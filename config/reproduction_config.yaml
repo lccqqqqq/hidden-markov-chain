@@ -1,0 +1,29 @@
+model:
+  name: "HookedTransformerModel"
+  vocab_size: 3
+  n_ctx: 10
+  n_positions: 10
+  d_head: 8
+  n_head: 1
+  n_layer: 4
+  n_embd: 64
+  n_inner: 256
+  activation_function: "relu"
+
+train:
+  process: mess3
+  batch_size: 64
+  learning_rate: 0.00002
+  num_epochs: 500000
+  device: "cuda"
+  wandb_project_name: "hidden-markov-model"
+  wandb_run_name: "model-mess3-lr-2e-5-batch-64-newgen"
+  
+scheduler:
+  type: "none"  # Options: "cosine", "step", "exponential", "plateau", "warmup_cosine", "none"
+  min_lr: 0.000001  # For cosine annealing
+  warmup_epochs: 1000  # For warmup_cosine
+  step_size: 5000  # For step scheduler
+  gamma: 0.5  # For step/exponential schedulers
+  patience: 1000  # For plateau scheduler
+  factor: 0.5  # For plateau scheduler
