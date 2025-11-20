@@ -27,3 +27,22 @@ scheduler:
   gamma: 0.5  # For step/exponential schedulers
   patience: 1000  # For plateau scheduler
   factor: 0.5  # For plateau scheduler
+
+# Dataset configuration (optional)
+# Uncomment to use pre-computed datasets instead of on-the-fly generation
+dataset:
+  mode: "on_the_fly"  # Options: "precomputed" or "on_the_fly"
+  # path: "data/datasets/z1r"  # Path to pre-generated dataset (auto-detected if not specified)
+
+  # Split sizes (used when generating datasets)
+  val_samples: 5000
+  test_samples: 5000
+
+  # Evaluation settings (used during training with precomputed mode)
+  eval_interval: 1000  # Evaluate on validation set every N steps
+
+  # Early stopping settings
+  early_stopping:
+    enabled: false  # Set to true to enable early stopping
+    patience: 5000  # Stop if no improvement for N steps
+    min_delta: 0.0001  # Minimum change to count as improvement
