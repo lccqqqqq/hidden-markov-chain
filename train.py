@@ -351,5 +351,5 @@ def train(config_file: str):
     wandb.finish()
 
 if __name__ == "__main__":
-    train("config/test_config.yaml")
+    train("config/psl7.yaml")
     
