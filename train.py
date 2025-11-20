@@ -1,4 +1,4 @@
-from hmm import RRXOR, Z1R, Mess3Proc
+from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM
 from model import HookedTransformerModel, MaskedHeadTransformerModel
 import yaml
 import torch
@@ -64,6 +64,26 @@ def checkpoint_on_error(model, optimizer, config, data_dir, scheduler=None, save
         state.save_metrics_to_file()
         raise
     except RuntimeError as e:
+        # Check if it's an MPS OOM error
+        if "MPS" in str(e) and "memory" in str(e).lower():
+            print(f"MPS Out of Memory at epoch {state.epoch}: {e}")
+            print("Try reducing batch_size in config or using a smaller model")
+            checkpoint_dir = os.path.join(data_dir, "checkpoints")
+            os.makedirs(checkpoint_dir, exist_ok=True)
+            checkpoint_data = {
+                'epoch': state.epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': state.loss,
+                'config': config,
+                'error': f"MPS OOM: {str(e)}"
+            }
+            if scheduler is not None:
+                checkpoint_data['scheduler_state_dict'] = scheduler.state_dict()
+            torch.save(checkpoint_data, f"{checkpoint_dir}/emergency_checkpoint_epoch_{state.epoch}_mps_oom.pt")
+            print(f"Emergency checkpoint saved due to MPS OOM at epoch {state.epoch}")
+            state.save_metrics_to_file()
+            raise
         print(f"Runtime error at epoch {state.epoch}: {e}")
         checkpoint_dir = os.path.join(data_dir, "checkpoints")
         os.makedirs(checkpoint_dir, exist_ok=True)
@@ -193,8 +213,21 @@ def train(config_file: str):
     train_config = config["train"]
     batch_size = int(train_config["batch_size"])
     learning_rate = float(train_config["learning_rate"])
-    num_epochs = int(train_config["num_epochs"]) 
-    device = torch.device(train_config["device"] if torch.cuda.is_available() else "cpu")
+    num_epochs = int(train_config["num_epochs"])
+
+    # Device selection with MPS support
+    requested_device = train_config["device"]
+    if requested_device == "cuda" and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif requested_device == "mps" and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    elif requested_device in ["cuda", "mps"]:
+        print(f"Warning: {requested_device} requested but not available, falling back to CPU")
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cpu")
+
+    print(f"Using device: {device}")
     
     # Initialize HMM process
     process_name = train_config["process"]
@@ -204,6 +237,8 @@ def train(config_file: str):
         process = Z1R()
     elif process_name == "mess3":
         process = Mess3Proc()
+    elif process_name == "psl7":
+        process = PSL7HMM()
     else:
         raise ValueError(f"Unknown process: {process_name}")
     
@@ -316,5 +351,5 @@ def train(config_file: str):
     wandb.finish()
 
 if __name__ == "__main__":
-    train("config/reproduction_config.yaml")
+    train("config/test_config.yaml")
     

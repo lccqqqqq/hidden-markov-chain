@@ -15,7 +15,7 @@ train:
   batch_size: 64
   learning_rate: 0.00005
   num_epochs: 24000
-  device: "cuda"
+  device: "mps"
   wandb_project_name: "hidden-markov-model-test"
   wandb_run_name: "model-cos_scheduler-z1r-lr-0.00005-batch-64"
 

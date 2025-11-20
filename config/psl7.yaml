@@ -1,0 +1,29 @@
+model:
+  name: "HookedTransformerModel" # or "MaskedHeadTransformerModel"
+  vocab_size: 64
+  n_ctx: 512
+  n_positions: 512
+  d_head: 8
+  n_head: 4
+  n_layer: 4
+  n_embd: 16
+  n_inner: 256
+  activation_function: "relu"
+
+train:
+  process: psl7
+  batch_size: 256
+  learning_rate: 0.00002
+  num_epochs: 24000
+  device: "mps"
+  wandb_project_name: "hidden-markov-model"
+  wandb_run_name: "model-psl7-lr-2e-5-batch-256"
+
+scheduler:
+  type: "none"  # Options: "cosine", "step", "exponential", "plateau", "warmup_cosine", "none"
+  min_lr: 0.000001  # For cosine annealing
+  warmup_epochs: 1000  # For warmup_cosine
+  step_size: 5000  # For step scheduler
+  gamma: 0.5  # For step/exponential schedulers
+  patience: 1000  # For plateau scheduler
+  factor: 0.5  # For plateau scheduler

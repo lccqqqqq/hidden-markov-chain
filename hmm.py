@@ -6,6 +6,7 @@ import os
 from itertools import product
 import einops
 from tqdm import tqdm
+import numpy as np
 
 class HMM(ABC):
     def __init__(self):
@@ -255,6 +256,14 @@ class Mess3Proc(HMM):
             ]
         )
         return E
+
+class PSL7HMM(HMM):
+    def __init__(self):
+        pass
+    
+    @property
+    def emission_matrices(self) -> t.Tensor:
+        return t.tensor(np.load("data/psl_instance_emission_matrix.npy"))
 
 
 def main():
