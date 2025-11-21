@@ -1,0 +1,16 @@
+{
+  "split": "val",
+  "process": "psl7",
+  "num_samples": 10000,
+  "seq_length": 257,
+  "vocab_size": 64,
+  "n_ctx": 256,
+  "num_hidden_states": 168,
+  "created": "2025-11-21T00:33:42.345611",
+  "config_file": "config/psl7.yaml",
+  "storage_format": "torch",
+  "data_type": "torch.int64",
+  "size_mb": 19.6075439453125,
+  "generated_with_mpi": true,
+  "mpi_ranks": 100
+}

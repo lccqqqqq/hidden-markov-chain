@@ -144,16 +144,28 @@ class HMM(ABC):
         # Convert to torch tensor for saving
         torch.save(torch.from_numpy(beliefs), os.path.join(save_dir, f"beliefs_{self.__class__.__name__}_{length}.pt"))
 
-    def generate_data(self, batch_size: int, length: int, use_tqdm: bool = False) -> torch.Tensor:
+    def generate_data(self, batch_size: int, length: int, init_state: int | None = None, use_tqdm: bool = False) -> torch.Tensor:
         """
         Generate a batch of observation sequences.
+
+        Args:
+            init_state: If -1, use random init state per sequence (avoids stationary dist computation).
+                       If None, sample from stationary distribution.
+                       If int >= 0, use that specific state for all sequences.
 
         Returns:
             PyTorch tensor of shape (batch_size, length) for compatibility with training pipeline
         """
         obs_batch = []
         for _ in tqdm(range(batch_size), desc="Generating data") if use_tqdm else range(batch_size):
-            states, obs = self.generate_sequence(length)
+            # Generate random init_state per sequence if init_state == -1 (sentinel value)
+            if init_state == -1:
+                import random
+                seq_init_state = random.randint(0, self.num_hidden_states - 1)
+            else:
+                seq_init_state = init_state
+
+            states, obs = self.generate_sequence(length, init_state=seq_init_state)
             obs_batch.append(obs)
 
         # Stack and convert to torch tensor for compatibility with training code
@@ -266,11 +278,15 @@ class Mess3Proc(HMM):
 
 class PSL7HMM(HMM):
     def __init__(self):
-        pass
+        # Load and cache emission matrix once at init time to avoid:
+        # 1. Repeated disk I/O during generation (much faster!)
+        # 2. File system contention when using MPI with many ranks
+        # 3. Potential corruption from concurrent reads
+        self._emission_matrices = np.load("data/psl_instance_emission_matrix.npy")
 
     @property
     def emission_matrices(self) -> np.ndarray:
-        return np.load("data/psl_instance_emission_matrix.npy")
+        return self._emission_matrices
 
 
 def main():
