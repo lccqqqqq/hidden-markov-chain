@@ -243,7 +243,7 @@ def generate_dataset(config_path, chunk_size=10000, force=False, split='all', us
             # Create empty tensor with correct shape
             local_observations = torch.empty((0, seq_length), dtype=torch.long)
 
-        # Save per-rank files when using MPI, then concatenate on rank 0
+        # Save per-rank files when using MPI (concatenation done separately)
         if use_mpi:
             # Each rank saves its own file
             rank_file = os.path.join(split_dir, f"observations_rank{rank}.pt")
@@ -256,31 +256,17 @@ def generate_dataset(config_path, chunk_size=10000, force=False, split='all', us
             # Synchronize - wait for all ranks to finish saving
             comm.Barrier()
 
-            # Rank 0 concatenates all files
             if rank == 0:
-                print("Rank 0: Concatenating all rank files...")
-                all_observations = []
+                print(f"Rank 0: All {size} ranks have saved their data")
+                print(f"Rank 0: To concatenate, run: python concatenate_ranks.py {split_dir}")
 
-                for r in range(size):
-                    rank_file = os.path.join(split_dir, f"observations_rank{r}.pt")
-                    print(f"Rank 0: Loading {rank_file}...")
-                    rank_data = torch.load(rank_file)
-                    all_observations.append(rank_data)
-
-                observations = torch.cat(all_observations, dim=0)
-
-                # Clean up intermediate files
-                print("Rank 0: Cleaning up intermediate rank files...")
-                for r in range(size):
-                    rank_file = os.path.join(split_dir, f"observations_rank{r}.pt")
-                    os.remove(rank_file)
-            else:
-                observations = None
+            # Skip the normal saving logic for MPI
+            observations = None
         else:
             observations = local_observations
 
-        # Only rank 0 saves the data
-        if rank == 0:
+        # Only rank 0 saves the data (skip if using MPI - concatenation done separately)
+        if rank == 0 and observations is not None:
             print(f"Final shape: {observations.shape}")
             print(f"Data type: {observations.dtype}")
 
@@ -318,6 +304,37 @@ def generate_dataset(config_path, chunk_size=10000, force=False, split='all', us
                 json.dump(metadata, f, indent=2)
 
             print(f"{split_name.upper()} split complete: {size_mb:.1f} MB")
+
+        # For MPI, save partial metadata
+        if rank == 0 and use_mpi:
+            bytes_per_sample = seq_length * 8
+            size_mb = (total_samples * bytes_per_sample) / (1024 * 1024)
+
+            metadata = {
+                "split": split_name,
+                "process": process_name,
+                "num_samples": total_samples,
+                "seq_length": seq_length,
+                "vocab_size": vocab_size,
+                "n_ctx": model_config['n_ctx'],
+                "num_hidden_states": process.num_hidden_states,
+                "created": datetime.now().isoformat(),
+                "config_file": config_path,
+                "generated_with_mpi": True,
+                "mpi_ranks": size,
+                "concatenation_required": True,
+                "concatenation_command": f"python concatenate_ranks.py {split_dir}"
+            }
+
+            if split_name == 'train':
+                metadata["batch_size"] = batch_size
+                metadata["num_epochs"] = num_epochs
+
+            print(f"Saving metadata to: {meta_path}")
+            with open(meta_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+
+            print(f"{split_name.upper()} split rank files saved ({size} files, ~{size_mb:.1f} MB total)")
 
     if rank == 0:
         print("\n" + "=" * 70)

@@ -29,12 +29,12 @@ class HMMDataset(Dataset):
         with open(meta_path, 'r') as f:
             self.metadata = json.load(f)
 
-        # Load observations
+        # Load observations with memory mapping for efficiency
         obs_path = os.path.join(dataset_path, "observations.pt")
         if not os.path.exists(obs_path):
             raise FileNotFoundError(f"Observations file not found: {obs_path}")
 
-        self.observations = torch.load(obs_path)
+        self.observations = torch.load(obs_path, map_location='cpu', mmap=True)
 
         # Validate shape
         expected_samples = self.metadata['num_samples']

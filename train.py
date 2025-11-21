@@ -278,23 +278,39 @@ def train(config_file: str):
     learning_rate = float(train_config["learning_rate"])
     num_epochs = int(train_config["num_epochs"])
 
-    # Device selection with MPS support
-    requested_device = train_config["device"]
-    if requested_device == "cuda" and torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif requested_device == "mps" and torch.backends.mps.is_available():
-        device = torch.device("mps")
-    elif requested_device in ["cuda", "mps"]:
-        print(f"Warning: {requested_device} requested but not available, falling back to CPU")
-        device = torch.device("cpu")
-    else:
-        device = torch.device("cpu")
+    # Device selection with auto-detection (cuda > mps > cpu)
+    requested_device = train_config.get("device", "auto")
 
-    print(f"Using device: {device}")
+    if requested_device == "auto":
+        # Auto-detect best available device
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"Using device: cuda (auto-detected)")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+            print(f"Using device: mps (auto-detected)")
+        else:
+            device = torch.device("cpu")
+            print(f"Using device: cpu (auto-detected)")
+    else:
+        # Respect user's specific device request
+        if requested_device == "cuda" and torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"Using device: cuda")
+        elif requested_device == "mps" and torch.backends.mps.is_available():
+            device = torch.device("mps")
+            print(f"Using device: mps")
+        elif requested_device in ["cuda", "mps"]:
+            print(f"Warning: {requested_device} requested but not available, falling back to CPU")
+            device = torch.device("cpu")
+            print(f"Using device: cpu")
+        else:
+            device = torch.device("cpu")
+            print(f"Using device: cpu")
 
     # Dataset configuration
     dataset_config = config.get("dataset", {})
-    dataset_mode = dataset_config.get("mode", "on_the_fly")
+    dataset_mode = dataset_config.get("mode", "precomputed")
     dataset_path = dataset_config.get("path", None)
 
     print(f"Dataset mode: {dataset_mode}")

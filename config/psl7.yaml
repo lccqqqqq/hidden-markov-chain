@@ -15,7 +15,7 @@ train:
   batch_size: 256
   learning_rate: 0.00002
   num_epochs: 24000
-  device: "mps"
+  device: "cuda"
   wandb_project_name: "hidden-markov-model"
   wandb_run_name: "model-psl7-lr-2e-5-batch-256"
 
