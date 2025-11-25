@@ -1,0 +1,32 @@
+model:
+  name: "HookedTransformerModel" # or "MaskedHeadTransformerModel"
+  vocab_size: 64
+  n_ctx: 256
+  n_positions: 256
+  d_head: 16
+  n_head: 2
+  n_layer: 2
+  n_embd: 32
+  n_inner: 64 # but are ignored because attn_only is True
+  activation_function: "relu"
+  normalization_type: null  # Use null or ~ for Python None (disables layer normalization)
+  attn_only: True
+  tie_word_embeddings: True
+
+train:
+  process: psl7
+  batch_size: 256
+  learning_rate: 0.00002
+  num_epochs: 24000
+  device: "cuda"
+  wandb_project_name: "hidden-markov-model"
+  wandb_run_name: "model-psl7-lr-2e-5-batch-256"
+
+scheduler:
+  type: "none"  # Options: "cosine", "step", "exponential", "plateau", "warmup_cosine", "none"
+  min_lr: 0.000001  # For cosine annealing
+  warmup_epochs: 1000  # For warmup_cosine
+  step_size: 5000  # For step scheduler
+  gamma: 0.5  # For step/exponential schedulers
+  patience: 1000  # For plateau scheduler
+  factor: 0.5  # For plateau scheduler
