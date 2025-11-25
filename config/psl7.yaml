@@ -3,12 +3,15 @@ model:
   vocab_size: 64
   n_ctx: 256
   n_positions: 256
-  d_head: 4
+  d_head: 16
   n_head: 1
-  n_layer: 1
-  n_embd: 4
-  n_inner: 8
+  n_layer: 2
+  n_embd: 16
+  n_inner: 64 # but are ignored because attn_only is True
   activation_function: "relu"
+  normalization_type: None
+  attn_only: True
+  tie_word_embeddings: True
 
 train:
   process: psl7

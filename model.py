@@ -101,6 +101,14 @@ class HookedTransformerModel(nn.Module):
         model_cfg = cfg['model']
         
         # Create HookedTransformerConfig from YAML config
+        # Optional interpretability settings (defaults preserve standard transformer)
+        attn_only = model_cfg.get('attn_only', False)  # Default: include MLP
+        normalization_type = model_cfg.get('normalization_type', 'LN')  # Default: LayerNorm
+        tie_word_embeddings = model_cfg.get('tie_word_embeddings', False)  # Default: separate W_E and W_U
+
+        # MLP hidden dimension (defaults to 4 * d_model if not specified)
+        d_mlp = model_cfg.get('n_inner', None) or model_cfg.get('d_mlp', None)
+
         hooked_config = HookedTransformerConfig(
             n_layers=model_cfg['n_layer'],
             d_model=model_cfg['n_embd'],
@@ -108,8 +116,11 @@ class HookedTransformerModel(nn.Module):
             n_heads=model_cfg['n_head'],
             d_vocab=model_cfg['vocab_size'],
             n_ctx=model_cfg['n_ctx'],
+            d_mlp=d_mlp,  # MLP hidden dimension (None defaults to 4 * d_model)
             act_fn=model_cfg['activation_function'],
-            normalization_type="LN",  # Layer norm
+            normalization_type=normalization_type,  # Configurable: "LN", "LNPre", None
+            attn_only=attn_only,  # Configurable: True removes MLP layers
+            tie_word_embeddings=tie_word_embeddings,  # Configurable: True ties W_E and W_U
             device="cpu"  # Will be moved to correct device later
         )
         
