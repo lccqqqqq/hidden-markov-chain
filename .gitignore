@@ -37,7 +37,7 @@ checkpoints/
 wandb/
 
 # Other stuff
-records/
+# records/
 model_checkpoints/
 models/
 pca_results/
