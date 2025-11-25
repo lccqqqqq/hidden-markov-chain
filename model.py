@@ -103,7 +103,11 @@ class HookedTransformerModel(nn.Module):
         # Create HookedTransformerConfig from YAML config
         # Optional interpretability settings (defaults preserve standard transformer)
         attn_only = model_cfg.get('attn_only', False)  # Default: include MLP
-        normalization_type = model_cfg.get('normalization_type', 'LN')  # Default: LayerNorm
+        # Handle normalization_type: allow explicit None to disable normalization, default to 'LN' if key missing
+        if 'normalization_type' in model_cfg:
+            normalization_type = model_cfg['normalization_type']  # Can be None, "LN", "LNPre", etc.
+        else:
+            normalization_type = 'LN'  # Default: LayerNorm
         tie_word_embeddings = model_cfg.get('tie_word_embeddings', False)  # Default: separate W_E and W_U
 
         # MLP hidden dimension (defaults to 4 * d_model if not specified)

@@ -3,10 +3,10 @@ model:
   vocab_size: 64
   n_ctx: 256
   n_positions: 256
-  d_head: 16
+  d_head: 8
   n_head: 2
-  n_layer: 2
-  n_embd: 32
+  n_layer: 4
+  n_embd: 16
   n_inner: 64 # but are ignored because attn_only is True
   activation_function: "relu"
   normalization_type: null  # Use null or ~ for Python None (disables layer normalization)
