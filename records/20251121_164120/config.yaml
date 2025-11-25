@@ -3,11 +3,11 @@ model:
   vocab_size: 64
   n_ctx: 256
   n_positions: 256
-  d_head: 4
-  n_head: 1
-  n_layer: 1
-  n_embd: 4
-  n_inner: 8
+  d_head: 8
+  n_head: 4
+  n_layer: 4
+  n_embd: 16
+  n_inner: 256
   activation_function: "relu"
 
 train:
@@ -15,7 +15,7 @@ train:
   batch_size: 256
   learning_rate: 0.00002
   num_epochs: 24000
-  device: "cuda"
+  device: "mps"
   wandb_project_name: "hidden-markov-model"
   wandb_run_name: "model-psl7-lr-2e-5-batch-256"
 
