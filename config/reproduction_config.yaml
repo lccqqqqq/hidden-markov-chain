@@ -17,8 +17,14 @@ train:
   num_epochs: 500000
   device: "cuda"
   wandb_project_name: "hidden-markov-model"
-  wandb_run_name: "model-mess3-lr-2e-5-batch-64-newgen"
-  
+  wandb_run_name: "reproduction"
+
+# Adding precomputed dataset to accelerate training
+dataset:
+  mode: "precomputed"
+  path: "data/datasets/mess3_ctx10"
+  eval_interval: 1000
+
 scheduler:
   type: "none"  # Options: "cosine", "step", "exponential", "plateau", "warmup_cosine", "none"
   min_lr: 0.000001  # For cosine annealing

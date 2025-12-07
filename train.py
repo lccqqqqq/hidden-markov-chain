@@ -397,90 +397,115 @@ def train(config_file: str):
 
     with checkpoint_on_error(model, optimizer, config, data_dir=data_dir, scheduler=scheduler) as checkpoint_state:
         if dataset_mode == "precomputed":
-            # Precomputed dataset mode: iterate through DataLoader
-            print(f"Training with pre-computed dataset ({len(train_loader)} batches)")
+            # Precomputed dataset mode: iterate through DataLoader until num_epochs steps
+            batches_per_epoch = len(train_loader)
+            total_steps = num_epochs  # num_epochs is actually total steps in this config
+            num_passes = (total_steps + batches_per_epoch - 1) // batches_per_epoch  # Ceiling division
+
+            print(f"Training with pre-computed dataset ({batches_per_epoch} batches per pass)")
+            print(f"Training for {total_steps} total steps (~{num_passes} passes through dataset)")
             print(f"Validation every {eval_interval} steps")
             step = 0
+            early_stop = False
 
-            for inputs, targets in train_loader:
-                # Move data to device
-                inputs = inputs.to(device)
-                targets = targets.to(device).long()
+            # Keep cycling through the dataset until we reach num_epochs steps
+            pass_num = 0
+            while step < total_steps:
+                pass_num += 1
+                print(f"\n{'='*70}")
+                print(f"Dataset pass {pass_num}/{num_passes} (Steps {step}/{total_steps})")
+                print(f"{'='*70}")
 
-                # Forward pass
-                optimizer.zero_grad()
-                logits = model(inputs)
-
-                # Reshape for loss computation
-                loss = criterion(logits.view(-1, logits.size(-1)), targets.view(-1))
-
-                # Backward pass
-                loss.backward()
-                optimizer.step()
-
-                # Update learning rate scheduler
-                if scheduler is not None:
-                    if scheduler_type == "plateau":
-                        scheduler.step(loss.item())
-                    else:
-                        scheduler.step()
-
-                # Update checkpoint state
-                checkpoint_state.update(step, loss.item())
-
-                # Get current learning rate
-                current_lr = optimizer.param_groups[0]['lr']
-
-                # Prepare metrics
-                metrics = {
-                    "step": step,
-                    "loss": loss.item(),
-                    "learning_rate": current_lr
-                }
-
-                # Periodic validation
-                if step % eval_interval == 0 and step > 0:
-                    val_loss = evaluate(model, val_loader, criterion, device)
-                    print(f"Step {step}: Train Loss = {loss.item():.6f}, Val Loss = {val_loss:.6f}, LR = {current_lr:.2e}")
-
-                    # Add validation loss to metrics
-                    metrics["val_loss"] = val_loss
-
-                    # Early stopping check
-                    if early_stopping and early_stopping(val_loss):
-                        print(f"\nEarly stopping triggered at step {step}")
-                        print(f"Best validation loss: {early_stopping.best_loss:.6f}")
-                        # Log final metrics before breaking
-                        wandb.log(metrics)
-                        checkpoint_state.log_metrics(metrics)
+                for inputs, targets in train_loader:
+                    # Check if we've reached the target number of steps
+                    if step >= total_steps:
                         break
-                else:
-                    # Console logging (without validation)
-                    if step % 1000 == 0:
-                        print(f"Step {step}/{len(train_loader)}, Loss: {loss.item():.6f}, LR: {current_lr:.2e}")
 
-                # Log metrics to wandb
-                wandb.log(metrics)
+                    # Move data to device
+                    inputs = inputs.to(device)
+                    targets = targets.to(device).long()
 
-                # Log metrics to context manager for local saving
-                checkpoint_state.log_metrics(metrics)
+                    # Forward pass
+                    optimizer.zero_grad()
+                    logits = model(inputs)
 
-                # Save checkpoint periodically
-                if step % 10000 == 0 and step > 0:
-                    checkpoint_dir = os.path.join(data_dir, "checkpoints")
-                    os.makedirs(checkpoint_dir, exist_ok=True)
-                    checkpoint_data = {
-                        'step': step,
-                        'model_state_dict': model.state_dict(),
-                        'optimizer_state_dict': optimizer.state_dict(),
-                        'loss': loss.item(),
-                        'config': config
-                    }
+                    # Reshape for loss computation
+                    loss = criterion(logits.view(-1, logits.size(-1)), targets.view(-1))
+
+                    # Backward pass
+                    loss.backward()
+                    optimizer.step()
+
+                    # Update learning rate scheduler
                     if scheduler is not None:
-                        checkpoint_data['scheduler_state_dict'] = scheduler.state_dict()
-                    torch.save(checkpoint_data, f"{checkpoint_dir}/checkpoint_step_{step}.pt")
+                        if scheduler_type == "plateau":
+                            scheduler.step(loss.item())
+                        else:
+                            scheduler.step()
 
-                step += 1
+                    # Update checkpoint state
+                    checkpoint_state.update(step, loss.item())
+
+                    # Get current learning rate
+                    current_lr = optimizer.param_groups[0]['lr']
+
+                    # Prepare metrics
+                    metrics = {
+                        "step": step,
+                        "pass": pass_num,
+                        "loss": loss.item(),
+                        "learning_rate": current_lr
+                    }
+
+                    # Periodic validation
+                    if step % eval_interval == 0 and step > 0:
+                        val_loss = evaluate(model, val_loader, criterion, device)
+                        print(f"Step {step}/{total_steps} (Pass {pass_num}): Train Loss = {loss.item():.6f}, Val Loss = {val_loss:.6f}, LR = {current_lr:.2e}")
+
+                        # Add validation loss to metrics
+                        metrics["val_loss"] = val_loss
+
+                        # Early stopping check
+                        if early_stopping and early_stopping(val_loss):
+                            print(f"\nEarly stopping triggered at step {step} (Pass {pass_num})")
+                            print(f"Best validation loss: {early_stopping.best_loss:.6f}")
+                            # Log final metrics before breaking
+                            wandb.log(metrics)
+                            checkpoint_state.log_metrics(metrics)
+                            early_stop = True
+                            break
+                    else:
+                        # Console logging (without validation)
+                        if step % 1000 == 0:
+                            print(f"Step {step}/{total_steps} (Pass {pass_num}), Loss: {loss.item():.6f}, LR: {current_lr:.2e}")
+
+                    # Log metrics to wandb
+                    wandb.log(metrics)
+
+                    # Log metrics to context manager for local saving
+                    checkpoint_state.log_metrics(metrics)
+
+                    # Save checkpoint periodically
+                    if step % 10000 == 0 and step > 0:
+                        checkpoint_dir = os.path.join(data_dir, "checkpoints")
+                        os.makedirs(checkpoint_dir, exist_ok=True)
+                        checkpoint_data = {
+                            'step': step,
+                            'pass': pass_num,
+                            'model_state_dict': model.state_dict(),
+                            'optimizer_state_dict': optimizer.state_dict(),
+                            'loss': loss.item(),
+                            'config': config
+                        }
+                        if scheduler is not None:
+                            checkpoint_data['scheduler_state_dict'] = scheduler.state_dict()
+                        torch.save(checkpoint_data, f"{checkpoint_dir}/checkpoint_step_{step}.pt")
+
+                    step += 1
+
+                # Break outer loop if early stopping triggered
+                if early_stop:
+                    break
 
             # Final test evaluation
             if test_loader is not None:
@@ -571,5 +596,6 @@ if __name__ == "__main__":
     # train("config/mess3_ctx4.yaml")
     # train("config/mess3_ctx6.yaml")
     # train("config/mess3_ctx8.yaml")
-    train("config/mess3_ctx10.yaml")
-    train("config/mess3_ctx15.yaml")
+    # train("config/mess3_ctx10.yaml")
+    # train("config/mess3_ctx15.yaml")
+    train("config/reproduction_config.yaml")

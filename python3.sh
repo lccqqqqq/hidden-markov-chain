@@ -1,6 +1,6 @@
 #!/bin/bash -l
 echo =========================================================   
-echo Job submitted  date = Thu 27 Nov 13:44:28 GMT 2025      
+echo Job submitted  date = Sun  7 Dec 23:57:20 GMT 2025      
 date_start=`date +%s`
 echo $SLURM_JOB_NUM_NODES nodes \( $SLURM_CPUS_ON_NODE processes per node \)        
 echo $SLURM_JOB_NUM_NODES hosts used: $SLURM_JOB_NODELIST      
@@ -15,7 +15,7 @@ echo
 ulimit -l unlimited
 
 export OMP_NUM_THEADS=1
- nice -n 10 /usr/bin/python3 train.py
+ /usr/local/shared/slurm/bin/srun -u -n 1 --mpi=pmix --mem-per-cpu=10240 nice -n 10 /usr/bin/python3 pca.py
   echo ---------------                                           
   echo Job output ends                                           
 

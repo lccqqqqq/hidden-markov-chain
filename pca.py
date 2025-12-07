@@ -24,7 +24,7 @@ def load_model_from_weights(model_dir: str, file_name: str = 'final_model_mess3.
     """Load a model from a weights file, load with nnsight"""
     with open(os.path.join(model_dir, "config.yaml"), "r") as f:
         config = yaml.safe_load(f)
-        
+
     model_name = config["model"]["name"]
     try:
         model = globals()[model_name](
@@ -32,8 +32,20 @@ def load_model_from_weights(model_dir: str, file_name: str = 'final_model_mess3.
         )
     except KeyError:
         raise ValueError(f"Model {model_name} not found in globals, possibly due to an absent import")
-    
-    model.load_state_dict(t.load(os.path.join(model_dir, file_name)))
+
+    # Load the state dict
+    checkpoint = t.load(os.path.join(model_dir, file_name))
+
+    # Check if this is a checkpoint file (with model_state_dict) or direct weights
+    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+        # This is a checkpoint file from training
+        state_dict = checkpoint['model_state_dict']
+        print(f"Loading from checkpoint (step/epoch: {checkpoint.get('step', checkpoint.get('epoch', 'unknown'))})")
+    else:
+        # This is a direct state dict
+        state_dict = checkpoint
+
+    model.load_state_dict(state_dict)
     model.eval()
     if t.cuda.is_available():
         model.to("cuda")
@@ -178,9 +190,11 @@ def visualize_simplex_3D(
     pass
 
 if __name__ == "__main__":
+    time_stamp = '20251207_232030'
     model = load_model_from_weights(
-        model_dir="records/20250801_225134",
-        file_name="final_model_mess3.pt"
+        model_dir=f"records/{time_stamp}",
+        # file_name="final_model_mess3.pt"
+        file_name=f"checkpoints/checkpoint_step_80000.pt"
     )
     print(model)
     
@@ -201,7 +215,7 @@ if __name__ == "__main__":
     regressors, predictions, mses = pca_layer_wise_actvs(
         raw_actvs=actvs,
         belief_states=belief_states,
-        run_id="20250803_main",
+        run_id=time_stamp,
     )
     
     print(predictions[0].shape)
