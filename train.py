@@ -332,6 +332,7 @@ def train(config_file: str):
     wandb.init(
         project=config["train"]["wandb_project_name"],
         name=config["train"]["wandb_run_name"],
+        config=config
     )
 
     # Get sequence length for data generation
@@ -567,5 +568,8 @@ def train(config_file: str):
     wandb.finish()
 
 if __name__ == "__main__":
-    train("config/psl7.yaml")
-    
+    # train("config/mess3_ctx4.yaml")
+    # train("config/mess3_ctx6.yaml")
+    # train("config/mess3_ctx8.yaml")
+    train("config/mess3_ctx10.yaml")
+    train("config/mess3_ctx15.yaml")

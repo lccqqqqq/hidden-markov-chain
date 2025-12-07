@@ -29,6 +29,8 @@ wheels/
 *.pt
 *.pth
 checkpoints/
+records/
+data/
 
 # Jupyter Notebook
 .ipynb_checkpoints

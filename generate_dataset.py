@@ -102,7 +102,7 @@ def generate_dataset(config_path, chunk_size=10000, force=False, split='all', us
         print("=" * 70)
 
     # Setup base output directory
-    base_output_dir = os.path.join("data", "datasets", process_name)
+    base_output_dir = os.path.join("data", "datasets", config_path.split("/")[-1].split(".")[0])
     os.makedirs(base_output_dir, exist_ok=True)
 
     # Initialize HMM process
