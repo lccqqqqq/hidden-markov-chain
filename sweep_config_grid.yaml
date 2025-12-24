@@ -1,0 +1,57 @@
+program: train.py
+method: grid  # Exhaustive grid search over all combinations
+
+metric:
+  name: val_loss
+  goal: minimize
+
+# No early termination for grid - let all combinations complete
+# This ensures fair comparison across architectures
+
+parameters:
+  # Architecture parameters - Ultra-light grid
+  # Focus: Small, efficient models only
+
+  n_layer:
+    values: [1, 2]  # 1 or 2 layers
+
+  n_embd:
+    values: [2, 4, 8]  # Small embeddings
+
+  n_head:
+    value: 1  # Number of attention heads
+
+  d_head:
+    values: [8, 16]  # Head dimension
+
+  # Note: n_embd does NOT need to equal n_head * d_head
+  # The model handles mismatches via internal projection layers
+  # All combinations will be tested
+
+  n_inner:
+    value: 16  # FFN hidden dimension
+
+  # Context length
+  n_ctx:
+    values: [4, 6, 8, 10, 15]  # Test two context lengths
+
+  # Model variants - Fixed to reduce grid size
+  attn_only:
+    values: [true, false]
+
+  normalization_type:
+    values: ["LN", null]  # Always use LayerNorm
+
+  # Training hyperparameters - Fixed for consistency
+  learning_rate:
+    value: 0.0003  # Fixed learning rate
+
+  batch_size:
+    value: 128  # Fixed batch size
+
+  scheduler_type:
+    value: "warmup_cosine"  # Fixed scheduler
+
+  # Fixed parameter pointing to base config
+  config_file:
+    value: "config/sweep_base.yaml"

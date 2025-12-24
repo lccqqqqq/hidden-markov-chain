@@ -1,0 +1,50 @@
+model:
+  name: "HookedTransformerModel"
+  vocab_size: 3
+  n_positions: 15  # Max context length (will accommodate n_ctx <= 15)
+  activation_function: "relu"
+  tie_word_embeddings: true
+  # Default values (will be overridden by sweep)
+  n_layer: 2
+  n_embd: 64
+  n_head: 4
+  d_head: 16
+  n_inner: 128
+  n_ctx: 10
+  attn_only: false
+  normalization_type: "LN"
+
+train:
+  process: mess3
+  device: "auto"  # Auto-detect best device (cuda > mps > cpu)
+  num_epochs: 100000  # Total training steps
+  wandb_project_name: "hmm-sweep"
+  wandb_run_name: "sweep-run"  # Will be overridden by WandB
+  # Default values (will be overridden by sweep)
+  learning_rate: 0.001
+  batch_size: 512
+
+dataset:
+  mode: "precomputed"
+  path: "data/datasets/mess3_ctx10"  # Updated dynamically based on n_ctx
+  eval_interval: 1000
+
+scheduler:
+  type: "warmup_cosine"  # Default, will be overridden by sweep
+  min_lr: 0.000001
+  warmup_epochs: 1000
+  step_size: 5000
+  gamma: 0.5
+  patience: 1000
+  factor: 0.5
+
+# Checkpoint validation configuration
+validation:
+  enabled: true
+  test_size: 1000         # Number of test sequences for validation
+  geometry_samples: 1000  # Samples for PCA geometry analysis
+  llr_samples: 1000       # Samples for log-likelihood ratio testing
+  seed: 42                # Fixed seed for reproducible test set
+
+early_stopping:
+  enabled: false  # Disabled - let WandB Hyperband handle early termination
