@@ -1,5 +1,6 @@
 from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM
 from model import HookedTransformerModel, MaskedHeadTransformerModel
+from checkpoint_validator import CheckpointValidator
 import yaml
 import torch
 import torch.nn as nn
@@ -12,6 +13,8 @@ from contextlib import contextmanager
 import pandas as pd
 import shutil
 from datetime import datetime
+import uuid
+import math
 
 @contextmanager
 def checkpoint_on_error(model, optimizer, config, data_dir, scheduler=None, save_metrics=True):
@@ -170,7 +173,7 @@ class WarmupCosineScheduler:
             # Cosine annealing
             cosine_epochs = self.total_epochs - self.warmup_epochs
             cosine_progress = (self.current_epoch - self.warmup_epochs) / cosine_epochs
-            lr = self.min_lr + (self.base_lr - self.min_lr) * 0.5 * (1 + torch.cos(torch.pi * cosine_progress))
+            lr = self.min_lr + (self.base_lr - self.min_lr) * 0.5 * (1 + math.cos(math.pi * cosine_progress))
 
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
@@ -258,19 +261,123 @@ def evaluate(model, dataloader, criterion, device):
 
 def train(config_file: str):
     # Load environment variables from .env file
-    # initalize the data directory using datatime
-    data_dir = os.path.join("records", datetime.now().strftime("%Y%m%d_%H%M%S"))
-    os.makedirs(data_dir, exist_ok=False)
-    # copy the config file to the data directory
-    shutil.copy(config_file, os.path.join(data_dir, "config.yaml"))
     load_dotenv()
-    
+
     # Set up wandb API key from environment
     if os.getenv("WANDB_API_KEY"):
         os.environ["WANDB_API_KEY"] = os.getenv("WANDB_API_KEY")
-    
+
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
+
+    # Initialize WandB - if called by wandb.agent(), this will automatically
+    # pick up sweep parameters. Otherwise, uses our config.
+    wandb.init(
+        project=config["train"]["wandb_project_name"],
+        name=config["train"]["wandb_run_name"],
+        config=config
+    )
+
+    # After wandb.init(), wandb.config contains either:
+    # 1. Sweep parameters (if running in sweep mode)
+    # 2. Our base config (if running standalone)
+    # We need to sync these back to our config dict
+
+    # Get all parameters from wandb.config
+    print("\nSyncing config from WandB...")
+    print(f"WandB config keys: {list(wandb.config.keys())}")
+
+    # Override model parameters from wandb.config
+    model_overrides = ['n_layer', 'n_embd', 'n_head', 'd_head', 'n_inner',
+                     'n_ctx', 'attn_only', 'normalization_type']
+    for param in model_overrides:
+        if param in wandb.config:
+            old_val = config['model'].get(param)
+            new_val = wandb.config[param]
+            if old_val != new_val:
+                config['model'][param] = new_val
+                print(f"  model.{param}: {old_val} → {new_val}")
+
+    # Override training parameters from wandb.config
+    train_overrides = ['learning_rate', 'batch_size']
+    for param in train_overrides:
+        if param in wandb.config:
+            old_val = config['train'].get(param)
+            new_val = wandb.config[param]
+            if old_val != new_val:
+                config['train'][param] = new_val
+                print(f"  train.{param}: {old_val} → {new_val}")
+
+    # Override scheduler type
+    if 'scheduler_type' in wandb.config:
+        old_val = config['scheduler'].get('type')
+        new_val = wandb.config['scheduler_type']
+        if old_val != new_val:
+            config['scheduler']['type'] = new_val
+            print(f"  scheduler.type: {old_val} → {new_val}")
+
+    # Debug: Print all final model parameters after overrides
+    print(f"\n{'='*70}")
+    print("FINAL MODEL CONFIGURATION (after all overrides):")
+    print(f"{'='*70}")
+    print("Model Parameters:")
+    print(f"  vocab_size: {config['model'].get('vocab_size')}")
+    print(f"  n_ctx: {config['model'].get('n_ctx')}")
+    print(f"  n_positions: {config['model'].get('n_positions')}")
+    print(f"  n_layer: {config['model'].get('n_layer')}")
+    print(f"  n_embd (d_model): {config['model'].get('n_embd')}")
+    print(f"  n_head: {config['model'].get('n_head')}")
+    print(f"  d_head: {config['model'].get('d_head')}")
+    print(f"  n_inner (d_mlp): {config['model'].get('n_inner')}")
+    print(f"  activation_function: {config['model'].get('activation_function')}")
+    print(f"  normalization_type: {config['model'].get('normalization_type')}")
+    print(f"  attn_only: {config['model'].get('attn_only')}")
+    print(f"  tie_word_embeddings: {config['model'].get('tie_word_embeddings')}")
+    print(f"\nTraining Parameters:")
+    print(f"  learning_rate: {config['train'].get('learning_rate')}")
+    print(f"  batch_size: {config['train'].get('batch_size')}")
+    print(f"  num_epochs: {config['train'].get('num_epochs')}")
+    print(f"  device: {config['train'].get('device')}")
+    print(f"  process: {config['train'].get('process')}")
+    print(f"\nScheduler:")
+    print(f"  type: {config['scheduler'].get('type')}")
+    print(f"\nDataset:")
+    print(f"  mode: {config.get('dataset', {}).get('mode')}")
+    print(f"  path: {config.get('dataset', {}).get('path')}")
+    print(f"{'='*70}\n")
+
+    # Create data directory using datetime and UUID (for multi-agent safety)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_id = str(uuid.uuid4())[:8]  # Short UUID for readability
+    data_dir = os.path.join("records", f"{timestamp}_{unique_id}")
+    os.makedirs(data_dir, exist_ok=False)
+
+    # Note: n_embd doesn't have to equal n_head * d_head
+    # The model will handle this internally via projection layers
+
+    # Update dataset path based on n_ctx
+    n_ctx = config['model']['n_ctx']
+    process_name = config['train']['process']
+    expected_dataset_path = f"data/datasets/{process_name}_ctx{n_ctx}"
+    current_path = config.get('dataset', {}).get('path')
+
+    print(f"\n{'='*70}")
+    print(f"DATASET PATH CHECK:")
+    print(f"  n_ctx from config: {n_ctx}")
+    print(f"  n_positions from config: {config['model']['n_positions']}")
+    print(f"  Current dataset path: {current_path}")
+    print(f"  Expected dataset path: {expected_dataset_path}")
+    print(f"  Paths match: {current_path == expected_dataset_path}")
+
+    if current_path != expected_dataset_path:
+        print(f"  → UPDATING dataset path to: {expected_dataset_path}")
+        if 'dataset' not in config:
+            config['dataset'] = {}
+        config['dataset']['path'] = expected_dataset_path
+        print(f"  ✓ Updated config['dataset']['path'] = {config['dataset']['path']}")
+    else:
+        print(f"  → Dataset path already correct, no update needed")
+    print(f"{'='*70}\n")
     
     # Extract training config
     train_config = config["train"]
@@ -327,13 +434,8 @@ def train(config_file: str):
         process = PSL7HMM()
     else:
         raise ValueError(f"Unknown process: {process_name}")
-    
-    # Initialize wandb
-    wandb.init(
-        project=config["train"]["wandb_project_name"],
-        name=config["train"]["wandb_run_name"],
-        config=config
-    )
+
+    # WandB already initialized earlier (to pick up sweep params)
 
     # Get sequence length for data generation
     seq_length = config["model"]["n_ctx"]
@@ -350,12 +452,33 @@ def train(config_file: str):
         if dataset_path is None:
             dataset_path = os.path.join("data", "datasets", process_name)
 
-        print(f"Loading pre-computed dataset from: {dataset_path}")
+        print(f"\n{'='*70}")
+        print(f"LOADING DATASET:")
+        print(f"  Path: {dataset_path}")
+        print(f"{'='*70}")
         train_loader, val_loader, test_loader = load_all_splits(dataset_path, batch_size, device=None)
+
+        # Check actual sequence length from loaded data
+        sample_inputs, sample_targets = next(iter(train_loader))
+        print(f"\n{'='*70}")
+        print(f"LOADED DATA SHAPES:")
+        print(f"  Input shape: {sample_inputs.shape} (batch_size, seq_len)")
+        print(f"  Target shape: {sample_targets.shape}")
+        print(f"  Actual sequence length from data: {sample_inputs.shape[1]}")
+        print(f"  Expected from n_ctx: {config['model']['n_ctx']}")
+        print(f"{'='*70}\n")
+
         print(f"Train: {len(train_loader)} batches, Val: {len(val_loader)} batches, Test: {len(test_loader)} batches")
     else:
         print(f"Using on-the-fly data generation (process: {process_name})")
     
+    # Save the UPDATED config (after all overrides) to the data directory
+    # This includes both sweep parameter overrides AND dataset path updates
+    updated_config_path = os.path.join(data_dir, "config.yaml")
+    with open(updated_config_path, 'w') as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+    print(f"\nSaved updated config to: {updated_config_path}")
+
     # Initialize model
     # according to the setup, we have two options:
     # 1. HookedTransformerModel
@@ -366,10 +489,37 @@ def train(config_file: str):
     if model_class is None:
         print(f"Using MaskedHeadTransformerModel as default")
         model_class = MaskedHeadTransformerModel
-        
-    model = model_class(config_file)
+
+    # IMPORTANT: Use the updated config, not the original base config!
+    # The updated config has sweep parameters (n_ctx, etc.) applied
+    print(f"\nInitializing model with updated config (n_ctx={config['model']['n_ctx']})")
+    model = model_class(updated_config_path)
     model = model.to(device)
     
+
+    # Initialize checkpoint validator
+    validator = None
+    validator_config = config.get("validation", {})
+    if validator_config.get("enabled", True):  # Default: enabled
+        print("\n" + "="*60)
+        print("Initializing checkpoint validator...")
+        print("="*60)
+        try:
+            validator = CheckpointValidator(
+                hmm_process=process,
+                test_size=validator_config.get("test_size", 1000),
+                seq_length=seq_length,
+                device=device,
+                seed=validator_config.get("seed", 42)
+            )
+            print(f"Validator initialized with {validator.test_size} test sequences")
+            print("="*60 + "\n")
+        except Exception as e:
+            print(f"Warning: Could not initialize validator: {e}")
+            print("Continuing without checkpoint validation")
+            print("="*60 + "\n")
+            validator = None
+
     # Setup optimizer and loss function
     optimizer = Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
@@ -436,12 +586,9 @@ def train(config_file: str):
                     loss.backward()
                     optimizer.step()
 
-                    # Update learning rate scheduler
-                    if scheduler is not None:
-                        if scheduler_type == "plateau":
-                            scheduler.step(loss.item())
-                        else:
-                            scheduler.step()
+                    # Update learning rate scheduler (skip plateau here, it's updated on validation)
+                    if scheduler is not None and scheduler_type != "plateau":
+                        scheduler.step()
 
                     # Update checkpoint state
                     checkpoint_state.update(step, loss.item())
@@ -464,6 +611,10 @@ def train(config_file: str):
 
                         # Add validation loss to metrics
                         metrics["val_loss"] = val_loss
+
+                        # Update plateau scheduler with validation loss
+                        if scheduler is not None and scheduler_type == "plateau":
+                            scheduler.step(val_loss)
 
                         # Early stopping check
                         if early_stopping and early_stopping(val_loss):
@@ -500,6 +651,27 @@ def train(config_file: str):
                         if scheduler is not None:
                             checkpoint_data['scheduler_state_dict'] = scheduler.state_dict()
                         torch.save(checkpoint_data, f"{checkpoint_dir}/checkpoint_step_{step}.pt")
+
+                        # Run checkpoint validation
+                        if validator is not None:
+                            try:
+                                val_metrics = validator.validate_all(
+                                    model=model,
+                                    step=step,
+                                    num_geometry_samples=validator_config.get("geometry_samples", 1000),
+                                    num_llr_samples=validator_config.get("llr_samples", 1000)
+                                )
+
+                                # Log to WandB
+                                validator.log_to_wandb(val_metrics, step=step)
+
+                                # Print summary
+                                print(f"  Geometry: Mean R² = {val_metrics.get('mean_r2', 0):.4f}")
+                                print(f"  LLR: Mean = {val_metrics.get('llr_mean', 0):.6f}, "
+                                      f"Std = {val_metrics.get('llr_std', 0):.6f}\n")
+                            except Exception as e:
+                                print(f"Warning: Checkpoint validation failed: {e}")
+                                # Don't crash training - continue even if validation fails
 
                     step += 1
 
@@ -541,6 +713,8 @@ def train(config_file: str):
                 optimizer.step()
 
                 # Update learning rate scheduler
+                # Note: plateau scheduler needs validation loss, but on-the-fly mode has no validation
+                # So we use training loss as a proxy (not ideal but works)
                 if scheduler is not None:
                     if scheduler_type == "plateau":
                         scheduler.step(loss.item())

@@ -1,0 +1,63 @@
+program: train.py
+method: bayes  # Bayesian optimization for efficient search
+metric:
+  name: val_loss  # Primary optimization target
+  goal: minimize
+
+# Early termination to save compute
+early_terminate:
+  type: hyperband
+  min_iter: 10000
+  eta: 3
+  s: 2
+
+parameters:
+  # Architecture parameters
+  n_layer:
+    distribution: int_uniform
+    min: 1
+    max: 3
+
+  n_embd:
+    values: [8, 16, 32]
+
+  n_head:
+    values: [1, 2, 4]
+
+  d_head:
+    values: [4, 8, 16, 32]
+
+  n_inner:
+    distribution: int_uniform
+    min: 16
+    max: 512
+
+  # Context length
+  n_ctx:
+    values: [4, 6, 8, 10, 15]
+
+  # Model variants
+  attn_only:
+    values: [true, false]
+
+  normalization_type:
+    values: [null, "LN"]
+  
+  tie_word_embeddings:
+    values: [true, false]
+
+  # Training hyperparameters
+  learning_rate:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.001
+
+  batch_size:
+    value: 256
+
+  scheduler_type:
+    values: ["none", "cosine", "warmup_cosine", "plateau"]
+
+  # Fixed parameter pointing to base config
+  config_file:
+    value: "config/sweep_base.yaml"
