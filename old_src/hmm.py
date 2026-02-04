@@ -1,12 +1,9 @@
 import torch
 import numpy as np
-import networkx as nx
 from abc import ABC, abstractmethod
 from jaxtyping import Float, Int
 from typing import Tuple
 import os
-import itertools
-import einops
 from itertools import product
 from tqdm import tqdm
 
@@ -290,109 +287,6 @@ class PSL7HMM(HMM):
     @property
     def emission_matrices(self) -> np.ndarray:
         return self._emission_matrices
-
-class CylinderGraphHMM(HMM):
-    """HMM based on a cylinder graph structure with depth and nodes per level."""
-
-    def __init__(
-        self,
-        n: int,
-        depth: int,
-        tokens_per_cluster: int = 16,
-        dirichlet_alpha: float = 0.5,
-        p: float = 0.1,
-        int_range: int = 2,
-        seed: int = None
-    ):
-        """
-        Initialize a Cylinder Graph HMM.
-
-        Args:
-            n: Number of nodes per level (width of cylinder)
-            depth: Number of levels (height of cylinder)
-            tokens_per_cluster: Number of tokens per depth level
-            dirichlet_alpha: Concentration parameter for Dirichlet prior on token distributions
-            p: Probability of transitioning to next layer (vs staying in current layer)
-            int_range: Integer range parameter (currently unused in cylinder graph)
-            seed: Random seed for reproducibility
-        """
-        self.n = n
-        self.depth = depth
-        self.tokens_per_cluster = tokens_per_cluster
-        self.dirichlet_alpha = dirichlet_alpha
-        self.p = p
-        self.seed = seed
-
-        # Build the complete HMM
-        self.graph = self._build_cylinder_graph()
-
-    def _build_cylinder_graph(self) -> nx.DiGraph:
-        """Construct the cylinder graph with token distributions."""
-        if self.seed is not None:
-            np.random.seed(self.seed)
-
-        G = nx.DiGraph()
-
-        # Add nodes
-        for i, (l, j) in enumerate(itertools.product(range(self.depth), range(self.n))):
-            G.add_node(i, depth=l, position=j)
-
-        # Add edges with weights
-        for l in range(self.depth):
-            for j in range(self.n):
-                # NN and NNN transitions within layer
-                current_node = l * self.n + j
-                NN_node = l * self.n + (j + 1) % self.n
-                NNN_node = l * self.n + (j + 2) % self.n
-                next_layer_node = ((l + 1) % self.depth) * self.n + j
-
-                random_weight = np.random.uniform(0, 1 - self.p)
-                G.add_edge(current_node, NN_node, weight=random_weight)
-                G.add_edge(current_node, NNN_node, weight=1 - self.p - random_weight)
-                G.add_edge(current_node, next_layer_node, weight=self.p)
-
-        # Add token distributions to nodes
-        self._add_token_distributions(G)
-
-        return G
-
-    def _add_token_distributions(self, G: nx.DiGraph) -> None:
-        """Add token emission distributions to each node."""
-        d_vocab = self.tokens_per_cluster * self.depth
-
-        for node, attrs in G.nodes(data=True):
-            # Sample from symmetric Dirichlet for this cluster
-            token_dist = np.random.dirichlet(np.ones(self.tokens_per_cluster) * self.dirichlet_alpha)
-
-            # Embed into full vocabulary (only non-zero for this depth's tokens)
-            token_dist_all = np.zeros(d_vocab)
-            start_idx = attrs['depth'] * self.tokens_per_cluster
-            end_idx = (attrs['depth'] + 1) * self.tokens_per_cluster
-            token_dist_all[start_idx:end_idx] = token_dist
-
-            attrs['token_dist'] = token_dist_all
-
-    def _get_emission_matrix(self) -> Float[np.ndarray, "d_vocab num_hidden_states num_hidden_states"]:
-        """Compute emission matrix from graph structure."""
-        # Get state transition matrix
-        state_transition = nx.adjacency_matrix(self.graph, weight='weight').todense()
-
-        # Get emission matrix (d_vocab x num_states)
-        d_vocab = self.graph.nodes(data=True)[0]['token_dist'].shape[0]
-        emission = np.zeros((d_vocab, self.graph.number_of_nodes()))
-        for i in range(self.graph.number_of_nodes()):
-            emission[:, i] = self.graph.nodes(data=True)[i]['token_dist']
-
-        # Combine: P(token, next_state | current_state)
-        tot_emission_matrix = einops.einsum(
-            state_transition, emission,
-            "current_state next_state, d_vocab current_state -> d_vocab current_state next_state"
-        )
-        return tot_emission_matrix
-    
-    @property
-    def emission_matrices(self):
-        return self._get_emission_matrix()
 
 
 def main():

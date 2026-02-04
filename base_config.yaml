@@ -1,0 +1,32 @@
+data_generator:
+  # Process configuration with nested params
+  process:
+    name: "cylinder_graph"
+    params:
+      n: 6
+      depth: 3
+      tokens_per_cluster: 16
+      dirichlet_alpha: 0.3
+      p: 0.1
+      seed: 42
+
+  # Data generation settings
+  num_tokens: 10_000_000
+  save_dir: "data/datasets/cylinder_graph_hmm"
+
+train:
+  optimizer:
+    adam_beta1: 0.9
+    adam_beta2: 0.999
+    adam_epsilon: 1e-8
+    adam_weight_decay: 0.01
+    learning_rate: 1e-3
+  
+  num_epochs: 10
+  batch_size: 128 # No need to accumulate gradients, etc
+  seq_length: 16
+
+wandb:
+  project_name: "pcfg"
+  experiment: "cylinder-graph-hmm"
+  log_period: 3
