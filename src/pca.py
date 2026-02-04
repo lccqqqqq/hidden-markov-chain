@@ -439,7 +439,7 @@ def plot_in_simplex(
 def run_pca_and_save_results(
     dirs: list[str] | str,
     batch_size: int = 100_000,
-    seq_length: int = 10,
+    seq_length: int = 16, # Currently the program is only consistent when this input is equal or larger than the actual n_ctx as in the model (if larger then truncate)
     use_mpi: bool = False,
     save_reusable_data_path: str = "pca_results/belief_states.npz",
     device: str = 'auto',

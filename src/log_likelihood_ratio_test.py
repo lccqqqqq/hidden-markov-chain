@@ -80,4 +80,4 @@ def llr_test(hmm, model, sequences, device: str = 'cuda'):
     mean_llr = np.mean(cond_log_prob_true - cond_log_prob_tsfm)
     return mean_llr
     
-def llr_test_models(hmm, model_paths, )
+
