@@ -1,0 +1,2148 @@
+=========================================================
+Job submitted date = Fri 6 Feb 14:19:58 GMT 2026
+1 nodes ( 2 processes per node )
+1 hosts used: gpu07
+Job output begins
+-----------------
+
+wandb: Starting wandb agent 🕵️
+2026-02-06 14:23:14,634 - wandb.wandb_agent - INFO - Running runs: []
+2026-02-06 14:23:15,081 - wandb.wandb_agent - INFO - Agent received command: run
+2026-02-06 14:23:15,081 - wandb.wandb_agent - INFO - Agent starting run with config:
+	attn_only: True
+	n_embd: 8
+	n_layer: 1
+	normalization_type: LN
+2026-02-06 14:23:15,089 - wandb.wandb_agent - INFO - About to run command: /usr/bin/env python3 src/train.py
+2026-02-06 14:23:20,126 - wandb.wandb_agent - INFO - Running runs: ['xvw13xm7']
+wandb: Currently logged in as: chuqiao-lin (chuqiao-lin-university-of-oxford) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: WARNING Ignoring project 'pcfg' when running a sweep.
+wandb: setting up run xvw13xm7
+wandb: Tracking run with wandb version 0.22.3
+wandb: Run data is saved locally in /mnt/newusers/clin/workspace/hidden-markov-chain/wandb/run-20260206_142351-xvw13xm7
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run fluent-sweep-8
+wandb: ⭐️ View project at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src
+wandb: 🧹 View sweep at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/sweeps/rn4j2ed2
+wandb: 🚀 View run at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/runs/xvw13xm7
+wandb: updating run metadata
+wandb: uploading config.yaml
+wandb: 
+wandb: Run history:
+wandb:            epoch ▁▁▁▁▂▂▃▃▃▃▃▃▃▃▃▃▃▄▄▄▄▄▄▅▅▆▆▆▆▆▆▆▆▆▇▇▇███
+wandb: epoch_train_loss █▂▁▁▁▁▁▁▁▁
+wandb:      global_step ▁▁▁▁▂▂▂▂▃▃▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇█████
+wandb:    learning_rate ███████▇▇▇▇▇▆▆▆▆▆▅▅▅▄▄▄▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁
+wandb:   tokens_per_sec ▁▅▇████▆▆▆▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃
+wandb:       train_loss ▆▆▄▆▆▆▃▄▅▆▃█▄▇▆▃▅▄▅▃▆▅▄▅▅▅▄▃▅▆▅▅▄▅▇▆▄▁▅▅
+wandb:         val_loss █▇▄▄▄▃▃▃▃▂▂▃▂▂▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:            epoch 9
+wandb: epoch_train_loss 2.67448
+wandb:      global_step 48340
+wandb:    learning_rate 0.0
+wandb:   tokens_per_sec 156872.16857
+wandb:       train_loss 2.67125
+wandb:         val_loss 2.67651
+wandb: 
+wandb: 🚀 View run L1_d8_attn_only_LN at: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/runs/xvw13xm7
+wandb: ⭐️ View project at: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260206_142351-xvw13xm7/logs
+Moving model to device:  cuda
+Dataset: 618749 train sequences, 6250 test sequences
+Steps per epoch: 4834, Total steps: 48340
+Epoch 1/10
+Step 100: Val Loss = 3.754835
+  Saved best model (val_loss: 3.754835)
+Step 200: Val Loss = 3.372421
+  Saved best model (val_loss: 3.372421)
+Step 300: Val Loss = 3.044880
+  Saved best model (val_loss: 3.044880)
+Step 400: Val Loss = 2.919612
+  Saved best model (val_loss: 2.919612)
+Step 500: Val Loss = 2.875422
+  Saved best model (val_loss: 2.875422)
+Step 600: Val Loss = 2.845126
+  Saved best model (val_loss: 2.845126)
+Step 700: Val Loss = 2.817954
+  Saved best model (val_loss: 2.817954)
+Step 800: Val Loss = 2.795854
+  Saved best model (val_loss: 2.795854)
+Step 900: Val Loss = 2.777695
+  Saved best model (val_loss: 2.777695)
+Step 1000: Val Loss = 2.763454
+  Saved best model (val_loss: 2.763454)
+Step 1100: Val Loss = 2.750160
+  Saved best model (val_loss: 2.750160)
+Step 1200: Val Loss = 2.739188
+  Saved best model (val_loss: 2.739188)
+Step 1300: Val Loss = 2.729339
+  Saved best model (val_loss: 2.729339)
+Step 1400: Val Loss = 2.722943
+  Saved best model (val_loss: 2.722943)
+Step 1500: Val Loss = 2.716980
+  Saved best model (val_loss: 2.716980)
+Step 1600: Val Loss = 2.712997
+  Saved best model (val_loss: 2.712997)
+Step 1700: Val Loss = 2.710735
+  Saved best model (val_loss: 2.710735)
+Step 1800: Val Loss = 2.707426
+  Saved best model (val_loss: 2.707426)
+Step 1900: Val Loss = 2.705534
+  Saved best model (val_loss: 2.705534)
+Step 2000: Val Loss = 2.703240
+  Saved best model (val_loss: 2.703240)
+Step 2100: Val Loss = 2.702413
+  Saved best model (val_loss: 2.702413)
+Step 2200: Val Loss = 2.700825
+  Saved best model (val_loss: 2.700825)
+Step 2300: Val Loss = 2.699823
+  Saved best model (val_loss: 2.699823)
+Step 2400: Val Loss = 2.698801
+  Saved best model (val_loss: 2.698801)
+Step 2500: Val Loss = 2.698231
+  Saved best model (val_loss: 2.698231)
+Step 2600: Val Loss = 2.696807
+  Saved best model (val_loss: 2.696807)
+Step 2700: Val Loss = 2.696188
+  Saved best model (val_loss: 2.696188)
+Step 2800: Val Loss = 2.695576
+  Saved best model (val_loss: 2.695576)
+Step 2900: Val Loss = 2.695004
+  Saved best model (val_loss: 2.695004)
+Step 3000: Val Loss = 2.694328
+  Saved best model (val_loss: 2.694328)
+Step 3100: Val Loss = 2.694035
+  Saved best model (val_loss: 2.694035)
+Step 3200: Val Loss = 2.693276
+  Saved best model (val_loss: 2.693276)
+Step 3300: Val Loss = 2.693306
+Step 3400: Val Loss = 2.692233
+  Saved best model (val_loss: 2.692233)
+Step 3500: Val Loss = 2.692536
+Step 3600: Val Loss = 2.692583
+Step 3700: Val Loss = 2.691459
+  Saved best model (val_loss: 2.691459)
+Step 3800: Val Loss = 2.691488
+Step 3900: Val Loss = 2.690744
+  Saved best model (val_loss: 2.690744)
+Step 4000: Val Loss = 2.690316
+  Saved best model (val_loss: 2.690316)
+Step 4100: Val Loss = 2.689726
+  Saved best model (val_loss: 2.689726)
+Step 4200: Val Loss = 2.689454
+  Saved best model (val_loss: 2.689454)
+Step 4300: Val Loss = 2.689177
+  Saved best model (val_loss: 2.689177)
+Step 4400: Val Loss = 2.689189
+Step 4500: Val Loss = 2.688778
+  Saved best model (val_loss: 2.688778)
+Step 4600: Val Loss = 2.688550
+  Saved best model (val_loss: 2.688550)
+Step 4700: Val Loss = 2.688631
+Step 4800: Val Loss = 2.688201
+  Saved best model (val_loss: 2.688201)
+Epoch 1 complete: Avg Train Loss = 2.773644
+  Saved checkpoint: checkpoint_epoch_1.pt
+Epoch 2/10
+Step 4900: Val Loss = 2.687765
+  Saved best model (val_loss: 2.687765)
+Step 5000: Val Loss = 2.688808
+Step 5100: Val Loss = 2.687073
+  Saved best model (val_loss: 2.687073)
+Step 5200: Val Loss = 2.687311
+Step 5300: Val Loss = 2.686865
+  Saved best model (val_loss: 2.686865)
+Step 5400: Val Loss = 2.686659
+  Saved best model (val_loss: 2.686659)
+Step 5500: Val Loss = 2.687212
+Step 5600: Val Loss = 2.686760
+Step 5700: Val Loss = 2.686631
+  Saved best model (val_loss: 2.686631)
+Step 5800: Val Loss = 2.685962
+  Saved best model (val_loss: 2.685962)
+Step 5900: Val Loss = 2.686024
+Step 6000: Val Loss = 2.685830
+  Saved best model (val_loss: 2.685830)
+Step 6100: Val Loss = 2.685471
+  Saved best model (val_loss: 2.685471)
+Step 6200: Val Loss = 2.685698
+Step 6300: Val Loss = 2.685555
+Step 6400: Val Loss = 2.685684
+Step 6500: Val Loss = 2.685300
+  Saved best model (val_loss: 2.685300)
+Step 6600: Val Loss = 2.685291
+  Saved best model (val_loss: 2.685291)
+Step 6700: Val Loss = 2.685298
+Step 6800: Val Loss = 2.684839
+  Saved best model (val_loss: 2.684839)
+Step 6900: Val Loss = 2.684840
+Step 7000: Val Loss = 2.685189
+Step 7100: Val Loss = 2.684622
+  Saved best model (val_loss: 2.684622)
+Step 7200: Val Loss = 2.684491
+  Saved best model (val_loss: 2.684491)
+Step 7300: Val Loss = 2.684571
+Step 7400: Val Loss = 2.684327
+  Saved best model (val_loss: 2.684327)
+Step 7500: Val Loss = 2.684508
+Step 7600: Val Loss = 2.683893
+  Saved best model (val_loss: 2.683893)
+Step 7700: Val Loss = 2.683996
+Step 7800: Val Loss = 2.684685
+Step 7900: Val Loss = 2.683891
+  Saved best model (val_loss: 2.683891)
+Step 8000: Val Loss = 2.684014
+Step 8100: Val Loss = 2.683733
+  Saved best model (val_loss: 2.683733)
+Step 8200: Val Loss = 2.683355
+  Saved best model (val_loss: 2.683355)
+Step 8300: Val Loss = 2.683868
+Step 8400: Val Loss = 2.683426
+Step 8500: Val Loss = 2.683373
+Step 8600: Val Loss = 2.683003
+  Saved best model (val_loss: 2.683003)
+Step 8700: Val Loss = 2.683491
+Step 8800: Val Loss = 2.683306
+Step 8900: Val Loss = 2.683736
+Step 9000: Val Loss = 2.683733
+Step 9100: Val Loss = 2.683079
+Step 9200: Val Loss = 2.683690
+Step 9300: Val Loss = 2.684055
+Step 9400: Val Loss = 2.683827
+Step 9500: Val Loss = 2.682790
+  Saved best model (val_loss: 2.682790)
+Step 9600: Val Loss = 2.683436
+Epoch 2 complete: Avg Train Loss = 2.682717
+  Saved checkpoint: checkpoint_epoch_2.pt
+Epoch 3/10
+Step 9700: Val Loss = 2.682886
+Step 9800: Val Loss = 2.682733
+  Saved best model (val_loss: 2.682733)
+Step 9900: Val Loss = 2.683572
+Step 10000: Val Loss = 2.682902
+Step 10100: Val Loss = 2.682833
+Step 10200: Val Loss = 2.683091
+Step 10300: Val Loss = 2.682339
+  Saved best model (val_loss: 2.682339)
+Step 10400: Val Loss = 2.682727
+Step 10500: Val Loss = 2.682230
+  Saved best model (val_loss: 2.682230)
+Step 10600: Val Loss = 2.683135
+Step 10700: Val Loss = 2.682154
+  Saved best model (val_loss: 2.682154)
+Step 10800: Val Loss = 2.682441
+Step 10900: Val Loss = 2.682085
+  Saved best model (val_loss: 2.682085)
+Step 11000: Val Loss = 2.682624
+Step 11100: Val Loss = 2.682554
+Step 11200: Val Loss = 2.681678
+  Saved best model (val_loss: 2.681678)
+Step 11300: Val Loss = 2.682286
+Step 11400: Val Loss = 2.681763
+Step 11500: Val Loss = 2.681796
+Step 11600: Val Loss = 2.682805
+Step 11700: Val Loss = 2.681966
+Step 11800: Val Loss = 2.682184
+Step 11900: Val Loss = 2.682071
+Step 12000: Val Loss = 2.682424
+Step 12100: Val Loss = 2.682042
+Step 12200: Val Loss = 2.681656
+  Saved best model (val_loss: 2.681656)
+Step 12300: Val Loss = 2.681612
+  Saved best model (val_loss: 2.681612)
+Step 12400: Val Loss = 2.681720
+Step 12500: Val Loss = 2.681460
+  Saved best model (val_loss: 2.681460)
+Step 12600: Val Loss = 2.681715
+Step 12700: Val Loss = 2.681536
+Step 12800: Val Loss = 2.681544
+Step 12900: Val Loss = 2.681573
+Step 13000: Val Loss = 2.681775
+Step 13100: Val Loss = 2.681622
+Step 13200: Val Loss = 2.681212
+  Saved best model (val_loss: 2.681212)
+Step 13300: Val Loss = 2.681597
+Step 13400: Val Loss = 2.681314
+Step 13500: Val Loss = 2.681749
+Step 13600: Val Loss = 2.680817
+  Saved best model (val_loss: 2.680817)
+Step 13700: Val Loss = 2.681273
+Step 13800: Val Loss = 2.681173
+Step 13900: Val Loss = 2.681250
+Step 14000: Val Loss = 2.681270
+Step 14100: Val Loss = 2.681189
+Step 14200: Val Loss = 2.680884
+Step 14300: Val Loss = 2.682057
+Step 14400: Val Loss = 2.681697
+Step 14500: Val Loss = 2.680968
+Epoch 3 complete: Avg Train Loss = 2.679817
+  Saved checkpoint: checkpoint_epoch_3.pt
+Epoch 4/10
+Step 14600: Val Loss = 2.680889
+Step 14700: Val Loss = 2.680667
+  Saved best model (val_loss: 2.680667)
+Step 14800: Val Loss = 2.680622
+  Saved best model (val_loss: 2.680622)
+Step 14900: Val Loss = 2.680852
+Step 15000: Val Loss = 2.680637
+Step 15100: Val Loss = 2.681037
+Step 15200: Val Loss = 2.680489
+  Saved best model (val_loss: 2.680489)
+Step 15300: Val Loss = 2.681215
+Step 15400: Val Loss = 2.680712
+Step 15500: Val Loss = 2.680442
+  Saved best model (val_loss: 2.680442)
+Step 15600: Val Loss = 2.680148
+  Saved best model (val_loss: 2.680148)
+Step 15700: Val Loss = 2.680737
+Step 15800: Val Loss = 2.680518
+Step 15900: Val Loss = 2.680935
+Step 16000: Val Loss = 2.680325
+Step 16100: Val Loss = 2.680695
+Step 16200: Val Loss = 2.680622
+Step 16300: Val Loss = 2.680407
+Step 16400: Val Loss = 2.680470
+Step 16500: Val Loss = 2.680436
+Step 16600: Val Loss = 2.680081
+  Saved best model (val_loss: 2.680081)
+Step 16700: Val Loss = 2.680236
+Step 16800: Val Loss = 2.680161
+Step 16900: Val Loss = 2.680459
+Step 17000: Val Loss = 2.680450
+Step 17100: Val Loss = 2.680042
+  Saved best model (val_loss: 2.680042)
+Step 17200: Val Loss = 2.680332
+Step 17300: Val Loss = 2.681101
+Step 17400: Val Loss = 2.680239
+Step 17500: Val Loss = 2.680265
+Step 17600: Val Loss = 2.680465
+Step 17700: Val Loss = 2.680854
+Step 17800: Val Loss = 2.680111
+Step 17900: Val Loss = 2.679917
+  Saved best model (val_loss: 2.679917)
+Step 18000: Val Loss = 2.680082
+Step 18100: Val Loss = 2.680255
+Step 18200: Val Loss = 2.680123
+Step 18300: Val Loss = 2.680234
+Step 18400: Val Loss = 2.679826
+  Saved best model (val_loss: 2.679826)
+Step 18500: Val Loss = 2.679784
+  Saved best model (val_loss: 2.679784)
+Step 18600: Val Loss = 2.679977
+Step 18700: Val Loss = 2.679670
+  Saved best model (val_loss: 2.679670)
+Step 18800: Val Loss = 2.679784
+Step 18900: Val Loss = 2.679919
+Step 19000: Val Loss = 2.680109
+Step 19100: Val Loss = 2.680109
+Step 19200: Val Loss = 2.679703
+Step 19300: Val Loss = 2.680241
+Epoch 4 complete: Avg Train Loss = 2.678332
+  Saved checkpoint: checkpoint_epoch_4.pt
+Epoch 5/10
+Step 19400: Val Loss = 2.679597
+  Saved best model (val_loss: 2.679597)
+Step 19500: Val Loss = 2.679561
+  Saved best model (val_loss: 2.679561)
+Step 19600: Val Loss = 2.679693
+Step 19700: Val Loss = 2.679931
+Step 19800: Val Loss = 2.680317
+Step 19900: Val Loss = 2.679572
+Step 20000: Val Loss = 2.679790
+Step 20100: Val Loss = 2.680076
+Step 20200: Val Loss = 2.679927
+Step 20300: Val Loss = 2.680191
+Step 20400: Val Loss = 2.679730
+Step 20500: Val Loss = 2.680146
+Step 20600: Val Loss = 2.679778
+Step 20700: Val Loss = 2.679399
+  Saved best model (val_loss: 2.679399)
+Step 20800: Val Loss = 2.679230
+  Saved best model (val_loss: 2.679230)
+Step 20900: Val Loss = 2.679369
+Step 21000: Val Loss = 2.679437
+Step 21100: Val Loss = 2.679695
+Step 21200: Val Loss = 2.680135
+Step 21300: Val Loss = 2.679390
+Step 21400: Val Loss = 2.679288
+Step 21500: Val Loss = 2.679797
+Step 21600: Val Loss = 2.679377
+Step 21700: Val Loss = 2.679781
+Step 21800: Val Loss = 2.678974
+  Saved best model (val_loss: 2.678974)
+Step 21900: Val Loss = 2.679522
+Step 22000: Val Loss = 2.679373
+Step 22100: Val Loss = 2.679173
+Step 22200: Val Loss = 2.679097
+Step 22300: Val Loss = 2.679323
+Step 22400: Val Loss = 2.679310
+Step 22500: Val Loss = 2.679735
+Step 22600: Val Loss = 2.679085
+Step 22700: Val Loss = 2.679274
+Step 22800: Val Loss = 2.679155
+Step 22900: Val Loss = 2.679136
+Step 23000: Val Loss = 2.679127
+Step 23100: Val Loss = 2.679261
+Step 23200: Val Loss = 2.679074
+Step 23300: Val Loss = 2.678728
+  Saved best model (val_loss: 2.678728)
+Step 23400: Val Loss = 2.678974
+Step 23500: Val Loss = 2.678679
+  Saved best model (val_loss: 2.678679)
+Step 23600: Val Loss = 2.679022
+Step 23700: Val Loss = 2.678823
+Step 23800: Val Loss = 2.678830
+Step 23900: Val Loss = 2.678682
+Step 24000: Val Loss = 2.678760
+Step 24100: Val Loss = 2.678515
+  Saved best model (val_loss: 2.678515)
+Epoch 5 complete: Avg Train Loss = 2.677299
+  Saved checkpoint: checkpoint_epoch_5.pt
+Epoch 6/10
+Step 24200: Val Loss = 2.678421
+  Saved best model (val_loss: 2.678421)
+Step 24300: Val Loss = 2.678378
+  Saved best model (val_loss: 2.678378)
+Step 24400: Val Loss = 2.678914
+Step 24500: Val Loss = 2.678875
+Step 24600: Val Loss = 2.678775
+Step 24700: Val Loss = 2.678295
+  Saved best model (val_loss: 2.678295)
+Step 24800: Val Loss = 2.678365
+Step 24900: Val Loss = 2.678251
+  Saved best model (val_loss: 2.678251)
+Step 25000: Val Loss = 2.678835
+Step 25100: Val Loss = 2.678403
+Step 25200: Val Loss = 2.678377
+Step 25300: Val Loss = 2.678291
+Step 25400: Val Loss = 2.678428
+Step 25500: Val Loss = 2.678255
+Step 25600: Val Loss = 2.678169
+  Saved best model (val_loss: 2.678169)
+Step 25700: Val Loss = 2.678362
+Step 25800: Val Loss = 2.678283
+Step 25900: Val Loss = 2.678417
+Step 26000: Val Loss = 2.678295
+Step 26100: Val Loss = 2.677990
+  Saved best model (val_loss: 2.677990)
+Step 26200: Val Loss = 2.678231
+Step 26300: Val Loss = 2.678580
+Step 26400: Val Loss = 2.678176
+Step 26500: Val Loss = 2.678229
+Step 26600: Val Loss = 2.677872
+  Saved best model (val_loss: 2.677872)
+Step 26700: Val Loss = 2.677895
+Step 26800: Val Loss = 2.677760
+  Saved best model (val_loss: 2.677760)
+Step 26900: Val Loss = 2.677713
+  Saved best model (val_loss: 2.677713)
+Step 27000: Val Loss = 2.677925
+Step 27100: Val Loss = 2.677962
+Step 27200: Val Loss = 2.678137
+Step 27300: Val Loss = 2.677820
+Step 27400: Val Loss = 2.677982
+Step 27500: Val Loss = 2.677829
+Step 27600: Val Loss = 2.677852
+Step 27700: Val Loss = 2.678023
+Step 27800: Val Loss = 2.677748
+Step 27900: Val Loss = 2.677771
+Step 28000: Val Loss = 2.677879
+Step 28100: Val Loss = 2.677874
+Step 28200: Val Loss = 2.677806
+Step 28300: Val Loss = 2.677820
+Step 28400: Val Loss = 2.677773
+Step 28500: Val Loss = 2.677810
+Step 28600: Val Loss = 2.677912
+Step 28700: Val Loss = 2.677833
+Step 28800: Val Loss = 2.677738
+Step 28900: Val Loss = 2.677760
+Step 29000: Val Loss = 2.677640
+  Saved best model (val_loss: 2.677640)
+Epoch 6 complete: Avg Train Loss = 2.676176
+  Saved checkpoint: checkpoint_epoch_6.pt
+Epoch 7/10
+Step 29100: Val Loss = 2.677611
+  Saved best model (val_loss: 2.677611)
+Step 29200: Val Loss = 2.677696
+Step 29300: Val Loss = 2.677874
+Step 29400: Val Loss = 2.677826
+Step 29500: Val Loss = 2.677514
+  Saved best model (val_loss: 2.677514)
+Step 29600: Val Loss = 2.677654
+Step 29700: Val Loss = 2.677446
+  Saved best model (val_loss: 2.677446)
+Step 29800: Val Loss = 2.677439
+  Saved best model (val_loss: 2.677439)
+Step 29900: Val Loss = 2.677730
+Step 30000: Val Loss = 2.677711
+Step 30100: Val Loss = 2.677577
+Step 30200: Val Loss = 2.677654
+Step 30300: Val Loss = 2.677721
+Step 30400: Val Loss = 2.677527
+Step 30500: Val Loss = 2.677343
+  Saved best model (val_loss: 2.677343)
+Step 30600: Val Loss = 2.677283
+  Saved best model (val_loss: 2.677283)
+Step 30700: Val Loss = 2.677518
+Step 30800: Val Loss = 2.677529
+Step 30900: Val Loss = 2.677514
+Step 31000: Val Loss = 2.677419
+Step 31100: Val Loss = 2.677714
+Step 31200: Val Loss = 2.677451
+Step 31300: Val Loss = 2.677443
+Step 31400: Val Loss = 2.677193
+  Saved best model (val_loss: 2.677193)
+Step 31500: Val Loss = 2.677474
+Step 31600: Val Loss = 2.677414
+Step 31700: Val Loss = 2.677210
+Step 31800: Val Loss = 2.677559
+Step 31900: Val Loss = 2.677614
+Step 32000: Val Loss = 2.677253
+Step 32100: Val Loss = 2.677650
+Step 32200: Val Loss = 2.677296
+Step 32300: Val Loss = 2.677319
+Step 32400: Val Loss = 2.677220
+Step 32500: Val Loss = 2.677255
+Step 32600: Val Loss = 2.677176
+  Saved best model (val_loss: 2.677176)
+Step 32700: Val Loss = 2.677490
+Step 32800: Val Loss = 2.677177
+Step 32900: Val Loss = 2.677022
+  Saved best model (val_loss: 2.677022)
+Step 33000: Val Loss = 2.677251
+Step 33100: Val Loss = 2.677175
+Step 33200: Val Loss = 2.677219
+Step 33300: Val Loss = 2.677204
+Step 33400: Val Loss = 2.677207
+Step 33500: Val Loss = 2.677202
+Step 33600: Val Loss = 2.676979
+  Saved best model (val_loss: 2.676979)
+Step 33700: Val Loss = 2.676880
+  Saved best model (val_loss: 2.676880)
+Step 33800: Val Loss = 2.677246
+Epoch 7 complete: Avg Train Loss = 2.675440
+  Saved checkpoint: checkpoint_epoch_7.pt
+Epoch 8/10
+Step 33900: Val Loss = 2.677454
+Step 34000: Val Loss = 2.677158
+Step 34100: Val Loss = 2.677139
+Step 34200: Val Loss = 2.677255
+Step 34300: Val Loss = 2.677334
+Step 34400: Val Loss = 2.677210
+Step 34500: Val Loss = 2.677104
+Step 34600: Val Loss = 2.677138
+Step 34700: Val Loss = 2.677117
+Step 34800: Val Loss = 2.676966
+Step 34900: Val Loss = 2.677015
+Step 35000: Val Loss = 2.677175
+Step 35100: Val Loss = 2.677000
+Step 35200: Val Loss = 2.677055
+Step 35300: Val Loss = 2.677104
+Step 35400: Val Loss = 2.677060
+Step 35500: Val Loss = 2.676992
+Step 35600: Val Loss = 2.676891
+Step 35700: Val Loss = 2.677069
+Step 35800: Val Loss = 2.676805
+  Saved best model (val_loss: 2.676805)
+Step 35900: Val Loss = 2.676884
+Step 36000: Val Loss = 2.676793
+  Saved best model (val_loss: 2.676793)
+Step 36100: Val Loss = 2.676816
+Step 36200: Val Loss = 2.676869
+Step 36300: Val Loss = 2.677055
+Step 36400: Val Loss = 2.677022
+Step 36500: Val Loss = 2.676877
+Step 36600: Val Loss = 2.676826
+Step 36700: Val Loss = 2.676835
+Step 36800: Val Loss = 2.676903
+Step 36900: Val Loss = 2.676860
+Step 37000: Val Loss = 2.676792
+  Saved best model (val_loss: 2.676792)
+Step 37100: Val Loss = 2.676902
+Step 37200: Val Loss = 2.676859
+Step 37300: Val Loss = 2.676917
+Step 37400: Val Loss = 2.676915
+Step 37500: Val Loss = 2.676993
+Step 37600: Val Loss = 2.676915
+Step 37700: Val Loss = 2.676823
+Step 37800: Val Loss = 2.676788
+  Saved best model (val_loss: 2.676788)
+Step 37900: Val Loss = 2.676789
+Step 38000: Val Loss = 2.676840
+Step 38100: Val Loss = 2.676995
+Step 38200: Val Loss = 2.676916
+Step 38300: Val Loss = 2.677038
+Step 38400: Val Loss = 2.676978
+Step 38500: Val Loss = 2.676840
+Step 38600: Val Loss = 2.676804
+Epoch 8 complete: Avg Train Loss = 2.674943
+  Saved checkpoint: checkpoint_epoch_8.pt
+Epoch 9/10
+Step 38700: Val Loss = 2.676791
+Step 38800: Val Loss = 2.676817
+Step 38900: Val Loss = 2.676773
+  Saved best model (val_loss: 2.676773)
+Step 39000: Val Loss = 2.676763
+  Saved best model (val_loss: 2.676763)
+Step 39100: Val Loss = 2.676741
+  Saved best model (val_loss: 2.676741)
+Step 39200: Val Loss = 2.676678
+  Saved best model (val_loss: 2.676678)
+Step 39300: Val Loss = 2.676696
+Step 39400: Val Loss = 2.676764
+Step 39500: Val Loss = 2.676670
+  Saved best model (val_loss: 2.676670)
+Step 39600: Val Loss = 2.676771
+Step 39700: Val Loss = 2.676712
+Step 39800: Val Loss = 2.676781
+Step 39900: Val Loss = 2.676754
+Step 40000: Val Loss = 2.676690
+Step 40100: Val Loss = 2.676701
+Step 40200: Val Loss = 2.676757
+Step 40300: Val Loss = 2.676803
+Step 40400: Val Loss = 2.676773
+Step 40500: Val Loss = 2.676702
+Step 40600: Val Loss = 2.676794
+Step 40700: Val Loss = 2.676704
+Step 40800: Val Loss = 2.676675
+Step 40900: Val Loss = 2.676686
+Step 41000: Val Loss = 2.676698
+Step 41100: Val Loss = 2.676732
+Step 41200: Val Loss = 2.676691
+Step 41300: Val Loss = 2.676705
+Step 41400: Val Loss = 2.676569
+  Saved best model (val_loss: 2.676569)
+Step 41500: Val Loss = 2.676687
+Step 41600: Val Loss = 2.676678
+Step 41700: Val Loss = 2.676641
+Step 41800: Val Loss = 2.676609
+Step 41900: Val Loss = 2.676575
+Step 42000: Val Loss = 2.676563
+  Saved best model (val_loss: 2.676563)
+Step 42100: Val Loss = 2.676681
+Step 42200: Val Loss = 2.676615
+Step 42300: Val Loss = 2.676615
+Step 42400: Val Loss = 2.676581
+Step 42500: Val Loss = 2.676561
+  Saved best model (val_loss: 2.676561)
+Step 42600: Val Loss = 2.676553
+  Saved best model (val_loss: 2.676553)
+Step 42700: Val Loss = 2.676557
+Step 42800: Val Loss = 2.676611
+Step 42900: Val Loss = 2.676652
+Step 43000: Val Loss = 2.676584
+Step 43100: Val Loss = 2.676623
+Step 43200: Val Loss = 2.676571
+Step 43300: Val Loss = 2.676608
+Step 43400: Val Loss = 2.676633
+Step 43500: Val Loss = 2.676580
+Epoch 9 complete: Avg Train Loss = 2.674632
+  Saved checkpoint: checkpoint_epoch_9.pt
+Epoch 10/10
+Step 43600: Val Loss = 2.676553
+Step 43700: Val Loss = 2.676561
+Step 43800: Val Loss = 2.676578
+Step 43900: Val Loss = 2.676586
+Step 44000: Val Loss = 2.676560
+Step 44100: Val Loss = 2.676585
+Step 44200: Val Loss = 2.676572
+Step 44300: Val Loss = 2.676586
+Step 44400: Val Loss = 2.676567
+Step 44500: Val Loss = 2.676553
+Step 44600: Val Loss = 2.676556
+Step 44700: Val Loss = 2.676522
+  Saved best model (val_loss: 2.676522)
+Step 44800: Val Loss = 2.676512
+  Saved best model (val_loss: 2.676512)
+Step 44900: Val Loss = 2.676533
+Step 45000: Val Loss = 2.676547
+Step 45100: Val Loss = 2.676539
+Step 45200: Val Loss = 2.676542
+Step 45300: Val Loss = 2.676535
+Step 45400: Val Loss = 2.676538
+Step 45500: Val Loss = 2.676532
+Step 45600: Val Loss = 2.676523
+Step 45700: Val Loss = 2.676519
+Step 45800: Val Loss = 2.676525
+Step 45900: Val Loss = 2.676527
+Step 46000: Val Loss = 2.676549
+Step 46100: Val Loss = 2.676548
+Step 46200: Val Loss = 2.676545
+Step 46300: Val Loss = 2.676527
+Step 46400: Val Loss = 2.676522
+Step 46500: Val Loss = 2.676526
+Step 46600: Val Loss = 2.676514
+Step 46700: Val Loss = 2.676513
+Step 46800: Val Loss = 2.676506
+  Saved best model (val_loss: 2.676506)
+Step 46900: Val Loss = 2.676505
+  Saved best model (val_loss: 2.676505)
+Step 47000: Val Loss = 2.676510
+Step 47100: Val Loss = 2.676513
+Step 47200: Val Loss = 2.676518
+Step 47300: Val Loss = 2.676520
+Step 47400: Val Loss = 2.676515
+Step 47500: Val Loss = 2.676511
+Step 47600: Val Loss = 2.676511
+Step 47700: Val Loss = 2.676512
+Step 47800: Val Loss = 2.676511
+Step 47900: Val Loss = 2.676511
+Step 48000: Val Loss = 2.676512
+Step 48100: Val Loss = 2.676513
+Step 48200: Val Loss = 2.676513
+Step 48300: Val Loss = 2.676511
+Epoch 10 complete: Avg Train Loss = 2.674483
+  Saved checkpoint: checkpoint_epoch_10.pt
+Training complete! Output saved to models/cylinderhmm/20260206_142355_L1_d8_attn_only_LN
+2026-02-06 14:34:32,448 - wandb.wandb_agent - INFO - Cleaning up finished run: xvw13xm7
+2026-02-06 14:34:32,763 - wandb.wandb_agent - INFO - Agent received command: run
+2026-02-06 14:34:32,763 - wandb.wandb_agent - INFO - Agent starting run with config:
+	attn_only: True
+	n_embd: 16
+	n_layer: 4
+	normalization_type: none
+2026-02-06 14:34:32,771 - wandb.wandb_agent - INFO - About to run command: /usr/bin/env python3 src/train.py
+2026-02-06 14:34:37,809 - wandb.wandb_agent - INFO - Running runs: ['q4f51adr']
+wandb: Currently logged in as: chuqiao-lin (chuqiao-lin-university-of-oxford) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: WARNING Ignoring project 'pcfg' when running a sweep.
+wandb: setting up run q4f51adr
+wandb: Tracking run with wandb version 0.22.3
+wandb: Run data is saved locally in /mnt/newusers/clin/workspace/hidden-markov-chain/wandb/run-20260206_143509-q4f51adr
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run robust-sweep-17
+wandb: ⭐️ View project at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src
+wandb: 🧹 View sweep at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/sweeps/rn4j2ed2
+wandb: 🚀 View run at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/runs/q4f51adr
+wandb: updating run metadata
+wandb: uploading wandb-summary.json; uploading history steps 5213-5326, summary, console lines 663-680; uploading config.yaml
+wandb: uploading data
+wandb: 
+wandb: Run history:
+wandb:            epoch ▁▁▂▂▂▂▂▂▃▃▃▃▃▃▃▄▄▄▄▄▄▅▅▅▆▆▆▆▆▆▇▇▇▇▇▇▇███
+wandb: epoch_train_loss █▃▂▂▂▁▁▁▁▁
+wandb:      global_step ▁▁▁▁▁▁▁▂▂▂▃▃▃▃▃▄▄▄▄▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▆▇▇▇██
+wandb:    learning_rate ██████▇▇▇▇▇▇▇▇▇▆▆▆▆▆▅▅▅▅▅▅▄▃▃▂▂▂▂▂▂▁▁▁▁▁
+wandb:   tokens_per_sec ▃▄▅▆▆▇▇▇▇▇█████████▆▃▃▃▃▃▂▂▂▂▂▁▁▁▁▁▂▂▂▂▂
+wandb:       train_loss █▄▃▃▄▃▃▄▃▃▂▃▃▁▃▃▂▁▃▃▃▂▁▂▂▁▂▂▁▂▂▂▂▂▂▂▂▂▂▁
+wandb:         val_loss █▃▃▃▃▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:            epoch 9
+wandb: epoch_train_loss 2.55473
+wandb:      global_step 48340
+wandb:    learning_rate 0.0
+wandb:   tokens_per_sec 122341.75175
+wandb:       train_loss 2.5089
+wandb:         val_loss 2.55802
+wandb: 
+wandb: 🚀 View run L4_d16_attn_only_noLN at: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/runs/q4f51adr
+wandb: ⭐️ View project at: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260206_143509-q4f51adr/logs
+Moving model to device:  cuda
+Dataset: 618749 train sequences, 6250 test sequences
+Steps per epoch: 4834, Total steps: 48340
+Epoch 1/10
+Step 100: Val Loss = 3.378921
+  Saved best model (val_loss: 3.378921)
+Step 200: Val Loss = 2.943211
+  Saved best model (val_loss: 2.943211)
+Step 300: Val Loss = 2.865099
+  Saved best model (val_loss: 2.865099)
+Step 400: Val Loss = 2.835555
+  Saved best model (val_loss: 2.835555)
+Step 500: Val Loss = 2.808887
+  Saved best model (val_loss: 2.808887)
+Step 600: Val Loss = 2.786046
+  Saved best model (val_loss: 2.786046)
+Step 700: Val Loss = 2.766304
+  Saved best model (val_loss: 2.766304)
+Step 800: Val Loss = 2.746407
+  Saved best model (val_loss: 2.746407)
+Step 900: Val Loss = 2.732766
+  Saved best model (val_loss: 2.732766)
+Step 1000: Val Loss = 2.717347
+  Saved best model (val_loss: 2.717347)
+Step 1100: Val Loss = 2.703438
+  Saved best model (val_loss: 2.703438)
+Step 1200: Val Loss = 2.689516
+  Saved best model (val_loss: 2.689516)
+Step 1300: Val Loss = 2.678791
+  Saved best model (val_loss: 2.678791)
+Step 1400: Val Loss = 2.672616
+  Saved best model (val_loss: 2.672616)
+Step 1500: Val Loss = 2.660862
+  Saved best model (val_loss: 2.660862)
+Step 1600: Val Loss = 2.655162
+  Saved best model (val_loss: 2.655162)
+Step 1700: Val Loss = 2.649057
+  Saved best model (val_loss: 2.649057)
+Step 1800: Val Loss = 2.645729
+  Saved best model (val_loss: 2.645729)
+Step 1900: Val Loss = 2.640330
+  Saved best model (val_loss: 2.640330)
+Step 2000: Val Loss = 2.639148
+  Saved best model (val_loss: 2.639148)
+Step 2100: Val Loss = 2.634058
+  Saved best model (val_loss: 2.634058)
+Step 2200: Val Loss = 2.630792
+  Saved best model (val_loss: 2.630792)
+Step 2300: Val Loss = 2.631685
+Step 2400: Val Loss = 2.626676
+  Saved best model (val_loss: 2.626676)
+Step 2500: Val Loss = 2.623533
+  Saved best model (val_loss: 2.623533)
+Step 2600: Val Loss = 2.621827
+  Saved best model (val_loss: 2.621827)
+Step 2700: Val Loss = 2.620838
+  Saved best model (val_loss: 2.620838)
+Step 2800: Val Loss = 2.619173
+  Saved best model (val_loss: 2.619173)
+Step 2900: Val Loss = 2.618222
+  Saved best model (val_loss: 2.618222)
+Step 3000: Val Loss = 2.617451
+  Saved best model (val_loss: 2.617451)
+Step 3100: Val Loss = 2.617997
+Step 3200: Val Loss = 2.614656
+  Saved best model (val_loss: 2.614656)
+Step 3300: Val Loss = 2.613518
+  Saved best model (val_loss: 2.613518)
+Step 3400: Val Loss = 2.614453
+Step 3500: Val Loss = 2.612389
+  Saved best model (val_loss: 2.612389)
+Step 3600: Val Loss = 2.611271
+  Saved best model (val_loss: 2.611271)
+Step 3700: Val Loss = 2.611272
+Step 3800: Val Loss = 2.608658
+  Saved best model (val_loss: 2.608658)
+Step 3900: Val Loss = 2.607837
+  Saved best model (val_loss: 2.607837)
+Step 4000: Val Loss = 2.607262
+  Saved best model (val_loss: 2.607262)
+Step 4100: Val Loss = 2.606454
+  Saved best model (val_loss: 2.606454)
+Step 4200: Val Loss = 2.605110
+  Saved best model (val_loss: 2.605110)
+Step 4300: Val Loss = 2.604892
+  Saved best model (val_loss: 2.604892)
+Step 4400: Val Loss = 2.605454
+Step 4500: Val Loss = 2.604574
+  Saved best model (val_loss: 2.604574)
+Step 4600: Val Loss = 2.604947
+Step 4700: Val Loss = 2.603832
+  Saved best model (val_loss: 2.603832)
+Step 4800: Val Loss = 2.602192
+  Saved best model (val_loss: 2.602192)
+Epoch 1 complete: Avg Train Loss = 2.685718
+  Saved checkpoint: checkpoint_epoch_1.pt
+Epoch 2/10
+Step 4900: Val Loss = 2.601845
+  Saved best model (val_loss: 2.601845)
+Step 5000: Val Loss = 2.602289
+Step 5100: Val Loss = 2.600192
+  Saved best model (val_loss: 2.600192)
+Step 5200: Val Loss = 2.600675
+Step 5300: Val Loss = 2.599569
+  Saved best model (val_loss: 2.599569)
+Step 5400: Val Loss = 2.598279
+  Saved best model (val_loss: 2.598279)
+Step 5500: Val Loss = 2.597913
+  Saved best model (val_loss: 2.597913)
+Step 5600: Val Loss = 2.597382
+  Saved best model (val_loss: 2.597382)
+Step 5700: Val Loss = 2.597187
+  Saved best model (val_loss: 2.597187)
+Step 5800: Val Loss = 2.595207
+  Saved best model (val_loss: 2.595207)
+Step 5900: Val Loss = 2.596402
+Step 6000: Val Loss = 2.596517
+Step 6100: Val Loss = 2.598152
+Step 6200: Val Loss = 2.597321
+Step 6300: Val Loss = 2.596858
+Step 6400: Val Loss = 2.594912
+  Saved best model (val_loss: 2.594912)
+Step 6500: Val Loss = 2.595141
+Step 6600: Val Loss = 2.594528
+  Saved best model (val_loss: 2.594528)
+Step 6700: Val Loss = 2.593081
+  Saved best model (val_loss: 2.593081)
+Step 6800: Val Loss = 2.593131
+Step 6900: Val Loss = 2.593118
+Step 7000: Val Loss = 2.594068
+Step 7100: Val Loss = 2.592788
+  Saved best model (val_loss: 2.592788)
+Step 7200: Val Loss = 2.591362
+  Saved best model (val_loss: 2.591362)
+Step 7300: Val Loss = 2.592255
+Step 7400: Val Loss = 2.592079
+Step 7500: Val Loss = 2.589812
+  Saved best model (val_loss: 2.589812)
+Step 7600: Val Loss = 2.590338
+Step 7700: Val Loss = 2.591653
+Step 7800: Val Loss = 2.589169
+  Saved best model (val_loss: 2.589169)
+Step 7900: Val Loss = 2.589147
+  Saved best model (val_loss: 2.589147)
+Step 8000: Val Loss = 2.589106
+  Saved best model (val_loss: 2.589106)
+Step 8100: Val Loss = 2.589087
+  Saved best model (val_loss: 2.589087)
+Step 8200: Val Loss = 2.588018
+  Saved best model (val_loss: 2.588018)
+Step 8300: Val Loss = 2.586771
+  Saved best model (val_loss: 2.586771)
+Step 8400: Val Loss = 2.589618
+Step 8500: Val Loss = 2.586284
+  Saved best model (val_loss: 2.586284)
+Step 8600: Val Loss = 2.588050
+Step 8700: Val Loss = 2.586980
+Step 8800: Val Loss = 2.588685
+Step 8900: Val Loss = 2.586143
+  Saved best model (val_loss: 2.586143)
+Step 9000: Val Loss = 2.587352
+Step 9100: Val Loss = 2.587451
+Step 9200: Val Loss = 2.585418
+  Saved best model (val_loss: 2.585418)
+Step 9300: Val Loss = 2.586333
+Step 9400: Val Loss = 2.584994
+  Saved best model (val_loss: 2.584994)
+Step 9500: Val Loss = 2.585957
+Step 9600: Val Loss = 2.584467
+  Saved best model (val_loss: 2.584467)
+Epoch 2 complete: Avg Train Loss = 2.589672
+  Saved checkpoint: checkpoint_epoch_2.pt
+Epoch 3/10
+Step 9700: Val Loss = 2.584141
+  Saved best model (val_loss: 2.584141)
+Step 9800: Val Loss = 2.584122
+  Saved best model (val_loss: 2.584122)
+Step 9900: Val Loss = 2.583079
+  Saved best model (val_loss: 2.583079)
+Step 10000: Val Loss = 2.583761
+Step 10100: Val Loss = 2.582905
+  Saved best model (val_loss: 2.582905)
+Step 10200: Val Loss = 2.582240
+  Saved best model (val_loss: 2.582240)
+Step 10300: Val Loss = 2.582193
+  Saved best model (val_loss: 2.582193)
+Step 10400: Val Loss = 2.582527
+Step 10500: Val Loss = 2.581453
+  Saved best model (val_loss: 2.581453)
+Step 10600: Val Loss = 2.583341
+Step 10700: Val Loss = 2.580912
+  Saved best model (val_loss: 2.580912)
+Step 10800: Val Loss = 2.579580
+  Saved best model (val_loss: 2.579580)
+Step 10900: Val Loss = 2.580524
+Step 11000: Val Loss = 2.581272
+Step 11100: Val Loss = 2.581937
+Step 11200: Val Loss = 2.580910
+Step 11300: Val Loss = 2.581938
+Step 11400: Val Loss = 2.580368
+Step 11500: Val Loss = 2.579606
+Step 11600: Val Loss = 2.578665
+  Saved best model (val_loss: 2.578665)
+Step 11700: Val Loss = 2.579673
+Step 11800: Val Loss = 2.580586
+Step 11900: Val Loss = 2.580776
+Step 12000: Val Loss = 2.580190
+Step 12100: Val Loss = 2.578397
+  Saved best model (val_loss: 2.578397)
+Step 12200: Val Loss = 2.579217
+Step 12300: Val Loss = 2.579959
+Step 12400: Val Loss = 2.578558
+Step 12500: Val Loss = 2.578370
+  Saved best model (val_loss: 2.578370)
+Step 12600: Val Loss = 2.578301
+  Saved best model (val_loss: 2.578301)
+Step 12700: Val Loss = 2.578021
+  Saved best model (val_loss: 2.578021)
+Step 12800: Val Loss = 2.578777
+Step 12900: Val Loss = 2.577525
+  Saved best model (val_loss: 2.577525)
+Step 13000: Val Loss = 2.579511
+Step 13100: Val Loss = 2.576355
+  Saved best model (val_loss: 2.576355)
+Step 13200: Val Loss = 2.576100
+  Saved best model (val_loss: 2.576100)
+Step 13300: Val Loss = 2.576102
+Step 13400: Val Loss = 2.578774
+Step 13500: Val Loss = 2.577222
+Step 13600: Val Loss = 2.577240
+Step 13700: Val Loss = 2.575453
+  Saved best model (val_loss: 2.575453)
+Step 13800: Val Loss = 2.576019
+Step 13900: Val Loss = 2.575186
+  Saved best model (val_loss: 2.575186)
+Step 14000: Val Loss = 2.574804
+  Saved best model (val_loss: 2.574804)
+Step 14100: Val Loss = 2.575743
+Step 14200: Val Loss = 2.575902
+Step 14300: Val Loss = 2.575108
+Step 14400: Val Loss = 2.574695
+  Saved best model (val_loss: 2.574695)
+Step 14500: Val Loss = 2.573923
+  Saved best model (val_loss: 2.573923)
+Epoch 3 complete: Avg Train Loss = 2.577033
+  Saved checkpoint: checkpoint_epoch_3.pt
+Epoch 4/10
+Step 14600: Val Loss = 2.573722
+  Saved best model (val_loss: 2.573722)
+Step 14700: Val Loss = 2.573383
+  Saved best model (val_loss: 2.573383)
+Step 14800: Val Loss = 2.573385
+Step 14900: Val Loss = 2.574988
+Step 15000: Val Loss = 2.572866
+  Saved best model (val_loss: 2.572866)
+Step 15100: Val Loss = 2.573820
+Step 15200: Val Loss = 2.573623
+Step 15300: Val Loss = 2.574718
+Step 15400: Val Loss = 2.573963
+Step 15500: Val Loss = 2.572486
+  Saved best model (val_loss: 2.572486)
+Step 15600: Val Loss = 2.573598
+Step 15700: Val Loss = 2.573455
+Step 15800: Val Loss = 2.573119
+Step 15900: Val Loss = 2.573396
+Step 16000: Val Loss = 2.572827
+Step 16100: Val Loss = 2.573216
+Step 16200: Val Loss = 2.572599
+Step 16300: Val Loss = 2.572589
+Step 16400: Val Loss = 2.572569
+Step 16500: Val Loss = 2.577045
+Step 16600: Val Loss = 2.571297
+  Saved best model (val_loss: 2.571297)
+Step 16700: Val Loss = 2.571288
+  Saved best model (val_loss: 2.571288)
+Step 16800: Val Loss = 2.572788
+Step 16900: Val Loss = 2.570855
+  Saved best model (val_loss: 2.570855)
+Step 17000: Val Loss = 2.573093
+Step 17100: Val Loss = 2.571676
+Step 17200: Val Loss = 2.573140
+Step 17300: Val Loss = 2.572168
+Step 17400: Val Loss = 2.571212
+Step 17500: Val Loss = 2.570991
+Step 17600: Val Loss = 2.569894
+  Saved best model (val_loss: 2.569894)
+Step 17700: Val Loss = 2.570583
+Step 17800: Val Loss = 2.570403
+Step 17900: Val Loss = 2.571257
+Step 18000: Val Loss = 2.569699
+  Saved best model (val_loss: 2.569699)
+Step 18100: Val Loss = 2.571319
+Step 18200: Val Loss = 2.570454
+Step 18300: Val Loss = 2.571194
+Step 18400: Val Loss = 2.570198
+Step 18500: Val Loss = 2.569869
+Step 18600: Val Loss = 2.568526
+  Saved best model (val_loss: 2.568526)
+Step 18700: Val Loss = 2.571110
+Step 18800: Val Loss = 2.569981
+Step 18900: Val Loss = 2.569632
+Step 19000: Val Loss = 2.570654
+Step 19100: Val Loss = 2.569901
+Step 19200: Val Loss = 2.570872
+Step 19300: Val Loss = 2.568258
+  Saved best model (val_loss: 2.568258)
+Epoch 4 complete: Avg Train Loss = 2.569215
+  Saved checkpoint: checkpoint_epoch_4.pt
+Epoch 5/10
+Step 19400: Val Loss = 2.568904
+Step 19500: Val Loss = 2.569238
+Step 19600: Val Loss = 2.568142
+  Saved best model (val_loss: 2.568142)
+Step 19700: Val Loss = 2.568241
+Step 19800: Val Loss = 2.568320
+Step 19900: Val Loss = 2.567586
+  Saved best model (val_loss: 2.567586)
+Step 20000: Val Loss = 2.569596
+Step 20100: Val Loss = 2.568599
+Step 20200: Val Loss = 2.568220
+Step 20300: Val Loss = 2.567604
+Step 20400: Val Loss = 2.571443
+Step 20500: Val Loss = 2.567755
+Step 20600: Val Loss = 2.568973
+Step 20700: Val Loss = 2.568026
+Step 20800: Val Loss = 2.567957
+Step 20900: Val Loss = 2.568899
+Step 21000: Val Loss = 2.567684
+Step 21100: Val Loss = 2.567772
+Step 21200: Val Loss = 2.567624
+Step 21300: Val Loss = 2.568114
+Step 21400: Val Loss = 2.566332
+  Saved best model (val_loss: 2.566332)
+Step 21500: Val Loss = 2.568962
+Step 21600: Val Loss = 2.567040
+Step 21700: Val Loss = 2.568953
+Step 21800: Val Loss = 2.567538
+Step 21900: Val Loss = 2.566288
+  Saved best model (val_loss: 2.566288)
+Step 22000: Val Loss = 2.567392
+Step 22100: Val Loss = 2.565956
+  Saved best model (val_loss: 2.565956)
+Step 22200: Val Loss = 2.567162
+Step 22300: Val Loss = 2.566670
+Step 22400: Val Loss = 2.567168
+Step 22500: Val Loss = 2.565981
+Step 22600: Val Loss = 2.566174
+Step 22700: Val Loss = 2.566921
+Step 22800: Val Loss = 2.566471
+Step 22900: Val Loss = 2.566491
+Step 23000: Val Loss = 2.566408
+Step 23100: Val Loss = 2.566600
+Step 23200: Val Loss = 2.565218
+  Saved best model (val_loss: 2.565218)
+Step 23300: Val Loss = 2.565831
+Step 23400: Val Loss = 2.565956
+Step 23500: Val Loss = 2.566132
+Step 23600: Val Loss = 2.566386
+Step 23700: Val Loss = 2.564909
+  Saved best model (val_loss: 2.564909)
+Step 23800: Val Loss = 2.565295
+Step 23900: Val Loss = 2.566415
+Step 24000: Val Loss = 2.566074
+Step 24100: Val Loss = 2.566023
+Epoch 5 complete: Avg Train Loss = 2.564446
+  Saved checkpoint: checkpoint_epoch_5.pt
+Epoch 6/10
+Step 24200: Val Loss = 2.565555
+Step 24300: Val Loss = 2.565279
+Step 24400: Val Loss = 2.565959
+Step 24500: Val Loss = 2.565220
+Step 24600: Val Loss = 2.565794
+Step 24700: Val Loss = 2.566125
+Step 24800: Val Loss = 2.564839
+  Saved best model (val_loss: 2.564839)
+Step 24900: Val Loss = 2.564871
+Step 25000: Val Loss = 2.564615
+  Saved best model (val_loss: 2.564615)
+Step 25100: Val Loss = 2.564818
+Step 25200: Val Loss = 2.565506
+Step 25300: Val Loss = 2.564642
+Step 25400: Val Loss = 2.565345
+Step 25500: Val Loss = 2.564283
+  Saved best model (val_loss: 2.564283)
+Step 25600: Val Loss = 2.563918
+  Saved best model (val_loss: 2.563918)
+Step 25700: Val Loss = 2.564188
+Step 25800: Val Loss = 2.565024
+Step 25900: Val Loss = 2.564336
+Step 26000: Val Loss = 2.564011
+Step 26100: Val Loss = 2.563819
+  Saved best model (val_loss: 2.563819)
+Step 26200: Val Loss = 2.565118
+Step 26300: Val Loss = 2.563943
+Step 26400: Val Loss = 2.564771
+Step 26500: Val Loss = 2.563523
+  Saved best model (val_loss: 2.563523)
+Step 26600: Val Loss = 2.563746
+Step 26700: Val Loss = 2.564570
+Step 26800: Val Loss = 2.563528
+Step 26900: Val Loss = 2.563419
+  Saved best model (val_loss: 2.563419)
+Step 27000: Val Loss = 2.563716
+Step 27100: Val Loss = 2.563850
+Step 27200: Val Loss = 2.563534
+Step 27300: Val Loss = 2.563541
+Step 27400: Val Loss = 2.563585
+Step 27500: Val Loss = 2.563456
+Step 27600: Val Loss = 2.564583
+Step 27700: Val Loss = 2.563987
+Step 27800: Val Loss = 2.563913
+Step 27900: Val Loss = 2.564097
+Step 28000: Val Loss = 2.562518
+  Saved best model (val_loss: 2.562518)
+Step 28100: Val Loss = 2.563420
+Step 28200: Val Loss = 2.562998
+Step 28300: Val Loss = 2.562379
+  Saved best model (val_loss: 2.562379)
+Step 28400: Val Loss = 2.562715
+Step 28500: Val Loss = 2.562996
+Step 28600: Val Loss = 2.562638
+Step 28700: Val Loss = 2.562898
+Step 28800: Val Loss = 2.562589
+Step 28900: Val Loss = 2.562788
+Step 29000: Val Loss = 2.562366
+  Saved best model (val_loss: 2.562366)
+Epoch 6 complete: Avg Train Loss = 2.560859
+  Saved checkpoint: checkpoint_epoch_6.pt
+Epoch 7/10
+Step 29100: Val Loss = 2.562555
+Step 29200: Val Loss = 2.562252
+  Saved best model (val_loss: 2.562252)
+Step 29300: Val Loss = 2.562875
+Step 29400: Val Loss = 2.562253
+Step 29500: Val Loss = 2.561465
+  Saved best model (val_loss: 2.561465)
+Step 29600: Val Loss = 2.562270
+Step 29700: Val Loss = 2.562031
+Step 29800: Val Loss = 2.563465
+Step 29900: Val Loss = 2.561939
+Step 30000: Val Loss = 2.561643
+Step 30100: Val Loss = 2.562573
+Step 30200: Val Loss = 2.561276
+  Saved best model (val_loss: 2.561276)
+Step 30300: Val Loss = 2.562276
+Step 30400: Val Loss = 2.562767
+Step 30500: Val Loss = 2.561773
+Step 30600: Val Loss = 2.561730
+Step 30700: Val Loss = 2.561290
+Step 30800: Val Loss = 2.561343
+Step 30900: Val Loss = 2.561690
+Step 31000: Val Loss = 2.561170
+  Saved best model (val_loss: 2.561170)
+Step 31100: Val Loss = 2.561675
+Step 31200: Val Loss = 2.561488
+Step 31300: Val Loss = 2.561821
+Step 31400: Val Loss = 2.561637
+Step 31500: Val Loss = 2.561915
+Step 31600: Val Loss = 2.561530
+Step 31700: Val Loss = 2.561396
+Step 31800: Val Loss = 2.561716
+Step 31900: Val Loss = 2.561766
+Step 32000: Val Loss = 2.561987
+Step 32100: Val Loss = 2.561427
+Step 32200: Val Loss = 2.561519
+Step 32300: Val Loss = 2.560774
+  Saved best model (val_loss: 2.560774)
+Step 32400: Val Loss = 2.560561
+  Saved best model (val_loss: 2.560561)
+Step 32500: Val Loss = 2.561248
+Step 32600: Val Loss = 2.560850
+Step 32700: Val Loss = 2.560961
+Step 32800: Val Loss = 2.560535
+  Saved best model (val_loss: 2.560535)
+Step 32900: Val Loss = 2.560292
+  Saved best model (val_loss: 2.560292)
+Step 33000: Val Loss = 2.560281
+  Saved best model (val_loss: 2.560281)
+Step 33100: Val Loss = 2.561718
+Step 33200: Val Loss = 2.560655
+Step 33300: Val Loss = 2.561076
+Step 33400: Val Loss = 2.560270
+  Saved best model (val_loss: 2.560270)
+Step 33500: Val Loss = 2.561222
+Step 33600: Val Loss = 2.560497
+Step 33700: Val Loss = 2.560762
+Step 33800: Val Loss = 2.560611
+Epoch 7 complete: Avg Train Loss = 2.558309
+  Saved checkpoint: checkpoint_epoch_7.pt
+Epoch 8/10
+Step 33900: Val Loss = 2.560478
+Step 34000: Val Loss = 2.559979
+  Saved best model (val_loss: 2.559979)
+Step 34100: Val Loss = 2.560359
+Step 34200: Val Loss = 2.560904
+Step 34300: Val Loss = 2.560539
+Step 34400: Val Loss = 2.560361
+Step 34500: Val Loss = 2.559925
+  Saved best model (val_loss: 2.559925)
+Step 34600: Val Loss = 2.560127
+Step 34700: Val Loss = 2.560135
+Step 34800: Val Loss = 2.560448
+Step 34900: Val Loss = 2.560048
+Step 35000: Val Loss = 2.560034
+Step 35100: Val Loss = 2.559650
+  Saved best model (val_loss: 2.559650)
+Step 35200: Val Loss = 2.559422
+  Saved best model (val_loss: 2.559422)
+Step 35300: Val Loss = 2.559711
+Step 35400: Val Loss = 2.559437
+Step 35500: Val Loss = 2.559883
+Step 35600: Val Loss = 2.559877
+Step 35700: Val Loss = 2.560074
+Step 35800: Val Loss = 2.559932
+Step 35900: Val Loss = 2.559840
+Step 36000: Val Loss = 2.560393
+Step 36100: Val Loss = 2.559659
+Step 36200: Val Loss = 2.559542
+Step 36300: Val Loss = 2.559652
+Step 36400: Val Loss = 2.559451
+Step 36500: Val Loss = 2.559293
+  Saved best model (val_loss: 2.559293)
+Step 36600: Val Loss = 2.559562
+Step 36700: Val Loss = 2.560593
+Step 36800: Val Loss = 2.559473
+Step 36900: Val Loss = 2.559209
+  Saved best model (val_loss: 2.559209)
+Step 37000: Val Loss = 2.559449
+Step 37100: Val Loss = 2.559243
+Step 37200: Val Loss = 2.559897
+Step 37300: Val Loss = 2.559283
+Step 37400: Val Loss = 2.559332
+Step 37500: Val Loss = 2.559253
+Step 37600: Val Loss = 2.559268
+Step 37700: Val Loss = 2.559262
+Step 37800: Val Loss = 2.559214
+Step 37900: Val Loss = 2.559087
+  Saved best model (val_loss: 2.559087)
+Step 38000: Val Loss = 2.559680
+Step 38100: Val Loss = 2.559352
+Step 38200: Val Loss = 2.559190
+Step 38300: Val Loss = 2.559148
+Step 38400: Val Loss = 2.559014
+  Saved best model (val_loss: 2.559014)
+Step 38500: Val Loss = 2.558994
+  Saved best model (val_loss: 2.558994)
+Step 38600: Val Loss = 2.559205
+Epoch 8 complete: Avg Train Loss = 2.556477
+  Saved checkpoint: checkpoint_epoch_8.pt
+Epoch 9/10
+Step 38700: Val Loss = 2.558902
+  Saved best model (val_loss: 2.558902)
+Step 38800: Val Loss = 2.558942
+Step 38900: Val Loss = 2.559034
+Step 39000: Val Loss = 2.559515
+Step 39100: Val Loss = 2.558881
+  Saved best model (val_loss: 2.558881)
+Step 39200: Val Loss = 2.558834
+  Saved best model (val_loss: 2.558834)
+Step 39300: Val Loss = 2.558846
+Step 39400: Val Loss = 2.558748
+  Saved best model (val_loss: 2.558748)
+Step 39500: Val Loss = 2.558658
+  Saved best model (val_loss: 2.558658)
+Step 39600: Val Loss = 2.558582
+  Saved best model (val_loss: 2.558582)
+Step 39700: Val Loss = 2.558811
+Step 39800: Val Loss = 2.558559
+  Saved best model (val_loss: 2.558559)
+Step 39900: Val Loss = 2.558689
+Step 40000: Val Loss = 2.558931
+Step 40100: Val Loss = 2.558751
+Step 40200: Val Loss = 2.558847
+Step 40300: Val Loss = 2.558599
+Step 40400: Val Loss = 2.558768
+Step 40500: Val Loss = 2.558585
+Step 40600: Val Loss = 2.558711
+Step 40700: Val Loss = 2.558770
+Step 40800: Val Loss = 2.558547
+  Saved best model (val_loss: 2.558547)
+Step 40900: Val Loss = 2.558501
+  Saved best model (val_loss: 2.558501)
+Step 41000: Val Loss = 2.558640
+Step 41100: Val Loss = 2.558692
+Step 41200: Val Loss = 2.558489
+  Saved best model (val_loss: 2.558489)
+Step 41300: Val Loss = 2.558563
+Step 41400: Val Loss = 2.558344
+  Saved best model (val_loss: 2.558344)
+Step 41500: Val Loss = 2.558410
+Step 41600: Val Loss = 2.558401
+Step 41700: Val Loss = 2.558619
+Step 41800: Val Loss = 2.558381
+Step 41900: Val Loss = 2.558654
+Step 42000: Val Loss = 2.558683
+Step 42100: Val Loss = 2.558491
+Step 42200: Val Loss = 2.558368
+Step 42300: Val Loss = 2.558215
+  Saved best model (val_loss: 2.558215)
+Step 42400: Val Loss = 2.558399
+Step 42500: Val Loss = 2.558266
+Step 42600: Val Loss = 2.558426
+Step 42700: Val Loss = 2.558270
+Step 42800: Val Loss = 2.558136
+  Saved best model (val_loss: 2.558136)
+Step 42900: Val Loss = 2.558258
+Step 43000: Val Loss = 2.558276
+Step 43100: Val Loss = 2.558217
+Step 43200: Val Loss = 2.558568
+Step 43300: Val Loss = 2.558421
+Step 43400: Val Loss = 2.558220
+Step 43500: Val Loss = 2.558291
+Epoch 9 complete: Avg Train Loss = 2.555286
+  Saved checkpoint: checkpoint_epoch_9.pt
+Epoch 10/10
+Step 43600: Val Loss = 2.558300
+Step 43700: Val Loss = 2.558239
+Step 43800: Val Loss = 2.558242
+Step 43900: Val Loss = 2.558280
+Step 44000: Val Loss = 2.558180
+Step 44100: Val Loss = 2.558154
+Step 44200: Val Loss = 2.558232
+Step 44300: Val Loss = 2.558223
+Step 44400: Val Loss = 2.558139
+Step 44500: Val Loss = 2.558127
+  Saved best model (val_loss: 2.558127)
+Step 44600: Val Loss = 2.558130
+Step 44700: Val Loss = 2.558213
+Step 44800: Val Loss = 2.558136
+Step 44900: Val Loss = 2.558080
+  Saved best model (val_loss: 2.558080)
+Step 45000: Val Loss = 2.558090
+Step 45100: Val Loss = 2.558113
+Step 45200: Val Loss = 2.558072
+  Saved best model (val_loss: 2.558072)
+Step 45300: Val Loss = 2.558133
+Step 45400: Val Loss = 2.558198
+Step 45500: Val Loss = 2.558060
+  Saved best model (val_loss: 2.558060)
+Step 45600: Val Loss = 2.558059
+  Saved best model (val_loss: 2.558059)
+Step 45700: Val Loss = 2.558049
+  Saved best model (val_loss: 2.558049)
+Step 45800: Val Loss = 2.558072
+Step 45900: Val Loss = 2.558051
+Step 46000: Val Loss = 2.558048
+  Saved best model (val_loss: 2.558048)
+Step 46100: Val Loss = 2.558065
+Step 46200: Val Loss = 2.558046
+  Saved best model (val_loss: 2.558046)
+Step 46300: Val Loss = 2.558057
+Step 46400: Val Loss = 2.558027
+  Saved best model (val_loss: 2.558027)
+Step 46500: Val Loss = 2.558067
+Step 46600: Val Loss = 2.558051
+Step 46700: Val Loss = 2.558042
+Step 46800: Val Loss = 2.558053
+Step 46900: Val Loss = 2.558018
+  Saved best model (val_loss: 2.558018)
+Step 47000: Val Loss = 2.558036
+Step 47100: Val Loss = 2.558031
+Step 47200: Val Loss = 2.558036
+Step 47300: Val Loss = 2.558036
+Step 47400: Val Loss = 2.558036
+Step 47500: Val Loss = 2.558024
+Step 47600: Val Loss = 2.558033
+Step 47700: Val Loss = 2.558013
+  Saved best model (val_loss: 2.558013)
+Step 47800: Val Loss = 2.558013
+  Saved best model (val_loss: 2.558013)
+Step 47900: Val Loss = 2.558006
+  Saved best model (val_loss: 2.558006)
+Step 48000: Val Loss = 2.558001
+  Saved best model (val_loss: 2.558001)
+Step 48100: Val Loss = 2.557998
+  Saved best model (val_loss: 2.557998)
+Step 48200: Val Loss = 2.558013
+Step 48300: Val Loss = 2.558017
+Epoch 10 complete: Avg Train Loss = 2.554726
+  Saved checkpoint: checkpoint_epoch_10.pt
+Training complete! Output saved to models/cylinderhmm/20260206_143510_L4_d16_attn_only_noLN
+2026-02-06 14:48:45,386 - wandb.wandb_agent - INFO - Cleaning up finished run: q4f51adr
+2026-02-06 14:48:45,721 - wandb.wandb_agent - INFO - Agent received command: run
+2026-02-06 14:48:45,722 - wandb.wandb_agent - INFO - Agent starting run with config:
+	attn_only: False
+	n_embd: 8
+	n_layer: 4
+	normalization_type: LN
+2026-02-06 14:48:45,729 - wandb.wandb_agent - INFO - About to run command: /usr/bin/env python3 src/train.py
+2026-02-06 14:48:50,766 - wandb.wandb_agent - INFO - Running runs: ['zpoxrq6i']
+wandb: Currently logged in as: chuqiao-lin (chuqiao-lin-university-of-oxford) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: WARNING Ignoring project 'pcfg' when running a sweep.
+wandb: setting up run zpoxrq6i
+wandb: Tracking run with wandb version 0.22.3
+wandb: Run data is saved locally in /mnt/newusers/clin/workspace/hidden-markov-chain/wandb/run-20260206_144916-zpoxrq6i
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run flowing-sweep-30
+wandb: ⭐️ View project at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src
+wandb: 🧹 View sweep at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/sweeps/rn4j2ed2
+wandb: 🚀 View run at https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/runs/zpoxrq6i
+wandb: updating run metadata
+wandb: 
+wandb: Run history:
+wandb:            epoch ▁▁▂▂▂▃▃▃▃▃▃▃▃▃▃▃▃▃▄▄▄▄▄▄▅▅▅▆▆▆▆▆▆▇▇▇▇▇▇█
+wandb: epoch_train_loss █▂▂▂▁▁▁▁▁▁
+wandb:      global_step ▁▁▂▂▂▂▂▂▂▃▃▃▃▃▄▄▄▅▅▅▅▅▅▅▆▆▆▆▆▆▆▇▇▇▇▇▇███
+wandb:    learning_rate ████████▇▇▇▇▇▇▇▆▆▆▆▆▆▆▅▅▅▄▄▄▃▃▃▂▂▂▂▁▁▁▁▁
+wandb:   tokens_per_sec ███▇▇▅▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:       train_loss █▄▄▅▅▄▆▆▃▄▄▄▃▄▂▃▆▄▃▄▂▃▄▄▄▃▆▃▄▁▂▄▆▃▃▄▃▁▃▄
+wandb:         val_loss █▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb: 
+wandb: Run summary:
+wandb:            epoch 9
+wandb: epoch_train_loss 2.56538
+wandb:      global_step 48340
+wandb:    learning_rate 0.0
+wandb:   tokens_per_sec 58435.91277
+wandb:       train_loss 2.55339
+wandb:         val_loss 2.56619
+wandb: 
+wandb: 🚀 View run L4_d8_full_LN at: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/runs/zpoxrq6i
+wandb: ⭐️ View project at: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src
+wandb: Synced 5 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20260206_144916-zpoxrq6i/logs
+Moving model to device:  cuda
+Dataset: 618749 train sequences, 6250 test sequences
+Steps per epoch: 4834, Total steps: 48340
+Epoch 1/10
+Step 100: Val Loss = 3.707312
+  Saved best model (val_loss: 3.707312)
+Step 200: Val Loss = 3.491887
+  Saved best model (val_loss: 3.491887)
+Step 300: Val Loss = 3.060932
+  Saved best model (val_loss: 3.060932)
+Step 400: Val Loss = 2.900750
+  Saved best model (val_loss: 2.900750)
+Step 500: Val Loss = 2.845215
+  Saved best model (val_loss: 2.845215)
+Step 600: Val Loss = 2.813970
+  Saved best model (val_loss: 2.813970)
+Step 700: Val Loss = 2.790341
+  Saved best model (val_loss: 2.790341)
+Step 800: Val Loss = 2.767665
+  Saved best model (val_loss: 2.767665)
+Step 900: Val Loss = 2.748955
+  Saved best model (val_loss: 2.748955)
+Step 1000: Val Loss = 2.735844
+  Saved best model (val_loss: 2.735844)
+Step 1100: Val Loss = 2.725955
+  Saved best model (val_loss: 2.725955)
+Step 1200: Val Loss = 2.716680
+  Saved best model (val_loss: 2.716680)
+Step 1300: Val Loss = 2.708643
+  Saved best model (val_loss: 2.708643)
+Step 1400: Val Loss = 2.701442
+  Saved best model (val_loss: 2.701442)
+Step 1500: Val Loss = 2.693278
+  Saved best model (val_loss: 2.693278)
+Step 1600: Val Loss = 2.688421
+  Saved best model (val_loss: 2.688421)
+Step 1700: Val Loss = 2.683525
+  Saved best model (val_loss: 2.683525)
+Step 1800: Val Loss = 2.681389
+  Saved best model (val_loss: 2.681389)
+Step 1900: Val Loss = 2.677057
+  Saved best model (val_loss: 2.677057)
+Step 2000: Val Loss = 2.672040
+  Saved best model (val_loss: 2.672040)
+Step 2100: Val Loss = 2.668795
+  Saved best model (val_loss: 2.668795)
+Step 2200: Val Loss = 2.666368
+  Saved best model (val_loss: 2.666368)
+Step 2300: Val Loss = 2.661658
+  Saved best model (val_loss: 2.661658)
+Step 2400: Val Loss = 2.660420
+  Saved best model (val_loss: 2.660420)
+Step 2500: Val Loss = 2.657392
+  Saved best model (val_loss: 2.657392)
+Step 2600: Val Loss = 2.652853
+  Saved best model (val_loss: 2.652853)
+Step 2700: Val Loss = 2.650927
+  Saved best model (val_loss: 2.650927)
+Step 2800: Val Loss = 2.646964
+  Saved best model (val_loss: 2.646964)
+Step 2900: Val Loss = 2.642413
+  Saved best model (val_loss: 2.642413)
+Step 3000: Val Loss = 2.641947
+  Saved best model (val_loss: 2.641947)
+Step 3100: Val Loss = 2.634764
+  Saved best model (val_loss: 2.634764)
+Step 3200: Val Loss = 2.631520
+  Saved best model (val_loss: 2.631520)
+Step 3300: Val Loss = 2.629378
+  Saved best model (val_loss: 2.629378)
+Step 3400: Val Loss = 2.625489
+  Saved best model (val_loss: 2.625489)
+Step 3500: Val Loss = 2.622558
+  Saved best model (val_loss: 2.622558)
+Step 3600: Val Loss = 2.620432
+  Saved best model (val_loss: 2.620432)
+Step 3700: Val Loss = 2.621623
+Step 3800: Val Loss = 2.618402
+  Saved best model (val_loss: 2.618402)
+Step 3900: Val Loss = 2.617776
+  Saved best model (val_loss: 2.617776)
+Step 4000: Val Loss = 2.616290
+  Saved best model (val_loss: 2.616290)
+Step 4100: Val Loss = 2.615377
+  Saved best model (val_loss: 2.615377)
+Step 4200: Val Loss = 2.613905
+  Saved best model (val_loss: 2.613905)
+Step 4300: Val Loss = 2.612909
+  Saved best model (val_loss: 2.612909)
+Step 4400: Val Loss = 2.612125
+  Saved best model (val_loss: 2.612125)
+Step 4500: Val Loss = 2.611033
+  Saved best model (val_loss: 2.611033)
+Step 4600: Val Loss = 2.608115
+  Saved best model (val_loss: 2.608115)
+Step 4700: Val Loss = 2.611484
+Step 4800: Val Loss = 2.607261
+  Saved best model (val_loss: 2.607261)
+Epoch 1 complete: Avg Train Loss = 2.730255
+  Saved checkpoint: checkpoint_epoch_1.pt
+Epoch 2/10
+Step 4900: Val Loss = 2.606564
+  Saved best model (val_loss: 2.606564)
+Step 5000: Val Loss = 2.605914
+  Saved best model (val_loss: 2.605914)
+Step 5100: Val Loss = 2.606509
+Step 5200: Val Loss = 2.604559
+  Saved best model (val_loss: 2.604559)
+Step 5300: Val Loss = 2.604060
+  Saved best model (val_loss: 2.604060)
+Step 5400: Val Loss = 2.603889
+  Saved best model (val_loss: 2.603889)
+Step 5500: Val Loss = 2.603353
+  Saved best model (val_loss: 2.603353)
+Step 5600: Val Loss = 2.602717
+  Saved best model (val_loss: 2.602717)
+Step 5700: Val Loss = 2.601634
+  Saved best model (val_loss: 2.601634)
+Step 5800: Val Loss = 2.601911
+Step 5900: Val Loss = 2.600813
+  Saved best model (val_loss: 2.600813)
+Step 6000: Val Loss = 2.599990
+  Saved best model (val_loss: 2.599990)
+Step 6100: Val Loss = 2.599927
+  Saved best model (val_loss: 2.599927)
+Step 6200: Val Loss = 2.599837
+  Saved best model (val_loss: 2.599837)
+Step 6300: Val Loss = 2.598776
+  Saved best model (val_loss: 2.598776)
+Step 6400: Val Loss = 2.598311
+  Saved best model (val_loss: 2.598311)
+Step 6500: Val Loss = 2.597315
+  Saved best model (val_loss: 2.597315)
+Step 6600: Val Loss = 2.597691
+Step 6700: Val Loss = 2.599825
+Step 6800: Val Loss = 2.596312
+  Saved best model (val_loss: 2.596312)
+Step 6900: Val Loss = 2.596945
+Step 7000: Val Loss = 2.596643
+Step 7100: Val Loss = 2.595632
+  Saved best model (val_loss: 2.595632)
+Step 7200: Val Loss = 2.595578
+  Saved best model (val_loss: 2.595578)
+Step 7300: Val Loss = 2.595766
+Step 7400: Val Loss = 2.594042
+  Saved best model (val_loss: 2.594042)
+Step 7500: Val Loss = 2.593988
+  Saved best model (val_loss: 2.593988)
+Step 7600: Val Loss = 2.594895
+Step 7700: Val Loss = 2.593112
+  Saved best model (val_loss: 2.593112)
+Step 7800: Val Loss = 2.594218
+Step 7900: Val Loss = 2.594200
+Step 8000: Val Loss = 2.593302
+Step 8100: Val Loss = 2.593489
+Step 8200: Val Loss = 2.593947
+Step 8300: Val Loss = 2.591697
+  Saved best model (val_loss: 2.591697)
+Step 8400: Val Loss = 2.591974
+Step 8500: Val Loss = 2.593344
+Step 8600: Val Loss = 2.592762
+Step 8700: Val Loss = 2.592845
+Step 8800: Val Loss = 2.591571
+  Saved best model (val_loss: 2.591571)
+Step 8900: Val Loss = 2.591548
+  Saved best model (val_loss: 2.591548)
+Step 9000: Val Loss = 2.593085
+Step 9100: Val Loss = 2.591972
+Step 9200: Val Loss = 2.592444
+Step 9300: Val Loss = 2.590213
+  Saved best model (val_loss: 2.590213)
+Step 9400: Val Loss = 2.589653
+  Saved best model (val_loss: 2.589653)
+Step 9500: Val Loss = 2.589522
+  Saved best model (val_loss: 2.589522)
+Step 9600: Val Loss = 2.590398
+Epoch 2 complete: Avg Train Loss = 2.594736
+  Saved checkpoint: checkpoint_epoch_2.pt
+Epoch 3/10
+Step 9700: Val Loss = 2.591522
+Step 9800: Val Loss = 2.589950
+Step 9900: Val Loss = 2.589118
+  Saved best model (val_loss: 2.589118)
+Step 10000: Val Loss = 2.589122
+Step 10100: Val Loss = 2.588945
+  Saved best model (val_loss: 2.588945)
+Step 10200: Val Loss = 2.589267
+Step 10300: Val Loss = 2.589942
+Step 10400: Val Loss = 2.587511
+  Saved best model (val_loss: 2.587511)
+Step 10500: Val Loss = 2.587613
+Step 10600: Val Loss = 2.589432
+Step 10700: Val Loss = 2.585948
+  Saved best model (val_loss: 2.585948)
+Step 10800: Val Loss = 2.587509
+Step 10900: Val Loss = 2.587771
+Step 11000: Val Loss = 2.586840
+Step 11100: Val Loss = 2.587283
+Step 11200: Val Loss = 2.585189
+  Saved best model (val_loss: 2.585189)
+Step 11300: Val Loss = 2.585664
+Step 11400: Val Loss = 2.586992
+Step 11500: Val Loss = 2.585637
+Step 11600: Val Loss = 2.586613
+Step 11700: Val Loss = 2.585531
+Step 11800: Val Loss = 2.585708
+Step 11900: Val Loss = 2.584870
+  Saved best model (val_loss: 2.584870)
+Step 12000: Val Loss = 2.586889
+Step 12100: Val Loss = 2.584587
+  Saved best model (val_loss: 2.584587)
+Step 12200: Val Loss = 2.584969
+Step 12300: Val Loss = 2.584133
+  Saved best model (val_loss: 2.584133)
+Step 12400: Val Loss = 2.585436
+Step 12500: Val Loss = 2.585256
+Step 12600: Val Loss = 2.586155
+Step 12700: Val Loss = 2.585801
+Step 12800: Val Loss = 2.583625
+  Saved best model (val_loss: 2.583625)
+Step 12900: Val Loss = 2.585496
+Step 13000: Val Loss = 2.584228
+Step 13100: Val Loss = 2.583382
+  Saved best model (val_loss: 2.583382)
+Step 13200: Val Loss = 2.585307
+Step 13300: Val Loss = 2.582984
+  Saved best model (val_loss: 2.582984)
+Step 13400: Val Loss = 2.583568
+Step 13500: Val Loss = 2.582941
+  Saved best model (val_loss: 2.582941)
+Step 13600: Val Loss = 2.585060
+Step 13700: Val Loss = 2.583028
+Step 13800: Val Loss = 2.582364
+  Saved best model (val_loss: 2.582364)
+Step 13900: Val Loss = 2.581712
+  Saved best model (val_loss: 2.581712)
+Step 14000: Val Loss = 2.583089
+Step 14100: Val Loss = 2.583004
+Step 14200: Val Loss = 2.583141
+Step 14300: Val Loss = 2.584444
+Step 14400: Val Loss = 2.582077
+Step 14500: Val Loss = 2.582589
+Epoch 3 complete: Avg Train Loss = 2.584040
+  Saved checkpoint: checkpoint_epoch_3.pt
+Epoch 4/10
+Step 14600: Val Loss = 2.581790
+Step 14700: Val Loss = 2.582291
+Step 14800: Val Loss = 2.582454
+Step 14900: Val Loss = 2.581428
+  Saved best model (val_loss: 2.581428)
+Step 15000: Val Loss = 2.582351
+Step 15100: Val Loss = 2.582227
+Step 15200: Val Loss = 2.582535
+Step 15300: Val Loss = 2.581529
+Step 15400: Val Loss = 2.581588
+Step 15500: Val Loss = 2.582475
+Step 15600: Val Loss = 2.580911
+  Saved best model (val_loss: 2.580911)
+Step 15700: Val Loss = 2.582103
+Step 15800: Val Loss = 2.582404
+Step 15900: Val Loss = 2.580601
+  Saved best model (val_loss: 2.580601)
+Step 16000: Val Loss = 2.579652
+  Saved best model (val_loss: 2.579652)
+Step 16100: Val Loss = 2.579343
+  Saved best model (val_loss: 2.579343)
+Step 16200: Val Loss = 2.580331
+Step 16300: Val Loss = 2.580434
+Step 16400: Val Loss = 2.581379
+Step 16500: Val Loss = 2.580321
+Step 16600: Val Loss = 2.580525
+Step 16700: Val Loss = 2.580850
+Step 16800: Val Loss = 2.580256
+Step 16900: Val Loss = 2.580263
+Step 17000: Val Loss = 2.580573
+Step 17100: Val Loss = 2.579435
+Step 17200: Val Loss = 2.580884
+Step 17300: Val Loss = 2.578588
+  Saved best model (val_loss: 2.578588)
+Step 17400: Val Loss = 2.580961
+Step 17500: Val Loss = 2.581282
+Step 17600: Val Loss = 2.579137
+Step 17700: Val Loss = 2.579209
+Step 17800: Val Loss = 2.578517
+  Saved best model (val_loss: 2.578517)
+Step 17900: Val Loss = 2.580153
+Step 18000: Val Loss = 2.581494
+Step 18100: Val Loss = 2.578650
+Step 18200: Val Loss = 2.579665
+Step 18300: Val Loss = 2.578884
+Step 18400: Val Loss = 2.579184
+Step 18500: Val Loss = 2.578930
+Step 18600: Val Loss = 2.578139
+  Saved best model (val_loss: 2.578139)
+Step 18700: Val Loss = 2.579256
+Step 18800: Val Loss = 2.578803
+Step 18900: Val Loss = 2.578063
+  Saved best model (val_loss: 2.578063)
+Step 19000: Val Loss = 2.578576
+Step 19100: Val Loss = 2.577940
+  Saved best model (val_loss: 2.577940)
+Step 19200: Val Loss = 2.577757
+  Saved best model (val_loss: 2.577757)
+Step 19300: Val Loss = 2.578046
+Epoch 4 complete: Avg Train Loss = 2.578795
+  Saved checkpoint: checkpoint_epoch_4.pt
+Epoch 5/10
+Step 19400: Val Loss = 2.579273
+Step 19500: Val Loss = 2.578301
+Step 19600: Val Loss = 2.577823
+Step 19700: Val Loss = 2.577202
+  Saved best model (val_loss: 2.577202)
+Step 19800: Val Loss = 2.577776
+Step 19900: Val Loss = 2.579094
+Step 20000: Val Loss = 2.579820
+Step 20100: Val Loss = 2.577693
+Step 20200: Val Loss = 2.576817
+  Saved best model (val_loss: 2.576817)
+Step 20300: Val Loss = 2.576397
+  Saved best model (val_loss: 2.576397)
+Step 20400: Val Loss = 2.577072
+Step 20500: Val Loss = 2.577223
+Step 20600: Val Loss = 2.578044
+Step 20700: Val Loss = 2.575521
+  Saved best model (val_loss: 2.575521)
+Step 20800: Val Loss = 2.576537
+Step 20900: Val Loss = 2.575919
+Step 21000: Val Loss = 2.576985
+Step 21100: Val Loss = 2.575862
+Step 21200: Val Loss = 2.575884
+Step 21300: Val Loss = 2.575045
+  Saved best model (val_loss: 2.575045)
+Step 21400: Val Loss = 2.576522
+Step 21500: Val Loss = 2.575520
+Step 21600: Val Loss = 2.575915
+Step 21700: Val Loss = 2.576344
+Step 21800: Val Loss = 2.575579
+Step 21900: Val Loss = 2.574985
+  Saved best model (val_loss: 2.574985)
+Step 22000: Val Loss = 2.575825
+Step 22100: Val Loss = 2.575936
+Step 22200: Val Loss = 2.575422
+Step 22300: Val Loss = 2.576099
+Step 22400: Val Loss = 2.576290
+Step 22500: Val Loss = 2.575831
+Step 22600: Val Loss = 2.576376
+Step 22700: Val Loss = 2.574876
+  Saved best model (val_loss: 2.574876)
+Step 22800: Val Loss = 2.575182
+Step 22900: Val Loss = 2.574858
+  Saved best model (val_loss: 2.574858)
+Step 23000: Val Loss = 2.574419
+  Saved best model (val_loss: 2.574419)
+Step 23100: Val Loss = 2.573961
+  Saved best model (val_loss: 2.573961)
+Step 23200: Val Loss = 2.573912
+  Saved best model (val_loss: 2.573912)
+Step 23300: Val Loss = 2.575650
+Step 23400: Val Loss = 2.575564
+Step 23500: Val Loss = 2.576513
+Step 23600: Val Loss = 2.575216
+Step 23700: Val Loss = 2.574597
+Step 23800: Val Loss = 2.574842
+Step 23900: Val Loss = 2.574058
+Step 24000: Val Loss = 2.574644
+Step 24100: Val Loss = 2.575333
+Epoch 5 complete: Avg Train Loss = 2.574940
+  Saved checkpoint: checkpoint_epoch_5.pt
+Epoch 6/10
+Step 24200: Val Loss = 2.574341
+Step 24300: Val Loss = 2.574950
+Step 24400: Val Loss = 2.574525
+Step 24500: Val Loss = 2.573169
+  Saved best model (val_loss: 2.573169)
+Step 24600: Val Loss = 2.573764
+Step 24700: Val Loss = 2.574236
+Step 24800: Val Loss = 2.574722
+Step 24900: Val Loss = 2.574011
+Step 25000: Val Loss = 2.572742
+  Saved best model (val_loss: 2.572742)
+Step 25100: Val Loss = 2.575056
+Step 25200: Val Loss = 2.574007
+Step 25300: Val Loss = 2.573834
+Step 25400: Val Loss = 2.573971
+Step 25500: Val Loss = 2.573219
+Step 25600: Val Loss = 2.573601
+Step 25700: Val Loss = 2.573145
+Step 25800: Val Loss = 2.572875
+Step 25900: Val Loss = 2.573009
+Step 26000: Val Loss = 2.573480
+Step 26100: Val Loss = 2.572162
+  Saved best model (val_loss: 2.572162)
+Step 26200: Val Loss = 2.572619
+Step 26300: Val Loss = 2.572596
+Step 26400: Val Loss = 2.574209
+Step 26500: Val Loss = 2.572980
+Step 26600: Val Loss = 2.572804
+Step 26700: Val Loss = 2.571927
+  Saved best model (val_loss: 2.571927)
+Step 26800: Val Loss = 2.572555
+Step 26900: Val Loss = 2.571592
+  Saved best model (val_loss: 2.571592)
+Step 27000: Val Loss = 2.572606
+Step 27100: Val Loss = 2.573164
+Step 27200: Val Loss = 2.571784
+Step 27300: Val Loss = 2.573273
+Step 27400: Val Loss = 2.571803
+Step 27500: Val Loss = 2.572429
+Step 27600: Val Loss = 2.571711
+Step 27700: Val Loss = 2.572791
+Step 27800: Val Loss = 2.572267
+Step 27900: Val Loss = 2.571389
+  Saved best model (val_loss: 2.571389)
+Step 28000: Val Loss = 2.571940
+Step 28100: Val Loss = 2.571087
+  Saved best model (val_loss: 2.571087)
+Step 28200: Val Loss = 2.571231
+Step 28300: Val Loss = 2.571270
+Step 28400: Val Loss = 2.572215
+Step 28500: Val Loss = 2.571110
+Step 28600: Val Loss = 2.571234
+Step 28700: Val Loss = 2.571180
+Step 28800: Val Loss = 2.571522
+Step 28900: Val Loss = 2.571376
+Step 29000: Val Loss = 2.572414
+Epoch 6 complete: Avg Train Loss = 2.571855
+  Saved checkpoint: checkpoint_epoch_6.pt
+Epoch 7/10
+Step 29100: Val Loss = 2.570980
+  Saved best model (val_loss: 2.570980)
+Step 29200: Val Loss = 2.571201
+Step 29300: Val Loss = 2.570465
+  Saved best model (val_loss: 2.570465)
+Step 29400: Val Loss = 2.571149
+Step 29500: Val Loss = 2.571170
+Step 29600: Val Loss = 2.572178
+Step 29700: Val Loss = 2.571853
+Step 29800: Val Loss = 2.571263
+Step 29900: Val Loss = 2.571348
+Step 30000: Val Loss = 2.571292
+Step 30100: Val Loss = 2.571041
+Step 30200: Val Loss = 2.570755
+Step 30300: Val Loss = 2.570190
+  Saved best model (val_loss: 2.570190)
+Step 30400: Val Loss = 2.570697
+Step 30500: Val Loss = 2.570442
+Step 30600: Val Loss = 2.570966
+Step 30700: Val Loss = 2.570034
+  Saved best model (val_loss: 2.570034)
+Step 30800: Val Loss = 2.570071
+Step 30900: Val Loss = 2.569654
+  Saved best model (val_loss: 2.569654)
+Step 31000: Val Loss = 2.570638
+Step 31100: Val Loss = 2.570053
+Step 31200: Val Loss = 2.570689
+Step 31300: Val Loss = 2.570514
+Step 31400: Val Loss = 2.571449
+Step 31500: Val Loss = 2.569880
+Step 31600: Val Loss = 2.570600
+Step 31700: Val Loss = 2.569411
+  Saved best model (val_loss: 2.569411)
+Step 31800: Val Loss = 2.569346
+  Saved best model (val_loss: 2.569346)
+Step 31900: Val Loss = 2.569670
+Step 32000: Val Loss = 2.570902
+Step 32100: Val Loss = 2.570360
+Step 32200: Val Loss = 2.569768
+Step 32300: Val Loss = 2.570135
+Step 32400: Val Loss = 2.570482
+Step 32500: Val Loss = 2.570035
+Step 32600: Val Loss = 2.569048
+  Saved best model (val_loss: 2.569048)
+Step 32700: Val Loss = 2.569396
+Step 32800: Val Loss = 2.569141
+Step 32900: Val Loss = 2.570022
+Step 33000: Val Loss = 2.569493
+Step 33100: Val Loss = 2.568992
+  Saved best model (val_loss: 2.568992)
+Step 33200: Val Loss = 2.569194
+Step 33300: Val Loss = 2.569139
+Step 33400: Val Loss = 2.568832
+  Saved best model (val_loss: 2.568832)
+Step 33500: Val Loss = 2.568676
+  Saved best model (val_loss: 2.568676)
+Step 33600: Val Loss = 2.568895
+Step 33700: Val Loss = 2.568787
+Step 33800: Val Loss = 2.569307
+Epoch 7 complete: Avg Train Loss = 2.569327
+  Saved checkpoint: checkpoint_epoch_7.pt
+Epoch 8/10
+Step 33900: Val Loss = 2.568837
+Step 34000: Val Loss = 2.569191
+Step 34100: Val Loss = 2.568486
+  Saved best model (val_loss: 2.568486)
+Step 34200: Val Loss = 2.569420
+Step 34300: Val Loss = 2.569162
+Step 34400: Val Loss = 2.568719
+Step 34500: Val Loss = 2.568974
+Step 34600: Val Loss = 2.568717
+Step 34700: Val Loss = 2.569501
+Step 34800: Val Loss = 2.568626
+Step 34900: Val Loss = 2.569214
+Step 35000: Val Loss = 2.568640
+Step 35100: Val Loss = 2.568718
+Step 35200: Val Loss = 2.568872
+Step 35300: Val Loss = 2.569280
+Step 35400: Val Loss = 2.568582
+Step 35500: Val Loss = 2.568478
+  Saved best model (val_loss: 2.568478)
+Step 35600: Val Loss = 2.568154
+  Saved best model (val_loss: 2.568154)
+Step 35700: Val Loss = 2.568351
+Step 35800: Val Loss = 2.568202
+Step 35900: Val Loss = 2.568403
+Step 36000: Val Loss = 2.568508
+Step 36100: Val Loss = 2.568144
+  Saved best model (val_loss: 2.568144)
+Step 36200: Val Loss = 2.568230
+Step 36300: Val Loss = 2.568099
+  Saved best model (val_loss: 2.568099)
+Step 36400: Val Loss = 2.567922
+  Saved best model (val_loss: 2.567922)
+Step 36500: Val Loss = 2.568186
+Step 36600: Val Loss = 2.568092
+Step 36700: Val Loss = 2.568330
+Step 36800: Val Loss = 2.568069
+Step 36900: Val Loss = 2.568553
+Step 37000: Val Loss = 2.568271
+Step 37100: Val Loss = 2.568215
+Step 37200: Val Loss = 2.568855
+Step 37300: Val Loss = 2.568119
+Step 37400: Val Loss = 2.567710
+  Saved best model (val_loss: 2.567710)
+Step 37500: Val Loss = 2.567476
+  Saved best model (val_loss: 2.567476)
+Step 37600: Val Loss = 2.567452
+  Saved best model (val_loss: 2.567452)
+Step 37700: Val Loss = 2.567541
+Step 37800: Val Loss = 2.567397
+  Saved best model (val_loss: 2.567397)
+Step 37900: Val Loss = 2.567617
+Step 38000: Val Loss = 2.567614
+Step 38100: Val Loss = 2.567759
+Step 38200: Val Loss = 2.567666
+Step 38300: Val Loss = 2.567411
+Step 38400: Val Loss = 2.567345
+  Saved best model (val_loss: 2.567345)
+Step 38500: Val Loss = 2.567625
+Step 38600: Val Loss = 2.567453
+Epoch 8 complete: Avg Train Loss = 2.567370
+  Saved checkpoint: checkpoint_epoch_8.pt
+Epoch 9/10
+Step 38700: Val Loss = 2.567300
+  Saved best model (val_loss: 2.567300)
+Step 38800: Val Loss = 2.567672
+Step 38900: Val Loss = 2.567658
+Step 39000: Val Loss = 2.567791
+Step 39100: Val Loss = 2.567424
+Step 39200: Val Loss = 2.567312
+Step 39300: Val Loss = 2.567214
+  Saved best model (val_loss: 2.567214)
+Step 39400: Val Loss = 2.567328
+Step 39500: Val Loss = 2.566850
+  Saved best model (val_loss: 2.566850)
+Step 39600: Val Loss = 2.567082
+Step 39700: Val Loss = 2.567113
+Step 39800: Val Loss = 2.567221
+Step 39900: Val Loss = 2.567261
+Step 40000: Val Loss = 2.567114
+Step 40100: Val Loss = 2.566960
+Step 40200: Val Loss = 2.567026
+Step 40300: Val Loss = 2.567171
+Step 40400: Val Loss = 2.566871
+Step 40500: Val Loss = 2.566730
+  Saved best model (val_loss: 2.566730)
+Step 40600: Val Loss = 2.567243
+Step 40700: Val Loss = 2.566932
+Step 40800: Val Loss = 2.567079
+Step 40900: Val Loss = 2.566960
+Step 41000: Val Loss = 2.566925
+Step 41100: Val Loss = 2.567045
+Step 41200: Val Loss = 2.566753
+Step 41300: Val Loss = 2.566873
+Step 41400: Val Loss = 2.566845
+Step 41500: Val Loss = 2.566816
+Step 41600: Val Loss = 2.566530
+  Saved best model (val_loss: 2.566530)
+Step 41700: Val Loss = 2.566592
+Step 41800: Val Loss = 2.566567
+Step 41900: Val Loss = 2.566524
+  Saved best model (val_loss: 2.566524)
+Step 42000: Val Loss = 2.566563
+Step 42100: Val Loss = 2.566779
+Step 42200: Val Loss = 2.566613
+Step 42300: Val Loss = 2.566638
+Step 42400: Val Loss = 2.566577
+Step 42500: Val Loss = 2.566567
+Step 42600: Val Loss = 2.566585
+Step 42700: Val Loss = 2.566616
+Step 42800: Val Loss = 2.566561
+Step 42900: Val Loss = 2.566634
+Step 43000: Val Loss = 2.566561
+Step 43100: Val Loss = 2.566446
+  Saved best model (val_loss: 2.566446)
+Step 43200: Val Loss = 2.566437
+  Saved best model (val_loss: 2.566437)
+Step 43300: Val Loss = 2.566558
+Step 43400: Val Loss = 2.566613
+Step 43500: Val Loss = 2.566569
+Epoch 9 complete: Avg Train Loss = 2.566027
+  Saved checkpoint: checkpoint_epoch_9.pt
+Epoch 10/10
+Step 43600: Val Loss = 2.566472
+Step 43700: Val Loss = 2.566488
+Step 43800: Val Loss = 2.566488
+Step 43900: Val Loss = 2.566525
+Step 44000: Val Loss = 2.566408
+  Saved best model (val_loss: 2.566408)
+Step 44100: Val Loss = 2.566289
+  Saved best model (val_loss: 2.566289)
+Step 44200: Val Loss = 2.566347
+Step 44300: Val Loss = 2.566404
+Step 44400: Val Loss = 2.566312
+Step 44500: Val Loss = 2.566358
+Step 44600: Val Loss = 2.566349
+Step 44700: Val Loss = 2.566327
+Step 44800: Val Loss = 2.566389
+Step 44900: Val Loss = 2.566351
+Step 45000: Val Loss = 2.566333
+Step 45100: Val Loss = 2.566370
+Step 45200: Val Loss = 2.566234
+  Saved best model (val_loss: 2.566234)
+Step 45300: Val Loss = 2.566279
+Step 45400: Val Loss = 2.566284
+Step 45500: Val Loss = 2.566249
+Step 45600: Val Loss = 2.566242
+Step 45700: Val Loss = 2.566217
+  Saved best model (val_loss: 2.566217)
+Step 45800: Val Loss = 2.566254
+Step 45900: Val Loss = 2.566210
+  Saved best model (val_loss: 2.566210)
+Step 46000: Val Loss = 2.566256
+Step 46100: Val Loss = 2.566211
+Step 46200: Val Loss = 2.566178
+  Saved best model (val_loss: 2.566178)
+Step 46300: Val Loss = 2.566186
+Step 46400: Val Loss = 2.566197
+Step 46500: Val Loss = 2.566176
+  Saved best model (val_loss: 2.566176)
+Step 46600: Val Loss = 2.566235
+Step 46700: Val Loss = 2.566224
+Step 46800: Val Loss = 2.566221
+Step 46900: Val Loss = 2.566216
+Step 47000: Val Loss = 2.566196
+Step 47100: Val Loss = 2.566190
+Step 47200: Val Loss = 2.566198
+Step 47300: Val Loss = 2.566189
+Step 47400: Val Loss = 2.566192
+Step 47500: Val Loss = 2.566202
+Step 47600: Val Loss = 2.566196
+Step 47700: Val Loss = 2.566185
+Step 47800: Val Loss = 2.566176
+Step 47900: Val Loss = 2.566182
+Step 48000: Val Loss = 2.566193
+Step 48100: Val Loss = 2.566188
+Step 48200: Val Loss = 2.566187
+Step 48300: Val Loss = 2.566188
+Epoch 10 complete: Avg Train Loss = 2.565379
+  Saved checkpoint: checkpoint_epoch_10.pt
+Training complete! Output saved to models/cylinderhmm/20260206_144917_L4_d8_full_LN
+2026-02-06 15:17:36,852 - wandb.wandb_agent - INFO - Cleaning up finished run: zpoxrq6i
+2026-02-06 15:17:37,142 - wandb.wandb_agent - INFO - Agent received command: exit
+2026-02-06 15:17:37,142 - wandb.wandb_agent - INFO - Received exit command. Killing runs and quitting.
+wandb: Terminating and syncing runs. Press ctrl-c to kill.
+---------------
+Job output ends
+=========================================================
+PBS job: finished date = Fri 6 Feb 15:17:37 GMT 2026
+Total run time : 0 Hours 54 Minutes 37 Seconds
+=========================================================

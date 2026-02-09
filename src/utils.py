@@ -1,8 +1,8 @@
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 import yaml
 import inspect
-from src.hmm import HMM
-from src.hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM
+from hmm import HMM
+from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM
 
 # Process Registry
 PROCESS_REGISTRY = {
@@ -15,11 +15,12 @@ PROCESS_REGISTRY = {
 
 
 # Config Utilities
-def initialize_transformer_from_yaml(config_path: str) -> HookedTransformer:
-    with open(config_path, 'r') as f:
-        cfg = yaml.safe_load(f)
-    
-    model_cfg = cfg['model']
+def initialize_transformer_from_yaml(config_path: str, model_cfg: dict = None) -> HookedTransformer:
+    if model_cfg is None:
+        with open(config_path, 'r') as f:
+            cfg = yaml.safe_load(f)
+        model_cfg = cfg['model']
+
     hooked_config = HookedTransformerConfig(
         n_layers=model_cfg['n_layer'],
         d_model=model_cfg['n_embd'],

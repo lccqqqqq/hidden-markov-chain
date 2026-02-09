@@ -1,0 +1,10 @@
+=========================================================
+Job submitted date = Fri 6 Feb 13:52:40 GMT 2026
+1 nodes ( 2 processes per node )
+1 hosts used: gpu02
+Job output begins
+-----------------
+
+wandb: Starting wandb agent 🕵️
+2026-02-06 13:52:49,848 - wandb.wandb_agent - INFO - Running runs: []
+slurmstepd: error: *** JOB 2726944 ON gpu02 CANCELLED AT 2026-02-06T14:22:53 ***

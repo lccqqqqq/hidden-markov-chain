@@ -14,6 +14,21 @@ data_generator:
   num_tokens: 10_000_000
   save_dir: "data/datasets/cylinder_graph_hmm"
 
+model:
+  n_layer: 4
+  n_embd: 8
+  n_head: 1
+  d_head: 8
+  vocab_size: 48 # should be depth * tokens_per_cluster
+  n_ctx: 16 # should be the same as seq_length in the trainer setup
+  activation_function: "relu"
+  normalization_type: null # Use null or ~ for Python None (disables layer normalization)
+  attn_only: False
+  d_mlp: 32 # should be 4 * d_model (conventional choice)
+  tie_word_embeddings: True
+
+  
+
 train:
   optimizer:
     adam_beta1: 0.9
@@ -25,6 +40,9 @@ train:
   num_epochs: 10
   batch_size: 128 # No need to accumulate gradients, etc
   seq_length: 16
+  val_interval_in_opt_steps: 100
+  log_interval_in_opt_steps: 10
+  
 
 wandb:
   project_name: "pcfg"

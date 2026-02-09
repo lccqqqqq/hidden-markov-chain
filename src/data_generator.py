@@ -4,9 +4,9 @@ Generate synthetic training data and save to disk
 
 import yaml
 import inspect
-from src.hmm import HMM
-from src.hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM
-from src.utils import create_process_from_dict
+from hmm import HMM
+from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM
+from utils import create_process_from_dict
 from mpi4py import MPI
 import os
 import numpy as np
@@ -103,4 +103,4 @@ def consolidate_and_split(data_dir, seq_length=16, train_ratio=0.95, seed=42):
 
 if __name__ == "__main__":
     # generate_data()
-    consolidate_and_split(data_dir="data/datasets/cylinder_graph_hmm")
+    consolidate_and_split(data_dir="data/datasets/cylinder_graph_hmm", train_ratio=0.99)

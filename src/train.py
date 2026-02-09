@@ -1,66 +1,211 @@
 import torch as t
-from src.utils import initialize_transformer_from_yaml
+from utils import initialize_transformer_from_yaml
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import yaml
-from torch.utils.data import DataLoader
-# Integration with wandb
-# Setup optimizer
-# Setup checkpointing
+import json
+from datetime import datetime
+from torch.utils.data import Dataset, DataLoader
+import wandb
+import time
+from pathlib import Path
 
-CONFIG_PATH = "config/hook_transformer_config.yaml"
+CONFIG_PATH = "base_config.yaml"
 device = "cuda" if t.cuda.is_available() else "cpu"
 
-# Initialize the model
-model = initialize_transformer_from_yaml(CONFIG_PATH)
-model.to(device)
-model.train()
 
-# Initialize the optimzer
-cfg = yaml.load(open(CONFIG_PATH, "r"))
-tcfg = cfg["train"]
-ocfg = tcfg["optimizer"]
+def train():
+    # Load base config
+    with open(CONFIG_PATH, 'r') as f:
+        cfg = yaml.safe_load(f)
 
-optimizer = t.optim.AdamW(
-    model.parameters(),
-    lr=ocfg['learning_rate'],
-    betas=(ocfg['adam_beta1'], ocfg['adam_beta2']),
-    eps=ocfg["adam_epsilon"],
-    weight_decay=ocfg["adam_weight_decay"],
-)
+    # Initialize wandb (sweep agent injects swept params as flat keys into wandb.config)
+    wandb.init(
+        project=cfg["wandb"]["project_name"],
+        config=cfg
+    )
 
-# Initialize Scheduler
-scheduler = CosineAnnealingLR(optimizer, T_max=tcfg["num_epochs"], eta_min=ocfg["learning_rate"] * 0.001)
+    # Apply sweep overrides to model config
+    mcfg = cfg["model"]
+    sweep_keys = ["n_layer", "n_embd", "n_head", "attn_only", "normalization_type"]
+    for key in sweep_keys:
+        if key in wandb.config:
+            val = wandb.config[key]
+            mcfg[key] = None if val == "none" else val
 
-# Initialize wandb
-wandb.init(project=cfg["wandb"]["project_name"], name=cfg["wandb"]["experiment"])
+    mcfg["d_head"] = mcfg["n_embd"] // mcfg["n_head"]
+    mcfg["d_mlp"] = 4 * mcfg["n_embd"]
 
-# Initialize & calculate training loop, epochs, steps, etc spec.
-num_epochs = tcfg["num_epochs"]
-batch_size = tcfg["batch_size"]
-seq_length = tcfg["seq_length"]
-num_tokens_per_epoch = cfg["data_generator"]["num_tokens"]
-tot_tokens = num_epochs * num_tokens_per_epoch
-num_optimizer_steps_per_epoch = num_tokens_per_epoch // (batch_size * seq_length)
+    # Set descriptive run name
+    norm_str = mcfg["normalization_type"] or "noLN"
+    attn_str = "attn_only" if mcfg["attn_only"] else "full"
+    run_name = f"L{mcfg['n_layer']}_d{mcfg['n_embd']}_H{mcfg['n_head']}_{attn_str}_{norm_str}"
+    wandb.run.name = run_name
+
+    # Set up run output directory
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_dir = Path("models/cylinderhmm") / f"{timestamp}_{run_name}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save the full resolved config for this run
+    with open(run_dir / "config.yaml", "w") as f:
+        yaml.dump(cfg, f, default_flow_style=False)
+
+    # Initialize the model
+    model = initialize_transformer_from_yaml(None, model_cfg=mcfg)
+    model.to(device)
+    num_params = sum(p.numel() for p in model.parameters())
+
+    tcfg = cfg["train"]
+    ocfg = tcfg["optimizer"]
+
+    optimizer = t.optim.AdamW(
+        model.parameters(),
+        lr=float(ocfg['learning_rate']),
+        betas=(float(ocfg['adam_beta1']), float(ocfg['adam_beta2'])),
+        eps=float(ocfg["adam_epsilon"]),
+        weight_decay=float(ocfg["adam_weight_decay"]),
+    )
+
+    # Load data
+    train_data = t.load("data/datasets/cylinder_graph_hmm/train/observations.pt")
+    test_data = t.load("data/datasets/cylinder_graph_hmm/test/observations.pt")
+
+    num_epochs = tcfg["num_epochs"]
+    batch_size = tcfg["batch_size"]
+    seq_length = tcfg["seq_length"]
+    val_interval = tcfg["val_interval_in_opt_steps"]
+    log_interval = tcfg["log_interval_in_opt_steps"]
+
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, pin_memory=(device=='cuda'))
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, pin_memory=(device=='cuda'))
+
+    steps_per_epoch = len(train_loader)
+    total_steps = num_epochs * steps_per_epoch
+    print(f"Dataset: {len(train_data)} train sequences, {len(test_data)} test sequences")
+    print(f"Steps per epoch: {steps_per_epoch}, Total steps: {total_steps}")
+
+    scheduler = CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=float(ocfg["learning_rate"]) * 0.001)
+
+    best_val_loss = float('inf')
+
+    # Save metadata at the start
+    metadata = {
+        "run_name": run_name,
+        "wandb_run_id": wandb.run.id,
+        "timestamp": timestamp,
+        "device": device,
+        "num_params": num_params,
+        "train_sequences": len(train_data),
+        "test_sequences": len(test_data),
+        "steps_per_epoch": steps_per_epoch,
+        "total_steps": total_steps,
+    }
+    with open(run_dir / "metadata.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    # Training loop
+    model.train()
+    global_step = 0
+    start_time = time.time()
+
+    for epoch in range(num_epochs):
+        print(f"Epoch {epoch+1}/{num_epochs}")
+        epoch_loss = 0.0
+
+        for batch_idx, batch in enumerate(train_loader):
+            batch = batch.to(device)
+            inputs = batch[:, :-1]
+            targets = batch[:, 1:]
+
+            optimizer.zero_grad()
+            logits = model(inputs)
+            loss = t.nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+            epoch_loss += loss.item()
+            global_step += 1
+
+            # Validation
+            if global_step % val_interval == 0:
+                model.eval()
+                val_loss = 0.0
+                num_batches = 0
+
+                with t.no_grad():
+                    for val_batch in test_loader:
+                        val_batch = val_batch.to(device)
+                        val_inputs = val_batch[:, :-1]
+                        val_targets = val_batch[:, 1:]
+
+                        val_logits = model(val_inputs)
+                        val_batch_loss = t.nn.functional.cross_entropy(
+                            val_logits.reshape(-1, val_logits.size(-1)),
+                            val_targets.reshape(-1)
+                        )
+                        val_loss += val_batch_loss.item()
+                        num_batches += 1
+
+                val_loss /= num_batches
+                wandb.log({"val_loss": val_loss, "global_step": global_step})
+                print(f"Step {global_step}: Val Loss = {val_loss:.6f}")
+
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    t.save({
+                        'epoch': epoch,
+                        'global_step': global_step,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler_state_dict': scheduler.state_dict(),
+                        'val_loss': val_loss,
+                    }, run_dir / "best_model.pt")
+                    print(f"  Saved best model (val_loss: {val_loss:.6f})")
+
+                model.train()
+
+            # Training metrics logging
+            if global_step % log_interval == 0:
+                elapsed_time = time.time() - start_time
+                tokens_processed = global_step * batch_size * seq_length
+                tokens_per_sec = tokens_processed / elapsed_time if elapsed_time > 0 else 0
+                current_lr = optimizer.param_groups[0]['lr']
+
+                wandb.log({
+                    "train_loss": loss.item(),
+                    "learning_rate": current_lr,
+                    "tokens_per_sec": tokens_per_sec,
+                    "global_step": global_step,
+                    "epoch": epoch,
+                })
+
+        avg_epoch_loss = epoch_loss / len(train_loader)
+        print(f"Epoch {epoch+1} complete: Avg Train Loss = {avg_epoch_loss:.6f}")
+        wandb.log({"epoch_train_loss": avg_epoch_loss, "epoch": epoch})
+
+        checkpoint = {
+            'epoch': epoch,
+            'global_step': global_step,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'train_loss': avg_epoch_loss,
+        }
+        t.save(checkpoint, run_dir / f"checkpoint_epoch_{epoch+1}.pt")
+        t.save(checkpoint, run_dir / "latest.pt")
+        print(f"  Saved checkpoint: checkpoint_epoch_{epoch+1}.pt")
+
+    # Update metadata with final results
+    metadata["best_val_loss"] = best_val_loss
+    metadata["final_train_loss"] = avg_epoch_loss
+    metadata["total_time_seconds"] = time.time() - start_time
+    with open(run_dir / "metadata.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    print(f"Training complete! Output saved to {run_dir}")
+    wandb.finish()
 
 
-# Initialize Dataset
-train_dataset = t.load(f"data/datasets/cylinder_graph_hmm/train/observations.pt")
-test_dataset = t.load(f"data/datasets/cylinder_graph_hmm/test/observations.pt")
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-# Optimizer Loop
-for epoch in range(num_epochs):
-    print(f"Epoch {epoch+1}/{num_epochs} start training...")
-
-    for inputs, targets in train_loader:
-        inputs = inputs.to(device)
-        targets = targets.to(device)
-
-        # Forward pass
-        optimizer.zero_grad()
-        logits = model(inputs)
-        
-        loss = criterion(logits, targets)
-        loss.backward()
-        optimizer.step()
+if __name__ == "__main__":
+    train()

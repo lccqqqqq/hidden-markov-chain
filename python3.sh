@@ -1,6 +1,6 @@
 #!/bin/bash -l
 echo =========================================================   
-echo Job submitted  date = Wed  4 Feb 16:29:24 GMT 2026      
+echo Job submitted  date = Sat  7 Feb 13:48:11 GMT 2026      
 date_start=`date +%s`
 echo $SLURM_JOB_NUM_NODES nodes \( $SLURM_CPUS_ON_NODE processes per node \)        
 echo $SLURM_JOB_NUM_NODES hosts used: $SLURM_JOB_NODELIST      
@@ -15,7 +15,7 @@ echo
 ulimit -l unlimited
 
 export OMP_NUM_THEADS=1
- nice -n 10 /usr/bin/python3 src/data_generator.py
+ nice -n 10 /usr/bin/python3 -m wandb agent chuqiao-lin-university-of-oxford/hidden-markov-chain-src/ndsbvl51
   echo ---------------                                           
   echo Job output ends                                           
 
