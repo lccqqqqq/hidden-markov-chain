@@ -13,6 +13,7 @@ SAVE_DIR = "notes/figures"
 
 #%% Computing the optimal prediction loss given the fixed context window
 import torch as t
+import numpy as np
 from jaxtyping import Int
 from src.hmm import HMM, CylinderGraphHMM
 from scipy.special import logsumexp
@@ -130,7 +131,7 @@ for run_name in sorted(os.listdir(MODEL_DIR)):
 print(f"Found {len(records)} models")
 
 # --- Scatter plot ---
-fig, ax = plt.subplots(figsize=(10, 7))
+fig, ax = plt.subplots(figsize=(10, 8))
 
 # Style mapping
 marker_map = {"attn_only": "o", "full": "s"}
@@ -174,8 +175,31 @@ hline = ax.axhline(GT_ENTROPY_RATE, color="k", linestyle="--", label="Theoretica
 legend_handles.append(Line2D([0], [0], color="k", linestyle="--", label="Theoretical Entropy Rate"))
 hline2 = ax.axhline(GT_OPTIMAL_LOSS, color="r", linestyle="--", label="Optimal Predictor Loss")
 legend_handles.append(Line2D([0], [0], color="r", linestyle="--", label="Optimal Predictor Loss"))
+
+# N-gram baseline horizontal lines with text annotations
+ngram_results_path = "out/ngram_baseline_results.json"
+if os.path.isfile(ngram_results_path):
+    with open(ngram_results_path) as f:
+        ngram_data = json.load(f)
+    ngram_cmap = plt.cm.viridis
+    ngram_orders = ngram_data["results"]
+    for i, entry in enumerate(ngram_orders):
+        n = entry["n"]
+        test_ce = entry["test_ce"]
+        color = ngram_cmap(i / max(len(ngram_orders) - 1, 1))
+        ax.axhline(test_ce, color=color, linestyle=":", linewidth=1.2, alpha=0.8)
+        # Text label at right edge of plot
+        ax.text(
+            1.01, test_ce, f"{n}-gram",
+            transform=ax.get_yaxis_transform(),
+            color=color, fontsize=8, fontweight="bold",
+            va="center", ha="left",
+        )
+
 ax.legend(handles=legend_handles, fontsize=11)
 ax.grid(True, alpha=0.3)
+
+ax.set_ylim(GT_ENTROPY_RATE, 2.9)
 
 plt.tight_layout()
 plt.savefig("model_comparison.png", dpi=150)
@@ -274,4 +298,94 @@ plt.savefig(os.path.join(SAVE_DIR, "embedding_cluster_similarity.png"), dpi=150)
 print(f"Saved {SAVE_DIR}/embedding_cluster_similarity.png")
 plt.show()
 
-#%% Compare the model's performance
+#%% Compare the model's performance for fixed embedding modes
+
+import json
+from pathlib import Path
+
+fixed_emb_dir = Path("models/cylinderhmm_fixed_emb_new")
+records = []
+for meta_path in sorted(fixed_emb_dir.glob("*/metadata.json")):
+    try:
+        with open(meta_path) as f:
+            meta = json.load(f)
+        run_name = meta["run_name"]
+        # Parse embedding mode and architecture from run_name
+        # Format: fixed_{mode}_L{layers}_d{dim}_H{heads}_full_noLN
+        parts = run_name.split("_")
+        # embedding mode is between "fixed" and "L{n}"
+        l_idx = next(i for i, p in enumerate(parts) if p.startswith("L"))
+        emb_mode = "_".join(parts[1:l_idx])
+        arch_str = "_".join(parts[l_idx:])  # e.g. L4_d8_H1_full_noLN
+        # Extract d and H
+        d_model = int([p for p in parts if p.startswith("d") and p[1:].isdigit()][0][1:])
+        n_heads = int([p for p in parts if p.startswith("H") and p[1:].isdigit()][0][1:])
+        records.append({
+            "emb_mode": emb_mode,
+            "d_model": d_model,
+            "n_heads": n_heads,
+            "arch": f"d{d_model}_H{n_heads}",
+            "best_val_loss": meta["best_val_loss"],
+            "final_train_loss": meta["final_train_loss"],
+            "trainable_params": meta["trainable_params"],
+            "total_params": meta["total_params"],
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        continue
+
+# ── Grouped bar chart: embedding mode × architecture ──
+SHOW_NGRAM = True  # Toggle to overlay n-gram baseline on the plot
+
+emb_modes = ["trained", "pmi", "random", "onehot"]
+archs = sorted(set(r["arch"] for r in records if r["d_model"] == 48))
+emb_labels = ["Trained", "PMI", "Random", "One-Hot"]
+
+fig, ax = plt.subplots(figsize=(10, 5))
+
+x = np.arange(len(emb_modes))
+n_archs = len(archs)
+width = 0.8 / max(n_archs, 1)
+offsets = [(i - (n_archs - 1) / 2) * width for i in range(n_archs)]
+
+for i, arch in enumerate(archs):
+    vals = []
+    for mode in emb_modes:
+        match = [r for r in records if r["emb_mode"] == mode and r["arch"] == arch]
+        vals.append(match[0]["best_val_loss"] if match else np.nan)
+    bars = ax.bar(x + offsets[i], vals, width, label=arch)
+    for bar, v in zip(bars, vals):
+        if not np.isnan(v):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,
+                    f"{v:.3f}", ha="center", va="bottom", fontsize=7)
+
+ax.axhline(y=loss.item(), color="black", linestyle="--", linewidth=1, label=f"Best predictor loss ({loss.item():.3f})")
+
+if SHOW_NGRAM:
+    ngram_path = Path("out/ngram_baseline_results.json")
+    if ngram_path.exists():
+        with open(ngram_path) as f:
+            ngram_data = json.load(f)
+        # Show best n-gram (lowest test CE) as a horizontal line
+        best_ngram = min(ngram_data["results"], key=lambda r: r["test_ce"])
+        ax.axhline(y=best_ngram["test_ce"], color="gray", linestyle=":",
+                   linewidth=1.5, label=f"Best {best_ngram['n']}-gram ({best_ngram['test_ce']:.3f})")
+        # Also show bigram as reference (strong single-token context baseline)
+        bigram = next(r for r in ngram_data["results"] if r["n"] == 2)
+        ax.axhline(y=bigram["test_ce"], color="gray", linestyle="-.",
+                   linewidth=1, alpha=0.6, label=f"Bigram ({bigram['test_ce']:.3f})")
+    else:
+        print("Warning: out/ngram_baseline_results.json not found. Run src/ngram_baseline.py first.")
+
+ax.set_ylabel("Best Validation Loss (nats)")
+ax.set_title("Fixed Embedding: Validation Loss by Embedding Mode and Architecture")
+ax.set_xticks(x)
+ax.set_xticklabels(emb_labels)
+ax.legend()
+ax.set_ylim(bottom=2.45, top=2.60)
+
+plt.tight_layout()
+FIXED_EMB_DIR = "notes/fixed_embedding"
+plt.savefig(os.path.join(FIXED_EMB_DIR, "fixed_embedding_comparison.png"), dpi=150)
+print(f"Saved {FIXED_EMB_DIR}/fixed_embedding_comparison.png")
+plt.show()

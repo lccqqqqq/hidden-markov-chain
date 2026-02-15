@@ -47,3 +47,9 @@ reproduction/
 useful_output/
 
 python*.out
+
+# Cluster output logs
+out/
+
+# Claude Code
+.claude/
