@@ -1,6 +1,6 @@
 #!/bin/bash -l
 echo =========================================================   
-echo Job submitted  date = Wed 11 Feb 16:07:10 GMT 2026      
+echo Job submitted  date = Sun 15 Feb 14:04:37 GMT 2026      
 date_start=`date +%s`
 echo $SLURM_JOB_NUM_NODES nodes \( $SLURM_CPUS_ON_NODE processes per node \)        
 echo $SLURM_JOB_NUM_NODES hosts used: $SLURM_JOB_NODELIST      
@@ -15,7 +15,7 @@ echo
 ulimit -l unlimited
 
 export OMP_NUM_THEADS=1
- nice -n 10 /usr/bin/python3 src/train_fixed_embedding.py --embedding_mode onehot --config models/cylinderhmm/20260207_142616_L4_d48_H4_attn_only_noLN/config.yaml
+ /usr/local/shared/slurm/bin/srun -u -n 1 --mpi=pmix --mem-per-cpu=1024 nice -n 10 /usr/bin/python3 SLM/04_exact_training.py
   echo ---------------                                           
   echo Job output ends                                           
 
