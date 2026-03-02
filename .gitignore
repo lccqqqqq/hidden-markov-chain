@@ -51,5 +51,8 @@ python*.out
 # Cluster output logs
 out/
 
+# Archive (old code, notebooks, tokenizers moved here during refactor)
+archive/
+
 # Claude Code
 .claude/
