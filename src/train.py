@@ -1,3 +1,4 @@
+import os
 import torch as t
 from utils import initialize_transformer_from_yaml
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -9,7 +10,7 @@ import wandb
 import time
 from pathlib import Path
 
-CONFIG_PATH = "base_config.yaml"
+CONFIG_PATH = os.environ.get("TRAIN_CONFIG", "base_config.yaml")
 device = "cuda" if t.cuda.is_available() else "cpu"
 
 
@@ -19,9 +20,11 @@ def train():
         cfg = yaml.safe_load(f)
 
     # Initialize wandb (sweep agent injects swept params as flat keys into wandb.config)
+    wandb_tags = cfg.get("wandb", {}).get("tags", None)
     wandb.init(
         project=cfg["wandb"]["project_name"],
-        config=cfg
+        config=cfg,
+        tags=wandb_tags,
     )
 
     # Apply sweep overrides to model config
@@ -67,8 +70,9 @@ def train():
     )
 
     # Load data
-    train_data = t.load("data/datasets/cylinder_graph_hmm/train/observations.pt")
-    test_data = t.load("data/datasets/cylinder_graph_hmm/test/observations.pt")
+    data_dir = cfg.get("data", {}).get("data_dir", "data/datasets/cylinder_graph_hmm")
+    train_data = t.load(os.path.join(data_dir, "train", "observations.pt"))
+    test_data = t.load(os.path.join(data_dir, "test", "observations.pt"))
 
     num_epochs = tcfg["num_epochs"]
     batch_size = tcfg["batch_size"]

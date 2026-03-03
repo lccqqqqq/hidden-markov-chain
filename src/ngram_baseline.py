@@ -113,7 +113,7 @@ def main():
         cfg = yaml.safe_load(f)
 
     vocab_size = cfg["model"]["vocab_size"]
-    data_dir = cfg["data_generator"]["save_dir"]
+    data_dir = cfg.get("data", {}).get("data_dir", cfg["data_generator"]["save_dir"])
 
     print(f"N-gram Baseline Results (vocab_size={vocab_size}, smoothing_k={args.smoothing_k})")
     print("=" * 65)
