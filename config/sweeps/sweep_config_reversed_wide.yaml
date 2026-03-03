@@ -1,0 +1,21 @@
+program: src/train.py
+method: grid
+command:
+  - ${env}
+  - python3
+  - ${program}
+metric:
+  name: val_loss
+  goal: minimize
+
+parameters:
+  n_layer:
+    values: [2, 4]
+  n_embd:
+    values: [16, 32, 48, 64]
+  n_head:
+    values: [1, 2, 4]
+  attn_only:
+    values: [true, false]
+  normalization_type:
+    values: ["none", "LN"]

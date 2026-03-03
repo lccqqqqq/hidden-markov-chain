@@ -1,0 +1,51 @@
+data_generator:
+  # Process configuration with nested params
+  process:
+    name: "cylinder_graph"
+    params:
+      n: 6
+      depth: 3
+      tokens_per_cluster: 16
+      dirichlet_alpha: 0.3
+      p: 0.1
+      seed: 42
+
+  # Data generation settings
+  num_tokens: 10_000_000
+  save_dir: "data/datasets/cylinder_graph_hmm"
+
+data:
+  data_dir: "data/datasets/cylinder_graph_hmm_reversed"
+
+model:
+  n_layer: 4
+  n_embd: 8
+  n_head: 1
+  d_head: 8
+  vocab_size: 48 # should be depth * tokens_per_cluster
+  n_ctx: 16 # should be the same as seq_length in the trainer setup
+  activation_function: "relu"
+  normalization_type: null # Use null or ~ for Python None (disables layer normalization)
+  attn_only: False
+  d_mlp: 32 # should be 4 * d_model (conventional choice)
+  tie_word_embeddings: True
+
+train:
+  optimizer:
+    adam_beta1: 0.9
+    adam_beta2: 0.999
+    adam_epsilon: 1e-8
+    adam_weight_decay: 0.01
+    learning_rate: 1e-3
+
+  num_epochs: 10
+  batch_size: 128
+  seq_length: 16
+  val_interval_in_opt_steps: 100
+  log_interval_in_opt_steps: 10
+
+wandb:
+  project_name: "pcfg"
+  experiment: "cylinder-graph-hmm-reversed"
+  tags: ["reversed", "time-reversal"]
+  log_period: 3
