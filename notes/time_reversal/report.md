@@ -80,21 +80,70 @@ Preliminary results (500 samples, first 8 positions) show:
 
 ## Wandb Sweep Links
 
-*(To be filled in after sweep creation)*
-
-- Forward sweep: `TODO`
+- Forward sweep: [hidden-markov-chain-src](https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src) (finished runs without `reversed` tag)
 - Reverse sweep: https://wandb.ai/chuqiao-lin-university-of-oxford/hidden-markov-chain-src/sweeps/eib9duyf
 
-## To-Do List (Post-Sweep Analysis)
+## Sweep Results Analysis
 
-- [ ] Run `src/reverse_hmm_analysis.py` with full 50k samples and save results
+Analysis script: `src/analyze_time_reversal.py`
+Summary JSON: `out/time_reversal_analysis.json`
+Figures: `figures/time_reversal/`
+
+**Dataset:** 60 matched architecture configs × 2 directions (forward vs. reversed).
+Each point uses the best (lowest) val_loss observed across multiple training runs for that config.
+
+### H3: Is Δ = loss_rev − loss_fwd > 0 consistently?
+
+**Result: H3 is NOT supported.**
+
+- Δ > 0 in only **22/60 configs (36.7%)**
+- Mean Δ = **+0.0002 ± 0.0086 nats** — essentially zero
+- Min Δ = −0.025 nats, Max Δ = +0.022 nats
+
+The gap is tiny in magnitude and **inconsistent in sign**. Transformers achieve nearly identical final val_loss on forward and reversed sequences across the full architecture sweep. This is surprising given the theoretical prediction that belief state convergence is slower for the reverse process.
+
+### H4: Does Δ depend on model capacity?
+
+**Result: H4 is very weakly supported, with the opposite sign to what was predicted.**
+
+Correlations of Δ with capacity measures:
+| Feature | Corr with Δ |
+|---------|------------|
+| n_params (approx) | −0.083 |
+| n_embd | −0.148 |
+| n_layer | −0.205 |
+
+Larger models show a *slight* tendency toward **negative** Δ (i.e., doing marginally *better* on reversed data), but the correlations are weak and likely not statistically significant given only 60 data points.
+
+### Architectural breakdown
+
+Notable patterns (see `figures/time_reversal/delta_by_arch.png`):
+- **Extreme case:** `L4_d8_attn_only_noLN` has Δ = −0.025 (reversed is *easier*)
+- **Small models** (n_embd=4) tend toward positive Δ, consistent with the theoretical prediction
+- **Large full models** (n_embd ≥ 32, full transformer) mostly have Δ < 0
+
+### Interpretation
+
+The near-zero mean gap suggests that:
+1. **Transformers are learning context up to the context window (seq_len=16) efficiently in both directions.** The belief state convergence argument still holds theoretically, but at context length 16, both forward and reverse belief states may be sufficiently converged for this HMM.
+2. Alternatively, the transformer may be implementing a different prediction strategy than exact Bayesian belief propagation, making the theoretical gap irrelevant.
+3. The Bayes-optimal gap (from `out/reverse_hmm_analysis.json`, computed with only 100 samples at k=4) was noisy and should be recomputed at full k=16 for a direct comparison.
+
+### Figures
+
+| File | Description |
+|------|-------------|
+| `figures/time_reversal/fwd_vs_rev_scatter.png` | Forward vs reversed val_loss scatter, colored by n_embd/n_layer |
+| `figures/time_reversal/delta_by_arch.png` | Δ for each of the 60 architecture configs |
+| `figures/time_reversal/delta_vs_params.png` | Δ vs approx. parameter count |
+| `figures/time_reversal/grouped_loss_by_arch.png` | Mean val_loss grouped by n_layer and n_embd |
+| `figures/time_reversal/delta_hist_by_archtype.png` | Distribution of Δ for attn-only vs full models |
+
+## To-Do List (Remaining)
+
+- [ ] Run `src/reverse_hmm_analysis.py` with full 50k samples and max_context=16 — current JSON only has 100 samples at k=4
 - [ ] Run n-gram baseline on reversed data and compare to forward
-- [ ] After sweeps complete, download final val_loss for all 36×2 runs
-- [ ] Plot forward vs reverse val_loss for each architecture configuration
-- [ ] Compute gap Δ = loss_reverse - loss_forward for each config
-- [ ] Test H3: Is Δ > 0 consistently across architectures?
-- [ ] Test H4: Does Δ depend on model capacity (depth/width)?
-- [ ] Compare transformer gap to Bayes-optimal gap at k=16
-- [ ] Investigate whether specific architectural features (attention-only, LayerNorm) affect the gap
-- [ ] Plot belief convergence curves (forward vs reverse) alongside transformer loss curves
-- [ ] Write final analysis section with plots
+- [ ] Compare transformer Δ to Bayes-optimal gap at k=16 (key comparison)
+- [ ] Investigate the `L4_d8_attn_only_noLN` outlier: why is the reversed gap so strongly negative?
+- [ ] Check if the near-zero mean Δ is consistent with the Bayes-optimal gap converging by k=16
+- [ ] Write final analysis section with conclusions

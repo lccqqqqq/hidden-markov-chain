@@ -67,3 +67,24 @@ All config lives in `base_config.yaml` with three sections:
 - The user is a physicist, not an ML practitioner. Flag non-standard ML practices when they arise.
 - When the user says "explain", respond with explanations only—do not write code unless explicitly asked.
 - Ask clarifying questions where appropriate.
+
+## Environment
+
+This user works on a Linux cluster via SSH from a Mac. Provide Mac keyboard shortcuts for local actions and Linux/terminal commands for remote actions. Never assume a local desktop GUI environment.
+
+## Python / PyTorch Conventions
+
+When writing Python code that involves PyTorch tensors, always ensure device consistency (CPU vs CUDA) in comparisons, assertions, and operations. Use `.cpu()` or `.to(device)` explicitly when mixing tensor sources.
+
+## LaTeX
+
+When editing LaTeX files, always check that any newly introduced symbols or environments have their required packages (e.g., `amssymb` for `\gtrsim`, `amsmath`, `tikz`). Run a test compilation after edits if possible.
+
+## Cluster / SLURM / Sweeps
+
+When generating SLURM submission scripts or wandb sweep configs, double-check: (1) YAML numeric types are correct (quote strings that look like numbers), (2) variable substitutions like `${args}` are present, (3) environment/module loading commands are included, (4) file paths resolve correctly on the cluster filesystem.
+
+## General Workflow Preferences
+
+- When asked to implement something, implement and run it rather than just planning — don't stop at creating a plan document unless explicitly asked to only plan. If a sweep or job submission is part of the task, actually submit it.
+- When searching the codebase for user-referenced code, ask for the exact file path if the first search attempt fails. Don't guess at directory structures.

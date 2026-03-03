@@ -1,0 +1,328 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+
+\newcommand{\lcq}[1]{\textcolor{red}{#1}}
+
+\title{AI-Assisted Workflow Optimisation\\for the HMM Transformer Research Project}
+\author{C.~L.\ (with Claude Code)}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+%----------------------------------------------------------------------
+\section{Introduction}
+%----------------------------------------------------------------------
+
+This document records a set of workflow recommendations distilled from
+accumulated interactions between the researcher and Claude Code over the
+course of the HMM--transformer research project.  It is intended as a
+living reference: a compact statement of conventions, guardrails, and
+automation opportunities that have been identified as useful for this
+particular combination of researcher background (physics), computing
+environment (Linux cluster accessed via SSH from macOS), and project
+structure (data generation $\to$ training $\to$ analysis pipeline).
+
+The document is organised as follows.  Section~\ref{sec:env} describes
+the computing environment and the role of the AI assistant within it.
+Section~\ref{sec:coding} covers Python and PyTorch coding conventions
+enforced by the assistant.  Section~\ref{sec:latex} covers \LaTeX{}
+editing conventions.  Section~\ref{sec:cluster} covers cluster and
+sweep submission practices.  Section~\ref{sec:general} states general
+workflow preferences.  Section~\ref{sec:automation} discusses
+automation opportunities opened up by access to a higher-capability
+model tier (Claude Max / Opus 4.6).
+
+%----------------------------------------------------------------------
+\section{Environment and Role of the AI Assistant}
+\label{sec:env}
+%----------------------------------------------------------------------
+
+The researcher works on a Linux cluster via SSH from a macOS laptop.
+The following conventions apply.
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Command suggestions} for remote (cluster) tasks are given
+        as Linux/Bash terminal commands.
+  \item \textbf{Keyboard shortcuts} for local (macOS) tasks use Mac
+        notation (\texttt{Cmd}, \texttt{Opt}, etc.).
+  \item The assistant \textbf{never assumes a local desktop GUI
+        environment}; all file editing, job submission, and inspection
+        happen in the terminal or via SSH.
+  \item The project lives at
+        \texttt{\textasciitilde/workspace/hidden-markov-chain/};
+        paths in scripts and configs should resolve from that root.
+\end{itemize}
+
+The AI assistant (Claude Code) acts as a collaborative coding partner
+with three roles in this project:
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Implementation} --- writing and running code, generating
+        config files, submitting cluster jobs.
+  \item \textbf{Explanation} --- translating ML conventions and
+        mathematical results into language accessible to a physicist.
+  \item \textbf{Documentation} --- producing \LaTeX{} reports,
+        maintaining \texttt{CLAUDE.md} and \texttt{MEMORY.md} so that
+        context persists across sessions.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\section{Python and PyTorch Conventions}
+\label{sec:coding}
+%----------------------------------------------------------------------
+
+\subsection{Device Consistency}
+
+When writing code that mixes PyTorch tensors from different sources
+(e.g.\ a tensor loaded from disk and one created in-flight during
+training), device placement (CPU vs.\ CUDA) must be made explicit.
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Use \texttt{.cpu()} before any NumPy comparison or
+        \texttt{assert} that would fail silently if the tensor is on
+        GPU.
+  \item Use \texttt{.to(device)} consistently when passing tensors into
+        model forward passes.
+  \item Never rely on implicit broadcasting between a CPU and a CUDA
+        tensor; PyTorch will raise a \texttt{RuntimeError}, but only at
+        runtime, so the error may be hard to locate.
+\end{itemize}
+
+This convention was added explicitly because a physicist unfamiliar
+with the GPU memory model may not think to check device placement when
+a numerical result looks incorrect.
+
+\subsection{Minimal Complexity Principle}
+
+The assistant is instructed to prefer the simplest implementation that
+satisfies the current requirement.  Concretely:
+\begin{itemize}[leftmargin=1.5em]
+  \item Do not add error handling for scenarios that cannot occur given
+        the current code structure.
+  \item Do not introduce helper abstractions for one-off operations.
+  \item Do not add docstrings or type annotations to code that was not
+        modified in the current task.
+\end{itemize}
+This prevents unnecessary growth of the codebase and keeps PRs focused.
+
+%----------------------------------------------------------------------
+\section{\LaTeX{} Editing Conventions}
+\label{sec:latex}
+%----------------------------------------------------------------------
+
+When editing \texttt{.tex} files, the following checks are performed
+automatically by the assistant.
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Package dependencies}: any newly introduced symbol or
+        environment must have its required package loaded in the
+        preamble.  Common cases that have arisen in this project:
+        \begin{itemize}
+          \item \texttt{\textbackslash gtrsim}, \texttt{\textbackslash
+                lesssim} $\to$ \texttt{amssymb}
+          \item \texttt{align}, \texttt{gather} environments $\to$
+                \texttt{amsmath}
+          \item \texttt{tikzpicture} $\to$ \texttt{tikz}
+          \item \texttt{tabularx}, \texttt{longtable} $\to$
+                corresponding packages
+        \end{itemize}
+  \item \textbf{Test compilation}: after non-trivial edits, attempt
+        \texttt{pdflatex} compilation to catch package or syntax errors
+        before the changes are finalised.
+  \item \textbf{Inline comments}: user comments of the form
+        \verb|\lcq{...}| are addressed before the document is
+        considered complete.  The comment markup is removed only upon
+        explicit user approval.
+\end{enumerate}
+
+The figure path convention in this project is
+\verb|\graphicspath{{../../figures/<experiment>/}}|, placing figures
+in a top-level \texttt{figures/} directory organised by experiment
+name, separate from the \texttt{notes/} source tree.
+
+%----------------------------------------------------------------------
+\section{Cluster, SLURM, and Sweep Submission}
+\label{sec:cluster}
+%----------------------------------------------------------------------
+
+The cluster uses \texttt{addqueue} for job submission.  When generating
+SLURM scripts or \texttt{wandb} sweep configs, the following checklist
+is applied.
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{YAML numeric types}: values that look like numbers but
+        should be treated as strings (e.g.\ experiment tags, run
+        labels) must be quoted; otherwise the YAML parser silently
+        converts them.
+  \item \textbf{Variable substitutions}: placeholders such as
+        \texttt{\$\{args\}} in sweep agent launch commands must be
+        present and syntactically correct.
+  \item \textbf{Environment loading}: module load commands and
+        \texttt{conda activate} / \texttt{source .venv/bin/activate}
+        lines must be included in every submission script, since
+        cluster compute nodes do not inherit the login shell environment.
+  \item \textbf{File path resolution}: all paths in scripts
+        (\texttt{save\_dir}, \texttt{data\_dir}, config paths) are
+        verified to resolve correctly from the cluster filesystem root,
+        not from a local working directory.
+\end{enumerate}
+
+The main sweep tooling currently in use is \texttt{wandb sweep} with
+\texttt{bash submit\_sweep.sh <sweep-id> [num\_agents]}.  All sweep
+configs live under \texttt{config/sweeps/}.
+
+%----------------------------------------------------------------------
+\section{General Workflow Preferences}
+\label{sec:general}
+%----------------------------------------------------------------------
+
+\begin{description}[leftmargin=1.5em, style=nextline]
+  \item[Implement, don't only plan.]
+        When asked to implement something, the assistant implements and
+        runs it.  A plan document is produced only if the user
+        explicitly requests it.  If a sweep or job submission is part
+        of the task, it is submitted in the same session.
+
+  \item[Ask for exact paths when searching fails.]
+        If a first search attempt for a user-referenced file or
+        function fails, the assistant asks the user for the exact file
+        path rather than guessing at directory structures.  This avoids
+        silent errors from editing the wrong file.
+
+  \item[Flag non-standard ML practices.]
+        Because the researcher's background is in physics, not machine
+        learning, the assistant explicitly flags when a suggested
+        approach deviates from standard ML practice, and briefly
+        explains what is commonly done in the field.
+
+  \item[Explain without coding by default.]
+        When the user says ``explain'', the assistant provides a
+        conceptual explanation only.  Code is written only if the user
+        explicitly requests it in the same prompt.
+\end{description}
+
+%----------------------------------------------------------------------
+\section{Automation Opportunities (Claude Max / Opus 4.6)}
+\label{sec:automation}
+%----------------------------------------------------------------------
+
+Upgrading to Claude Max provides access to the Opus 4.6 model with a
+200\,000-token context window and higher rate limits.  The following
+automation opportunities are directly enabled or substantially improved
+by this upgrade.
+
+\subsection{Whole-Codebase Context}
+
+With 200k tokens, the entire \texttt{src/} directory, all config
+files, and the active \LaTeX{} report can be loaded simultaneously.
+This eliminates the need to manually identify which files are relevant
+to a given task, and allows the assistant to detect cross-file
+inconsistencies (e.g.\ a config constraint violation before a training
+run is submitted).
+
+\subsection{End-to-End Experiment Automation}
+
+A single assistant session can now cover a full experiment cycle:
+\begin{enumerate}[leftmargin=1.5em]
+  \item Edit \texttt{base\_config.yaml} for the new experiment.
+  \item Generate data via \texttt{mpirun data\_generator.py}.
+  \item Submit training sweep via \texttt{wandb sweep} and
+        \texttt{submit\_sweep.sh}.
+  \item Monitor W\&B run completion and pull results.
+  \item Run analysis scripts and produce figures.
+  \item Draft the \LaTeX{} section summarising the results.
+\end{enumerate}
+Steps 1--3 and 5--6 can be executed within one session without
+context loss.
+
+\subsection{Report Drafting and Revision}
+
+The assistant can hold the full report \texttt{.tex} file in context
+alongside the analysis outputs, allowing it to insert numerical
+results, update figures, and address \verb|\lcq{}| comments in a
+single pass.  This is particularly useful for the iterative
+\texttt{time\_reversal/report.tex} workflow where multiple rounds of
+edits are needed.
+
+\subsection{Multi-Step Debugging Without Re-Explanation}
+
+Longer context means the assistant retains the full stack trace,
+config, and relevant source code across multiple back-and-forth turns
+of debugging, without the user needing to re-paste context.  This
+materially speeds up debugging cluster job failures and CUDA
+environment issues.
+
+\subsection{Parallel Sub-Agents (Agentic Mode)}
+
+The Max plan enables launching multiple sub-agents in parallel.
+Potential uses in this project:
+\begin{itemize}[leftmargin=1.5em]
+  \item Run \texttt{forward} and \texttt{reversed} training sweeps
+        concurrently and compare results.
+  \item Simultaneously search the codebase for two independent
+        issues.
+  \item Generate figures and draft the corresponding \LaTeX{}
+        description in parallel.
+\end{itemize}
+
+\subsection{Persistent Memory and CLAUDE.md Maintenance}
+
+With richer context, the assistant can more reliably detect when a new
+convention or experimental result should be recorded in
+\texttt{MEMORY.md} or \texttt{CLAUDE.md}, keeping the project
+knowledge base up to date without explicit prompting.
+
+%----------------------------------------------------------------------
+\section{Summary and Next Steps}
+\label{sec:summary}
+%----------------------------------------------------------------------
+
+Table~\ref{tab:recommendations} provides a concise summary of the
+recommendations documented here.
+
+\begin{table}[h]
+\centering
+\caption{AI workflow recommendations for the HMM transformer project.}
+\label{tab:recommendations}
+\begin{tabular}{lll}
+\toprule
+Category & Recommendation & Rationale \\
+\midrule
+Environment     & Use Linux commands for cluster tasks & SSH-only access \\
+PyTorch         & Explicit \texttt{.to(device)} / \texttt{.cpu()} & Silent GPU/CPU mismatches \\
+\LaTeX{}        & Check packages; compile after edits & Catch errors early \\
+Cluster/Sweeps  & Verify YAML types, paths, env loads & Cluster env differs from login shell \\
+Workflow        & Implement and run, not just plan & Reduces idle planning overhead \\
+Workflow        & Ask for exact path if search fails & Avoids editing wrong files \\
+Max plan        & Load whole codebase in context & Cross-file consistency checks \\
+Max plan        & Parallel sub-agents for sweeps & Forward/reverse in one session \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Immediate next steps for adopting this workflow:
+\begin{enumerate}[leftmargin=1.5em]
+  \item Add a \texttt{Makefile} or shell script that runs the full
+        data $\to$ train $\to$ analyse pipeline with a single command,
+        so the assistant can trigger it without constructing the
+        individual commands each time.
+  \item Standardise figure generation scripts under
+        \texttt{src/figures/} so the assistant knows where to look and
+        what to run to regenerate any figure.
+  \item Consider a lightweight \texttt{results\_registry.yaml} that
+        records the W\&B run ID, config hash, and key metrics for each
+        completed experiment, serving as a machine-readable index the
+        assistant can query.
+\end{enumerate}
+
+\end{document}

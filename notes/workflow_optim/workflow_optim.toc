@@ -1,0 +1,16 @@
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {2}Environment and Role of the AI Assistant}{2}{section.2}%
+\contentsline {section}{\numberline {3}Python and PyTorch Conventions}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Device Consistency}{2}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Minimal Complexity Principle}{3}{subsection.3.2}%
+\contentsline {section}{\numberline {4}\LaTeX {} Editing Conventions}{3}{section.4}%
+\contentsline {section}{\numberline {5}Cluster, SLURM, and Sweep Submission}{3}{section.5}%
+\contentsline {section}{\numberline {6}General Workflow Preferences}{4}{section.6}%
+\contentsline {section}{\numberline {7}Automation Opportunities (Claude Max / Opus 4.6)}{4}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Whole-Codebase Context}{4}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}End-to-End Experiment Automation}{4}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Report Drafting and Revision}{5}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Multi-Step Debugging Without Re-Explanation}{5}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}Parallel Sub-Agents (Agentic Mode)}{5}{subsection.7.5}%
+\contentsline {subsection}{\numberline {7.6}Persistent Memory and CLAUDE.md Maintenance}{5}{subsection.7.6}%
+\contentsline {section}{\numberline {8}Summary and Next Steps}{5}{section.8}%

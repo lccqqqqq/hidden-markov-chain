@@ -1,0 +1,32 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Theoretical Background}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Entropy Rate Invariance}{2}{subsection.2.1}%
+\contentsline {paragraph}{Consequence.}{2}{section*.2}%
+\contentsline {subsection}{\numberline {2.2}Reverse HMM Construction}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Belief-State Convergence and Finite-Context Effects}{3}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Hypotheses}{3}{section.3}%
+\contentsline {section}{\numberline {4}Experimental Setup}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}HMM and Dataset}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Architecture Sweep}{4}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Matched Comparison}{4}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Theoretical Predictions}{4}{section.5}%
+\contentsline {paragraph}{Entropy rates.}{5}{section*.4}%
+\contentsline {paragraph}{Belief-state convergence.}{5}{section*.5}%
+\contentsline {paragraph}{Bayes-optimal gap.}{5}{section*.6}%
+\contentsline {section}{\numberline {6}Results}{5}{section.6}%
+\contentsline {subsection}{\numberline {6.1}H3: Is the Reversed Direction Harder?}{5}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}H4: Architecture Dependence of the Gap}{6}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Architectural Breakdown}{6}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Interpretation}{7}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Activation Ablation Experiments}{7}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Overview}{7}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Direction Identification}{8}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Ablation Protocol}{8}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Results}{8}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Embedding Geometry}{8}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{8}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Norm Structure}{9}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Relationship to PMI Embeddings}{9}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Discussion and Open Questions}{9}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Summary of Findings}{9}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Open Questions}{10}{subsection.9.2}%
