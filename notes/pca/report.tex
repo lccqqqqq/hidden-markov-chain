@@ -1,0 +1,217 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\hfuzz=\maxdimen
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+
+\title{Code Review: PCA Analysis of Belief-State Geometry\\in Transformer Residual Streams}
+\author{C.~L.}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+%----------------------------------------------------------------------
+\section{Purpose of This Document}
+%----------------------------------------------------------------------
+
+This report is a code review of \file{old\_src/pca.py}, which implements the pipeline for extracting fractal belief-state geometry from transformer residual streams.  The review separates the \emph{conceptual} content (what is being computed and why) from \emph{engineering} concerns (how the code is structured, its scalability, and its correctness).
+
+%----------------------------------------------------------------------
+\section{Conceptual Background}
+%----------------------------------------------------------------------
+
+\subsection{Belief States as an Iterated Function System}
+
+A Hidden Markov Model with $N$ hidden states and vocabulary $V$ defines a Bayesian belief update rule.  After observing token $x_t$, the belief vector $\alpha_t \in \Delta^{N-1}$ (the probability simplex) evolves as
+\begin{equation}\label{eq:belief-update}
+  \alpha_{t+1} \;=\; \frac{E[x_t]^\top\, \alpha_t}{\mathbf{1}^\top E[x_t]^\top\, \alpha_t},
+\end{equation}
+where $E[x] \in \mathbb{R}^{N \times N}$ is the emission matrix for token~$x$, with $E[x]_{ik} = P(\text{observe } x \text{ and transition } i \to k)$.  Each token defines a contraction on the simplex; together the $|V|$ maps $\{f_x : x \in V\}$ form an \textbf{Iterated Function System} (IFS).  The attractor of this IFS---the closure of all reachable belief states---is the \textbf{mixed-state presentation} (MSP).  For generic HMMs this attractor is a fractal subset of the simplex~\cite{jurgens2021entropy, crutchfield1994}.
+
+\subsection{The Probing Question}
+
+Shai et al.~\cite{shai2024transformers} showed that transformers trained on next-token prediction over HMM-generated data learn an internal representation of the belief state that is recoverable via a \emph{linear} map from the residual stream.  Concretely, if $h_t^{(\ell)} \in \mathbb{R}^{d}$ denotes the residual-stream activation at layer~$\ell$ and position~$t$, then there exists a matrix $W \in \mathbb{R}^{N \times d}$ and bias $b \in \mathbb{R}^N$ such that
+\begin{equation}
+  W h_t^{(\ell)} + b \;\approx\; \alpha_t.
+\end{equation}
+The quality of this approximation, measured by $R^2$, quantifies how faithfully the transformer encodes the belief state at each layer.
+
+\subsection{Why ``Fractal Directions''?}
+
+Because the belief simplex is $(N{-}1)$-dimensional (2D for Mess3's 3~states), only a low-dimensional subspace of the $d$-dimensional residual stream is needed to encode $\alpha_t$.  The principal components of this subspace are called the \textbf{fractal directions}: projecting activations onto them recovers the fractal geometry of the MSP.  Ablating these directions destroys predictive performance far more than ablating the orthogonal complement (Section~5 of the time-reversal report), confirming their causal role.
+
+%----------------------------------------------------------------------
+\section{What the Code Computes}\label{sec:pipeline}
+%----------------------------------------------------------------------
+
+The pipeline in \file{old\_src/pca.py} has four stages:
+
+\begin{enumerate}
+  \item \textbf{Model loading} (\code{load\_model\_from\_weights}): Deserialise a trained transformer (either \code{HookedTransformerModel} via TransformerLens or \code{MaskedHeadTransformerModel} via NNsight) from a checkpoint directory containing \file{config.yaml} and a \file{.pt} weights file.
+
+  \item \textbf{Activation extraction} (\code{extract\_residual\_stream}): Run a forward pass on a batch of observation sequences and record the post-layer residual-stream activations.  Returns a tensor of shape \code{(num\_layers, batch, seq\_len, d\_model)}.
+
+  \item \textbf{Linear probing} (\code{learn\_affine\_mapping}, \code{pca\_layer\_wise\_actvs}, \code{pca\_concat\_actvs}): Fit ordinary least-squares regression from activations to ground-truth belief states.  Two modes:
+  \begin{itemize}
+    \item \emph{Layer-wise}: One regression per layer, answering ``at which layer does the belief representation crystallise?''
+    \item \emph{Concatenated}: Stack all layers into a single feature vector, answering ``is belief information distributed across layers?'' (relevant for RRXOR, where a single layer's $R^2$ can be as low as 0.31).
+  \end{itemize}
+
+  \item \textbf{Visualisation} (\code{barycentric\_to\_cartesian\_2d}, \code{plot\_in\_simplex}): Project 3D barycentric coordinates to an equilateral triangle for plotting.
+\end{enumerate}
+
+The entry point \code{run\_pca\_and\_save\_results} orchestrates all four stages over one or more model directories, with optional MPI parallelism.
+
+%----------------------------------------------------------------------
+\section{Conceptual Critique}
+%----------------------------------------------------------------------
+
+\subsection{The Name ``PCA'' Is a Misnomer}\label{sec:misnomer}
+
+Despite the filename, \textbf{no PCA is performed on the activations}.  The code fits a linear regression (ordinary least squares via \code{sklearn.LinearRegression}) from activations to belief states.  PCA and linear regression are related---PCA finds the directions of maximum variance in the \emph{input} space, while regression finds the directions that maximally predict a \emph{target}---but they are distinct operations.  The code should be renamed (e.g., \file{linear\_probe.py} or \file{belief\_probe.py}) to avoid confusion.
+
+The \code{sklearn.decomposition.PCA} import on line~12 is in fact \emph{unused}.
+
+\subsection{Appropriateness of a Linear Probe}
+
+The choice of a linear (affine) probe is well motivated: it tests whether the belief state is linearly decodable from the residual stream.  A nonlinear probe (e.g., an MLP) would achieve higher $R^2$ but would not distinguish ``the information is linearly accessible'' from ``the information exists somewhere in the activations and can be extracted with sufficient computation.''  The linear probe is the standard tool in the mechanistic-interpretability literature for this reason~\cite{shai2024transformers, alain2016understanding}.
+
+One subtlety: the probe includes a bias term ($b$ in the affine map), which is important because belief states are constrained to the simplex ($\sum_i \alpha_i = 1$) while activations are not.  The bias absorbs the mean of the belief distribution.
+
+\subsection{Last-Position vs.\ All-Position Analysis}
+
+The \code{use\_last\_pos} flag (default \code{True}) restricts the analysis to the final sequence position.  This is the natural choice for autoregressive models: the last-position activation has seen the full context and should encode the most refined belief state.  When \code{use\_last\_pos=False}, the code reshapes all positions into a single regression, mixing different context lengths.  This is a weaker test---short-context positions will have diffuse beliefs (close to the stationary distribution) and inflate $R^2$ by providing ``easy'' data points near the simplex centre.
+
+\subsection{Metric Interpretation}
+
+Three metrics are reported:
+\begin{itemize}
+  \item \textbf{MSE}: Mean squared error between predicted and true belief states, averaged over all simplex dimensions and data points.
+  \item \textbf{$R^2$}: Coefficient of determination.  Values above 0.99 indicate near-perfect linear decodability.
+  \item \textbf{Baseline MSE}: The MSE achieved by predicting the mean belief state for all inputs.  The ratio $\text{MSE}/\text{Baseline MSE} = 1 - R^2$ relates the three metrics.
+\end{itemize}
+
+Reporting all three is mildly redundant (any two determine the third) but provides useful sanity checks.
+
+\subsection{Missing: Statistical Rigour}
+
+The code does not perform train/test splitting of the probing data.  All $10^5$ data points are used for both fitting and evaluation.  With $d = 8$ (or even $d = 32$ for concatenated features) and $10^5$ samples, overfitting is unlikely in practice, but a held-out split would strengthen the claims.  More importantly, no confidence intervals or significance tests are reported for $R^2$ differences across layers.
+
+%----------------------------------------------------------------------
+\section{Engineering Critique}
+%----------------------------------------------------------------------
+
+\subsection{Strengths}
+
+\begin{itemize}
+  \item \textbf{MPI parallelism.}  The \code{run\_pca\_and\_save\_results} function distributes model directories across MPI ranks with round-robin GPU assignment.  Rank~0 generates belief states once and broadcasts them, avoiding redundant computation.  Error handling is robust: each directory is processed in a try/except block with per-rank summaries.
+
+  \item \textbf{Automatic device selection.}  The \code{get\_device()} helper correctly prioritises CUDA $\to$ MPS $\to$ CPU.
+
+  \item \textbf{Skip-if-done logic.}  Already-processed directories (containing \file{pca\_data.npz}) are skipped, enabling restartable batch runs.
+
+  \item \textbf{Comprehensive serialisation.}  Regressors (pickle), activations/predictions (compressed npz), and metrics (CSV) are all saved, enabling downstream analysis without re-running the pipeline.
+\end{itemize}
+
+\subsection{Issues}
+
+\begin{enumerate}
+  \item \textbf{Unused imports.}  \code{PCA} (line~12), \code{math} (line~14), \code{F} (line~7), \code{transformer\_lens} (line~22), and \code{NNsight} (line~21) are imported but never used in the module's own functions.  The \code{NNsight} import triggers a side effect (registering the \code{.trace()} context manager on \code{nn.Module}), which is required for the \code{MaskedHeadTransformerModel} branch of \code{extract\_residual\_stream}.  This implicit dependency should be documented.
+
+  \item \textbf{Model lookup via \code{globals()}.}  Line~54 resolves the model class by name from \code{globals()}, which depends on the specific imports at the top of the file (\code{HookedTransformerModel}, \code{MaskedHeadTransformerModel}).  This is fragile: adding a new model class requires editing the import block.  A registry pattern (as in \code{src/utils.py}'s \code{PROCESS\_REGISTRY}) would be more maintainable.
+
+  \item \textbf{Hard-coded HMM process.}  The entry point (line~518 onward) hard-codes \code{Mess3Proc()} and the filename \code{final\_model\_mess3.pt}.  The HMM process should be read from the model's \file{config.yaml} to support other processes (Z1R, RRXOR, CylinderGraphHMM) without code changes.
+
+  \item \textbf{Memory scaling.}  With \code{batch\_size=100\,000} and \code{seq\_length=16}, the belief-state tensor is shape $(10^5, 16, N)$ and the activation tensor is $(L, 10^5, 16, d)$.  For a 4-layer model with $d = 8$, this is only $\sim$50\,MB.  But for the CylinderGraphHMM with $N = 18$, $d = 64$, $L = 4$, the activation tensor alone is $\sim$3.3\,GB.  The code loads everything into memory simultaneously.  For larger models, a streaming or chunked approach would be needed.
+
+  \item \textbf{Belief states on wrong device.}  Line~611 creates \code{t.tensor(truncated\_beliefs, device=device)}, but \code{truncated\_beliefs} is a NumPy array and the belief states are only used by \code{learn\_affine\_mapping}, which immediately calls \code{.cpu().numpy()}.  The GPU round-trip is unnecessary.
+
+  \item \textbf{Redundant computation in \code{pca\_layer\_wise\_actvs}.}  Lines~255--263 recompute the per-layer activation slicing that was already done in the main loop (lines~223--231), solely to save the data.  This duplicates the slicing logic and risks inconsistency.
+
+  \item \textbf{No \code{run\_id} in layer-wise output filenames.}  The layer-wise functions save to fixed names (\file{pca\_data.npz}, \file{pca\_metrics.csv}, \file{regressors.pkl}) without incorporating a run identifier, unlike the concatenated variant which uses \code{run\_id} prefixes.  This makes it impossible to store multiple analyses in the same directory.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\section{Summary of Recommendations}
+%----------------------------------------------------------------------
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{l l p{7cm}}
+    \toprule
+    Category & Priority & Recommendation \\
+    \midrule
+    Conceptual & High & Rename the module from \file{pca.py} to \file{linear\_probe.py}; the code performs linear regression, not PCA (Section~\ref{sec:misnomer}). \\
+    Conceptual & Medium & Add a train/test split to the probing evaluation to guard against overfitting and enable confidence intervals. \\
+    Conceptual & Low & Consider a nonlinear probe as a comparison baseline, to quantify how much information is linearly vs.\ nonlinearly accessible. \\
+    \midrule
+    Engineering & High & Read the HMM process from \file{config.yaml} instead of hard-coding \code{Mess3Proc}. \\
+    Engineering & Medium & Replace \code{globals()} model lookup with a registry. \\
+    Engineering & Medium & Remove or document the unused imports; make the NNsight side-effect explicit. \\
+    Engineering & Low & Eliminate the GPU round-trip for belief states (line~611). \\
+    Engineering & Low & Unify the \code{run\_id} naming convention between layer-wise and concatenated modes. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Summary of recommendations, ordered by priority within each category.}
+  \label{tab:recommendations}
+\end{table}
+
+%----------------------------------------------------------------------
+\section*{References}
+%----------------------------------------------------------------------
+
+\begingroup
+\renewcommand{\section}[2]{}
+\begin{thebibliography}{9}
+
+\bibitem{shai2024transformers}
+A.~Shai, S.~Marzen, L.~Teixeira, A.~Oldenziel, and P.~Riechers,
+``Transformers represent belief state geometry in their residual stream,''
+in \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2024.
+\texttt{arXiv:2405.15943}.
+
+\bibitem{shai2025constrained}
+A.~Shai, P.~Riechers, et al.,
+``Constrained belief updates explain geometric structures in transformer representations,''
+in \emph{International Conference on Machine Learning (ICML)}, 2025.
+\texttt{arXiv:2502.01954}.
+
+\bibitem{jurgens2021entropy}
+P.~Jurgens and J.~P.~Crutchfield,
+``Shannon entropy rate of hidden Markov processes,''
+\emph{Journal of Statistical Physics}, vol.~183, 2021.
+
+\bibitem{crutchfield1994}
+J.~P.~Crutchfield and K.~Young,
+``Inferring statistical complexity,''
+\emph{Physical Review Letters}, vol.~63, pp.~105--108, 1989.
+
+\bibitem{alain2016understanding}
+G.~Alain and Y.~Bengio,
+``Understanding intermediate layers using linear classifier probes,''
+in \emph{ICLR Workshop}, 2017.
+
+\bibitem{aggarwal2025bayesian}
+N.~Aggarwal, S.~R.~Dalal, and V.~Misra,
+``The Bayesian geometry of transformer attention,''
+\texttt{arXiv:2512.22471}, 2025.
+
+\end{thebibliography}
+\endgroup
+
+\end{document}

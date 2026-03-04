@@ -1,0 +1,16 @@
+\contentsline {section}{\numberline {1}Purpose of This Document}{1}{section.1}%
+\contentsline {section}{\numberline {2}Conceptual Background}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Belief States as an Iterated Function System}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}The Probing Question}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Why ``Fractal Directions''?}{2}{subsection.2.3}%
+\contentsline {section}{\numberline {3}What the Code Computes}{2}{section.3}%
+\contentsline {section}{\numberline {4}Conceptual Critique}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}The Name ``PCA'' Is a Misnomer}{3}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Appropriateness of a Linear Probe}{3}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Last-Position vs.\ All-Position Analysis}{3}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Metric Interpretation}{3}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Missing: Statistical Rigour}{4}{subsection.4.5}%
+\contentsline {section}{\numberline {5}Engineering Critique}{4}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Strengths}{4}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Issues}{4}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Summary of Recommendations}{5}{section.6}%

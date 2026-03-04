@@ -15,18 +15,18 @@
 \contentsline {paragraph}{Bayes-optimal gap.}{5}{section*.6}%
 \contentsline {section}{\numberline {6}Results}{5}{section.6}%
 \contentsline {subsection}{\numberline {6.1}H3: Is the Reversed Direction Harder?}{5}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}H4: Architecture Dependence of the Gap}{6}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Architectural Breakdown}{6}{subsection.6.3}%
-\contentsline {subsection}{\numberline {6.4}Interpretation}{7}{subsection.6.4}%
-\contentsline {section}{\numberline {7}Activation Ablation Experiments}{7}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Overview}{7}{subsection.7.1}%
+\contentsline {subsection}{\numberline {6.2}H4: Architecture Dependence of the Gap}{5}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Architectural Breakdown}{7}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Interpretation}{8}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Activation Ablation Experiments}{8}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Overview}{8}{subsection.7.1}%
 \contentsline {subsection}{\numberline {7.2}Direction Identification}{8}{subsection.7.2}%
 \contentsline {subsection}{\numberline {7.3}Ablation Protocol}{8}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Results}{8}{subsection.7.4}%
-\contentsline {section}{\numberline {8}Embedding Geometry}{8}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{8}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Norm Structure}{9}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Relationship to PMI Embeddings}{9}{subsection.8.3}%
-\contentsline {section}{\numberline {9}Discussion and Open Questions}{9}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Summary of Findings}{9}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Open Questions}{10}{subsection.9.2}%
+\contentsline {subsection}{\numberline {7.4}Results}{9}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Embedding Geometry}{9}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{9}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Norm Structure}{11}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Relationship to PMI Embeddings}{11}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Discussion and Open Questions}{11}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Summary of Findings}{11}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Open Questions}{13}{subsection.9.2}%
