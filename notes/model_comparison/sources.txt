@@ -1,0 +1,9 @@
+https://ieeexplore.ieee.org/document/18626
+https://web.stanford.edu/~jurafsky/slp3/A.pdf
+https://en.wikipedia.org/wiki/Forward_algorithm
+https://en.wikipedia.org/wiki/Forward%E2%80%93backward_algorithm
+http://www.cs.columbia.edu/~mcollins/fb.pdf
+https://ocw.mit.edu/courses/16-410-principles-of-autonomy-and-decision-making-fall-2010/2ebbc8cc4bc9adc3418a572a17331f63_MIT16_410F10_lec21.pdf
+https://www.cs.cmu.edu/~02710/Lectures/HMMs.pdf
+https://ethw.org/First-Hand:The_Hidden_Markov_Model
+https://www.semanticscholar.org/paper/History-and-Theoretical-Basics-of-Hidden-Markov-Kouemou/c67bdd864457d385d28e9a9364660da83f1beff9

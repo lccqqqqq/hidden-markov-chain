@@ -16,7 +16,7 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\file}[1]{\texttt{#1}}
 
-\title{Code Review: PCA Analysis of Belief-State Geometry\\in Transformer Residual Streams}
+\title{Code Review and Refactoring: Linear Probing of Belief-State Geometry\\in Transformer Residual Streams}
 \author{C.~L.}
 \date{\today}
 
@@ -147,27 +147,103 @@ The code does not perform train/test splitting of the probing data.  All $10^5$ 
 \end{enumerate}
 
 %----------------------------------------------------------------------
+\section{Refactored Implementation}
+%----------------------------------------------------------------------
+
+The monolithic \file{old\_src/pca.py} has been decomposed into five modules under \file{src/}, each with a single responsibility and a corresponding test suite under \file{tests/}.
+
+\subsection{Architecture}
+
+\begin{description}
+  \item[\file{src/linear\_probe.py}] Core probing logic (pure NumPy/sklearn, no I/O, no Torch).  Exposes a \code{ProbeResult} dataclass and three entry points: \code{fit\_probe\_with\_split}, \code{probe\_layer\_wise}, and \code{probe\_concatenated}.  All functions take a \code{test\_fraction} and \code{seed} argument to produce reproducible train/test splits.
+
+  \item[\file{src/activation\_extraction.py}] Model loading via \code{initialize\_transformer\_from\_yaml} (from \file{src/utils.py}) and residual-stream extraction via TransformerLens's \code{run\_with\_cache}.  Supports chunked inference (\code{batch\_size} parameter) for large datasets.  Auto-detects the best checkpoint file (priority: \file{best\_model.pt} $>$ \file{latest.pt} $>$ highest-epoch \file{checkpoint\_epoch\_*.pt}).  The HMM process is read from \file{config.yaml} via \code{create\_process\_from\_dict}, eliminating the hard-coded \code{Mess3Proc} dependency.
+
+  \item[\file{src/visualisation.py}] Simplex plotting (matplotlib).  Ported from the original code with added \code{ax} parameter for subplot support and configurable \code{vertex\_labels}.
+
+  \item[\file{src/probe\_io.py}] Serialisation: \code{save\_probe\_results} writes a metrics CSV (with train and test columns), pickled regressors, and optionally compressed NPZ data.  All filenames use a consistent \code{run\_id} prefix.  \code{load\_probe\_results} is the inverse.
+
+  \item[\file{src/run\_linear\_probe.py}] CLI entry point.  Supports single-model (\code{-{}-model-dir}) and batch (\code{-{}-model-dirs}) modes with optional MPI parallelism.  In batch mode, Rank~0 generates shared sequences and belief states, then broadcasts to all ranks---the same pattern as the original code.
+\end{description}
+
+\subsection{Data Flow}
+
+The pipeline proceeds as follows:
+\begin{enumerate}
+  \item Read \file{config.yaml} from the model directory to determine the HMM process and model architecture.
+  \item Generate observation sequences and compute ground-truth belief states via \code{HMM.mixed\_state\_presentation}.
+  \item Load the trained \code{HookedTransformer} and extract post-layer residual-stream activations with \code{extract\_residual\_stream}.
+  \item Reshape activations and beliefs via \code{prepare\_probe\_data} (last-position or all-position).
+  \item Fit linear probes via \code{probe\_layer\_wise} and/or \code{probe\_concatenated}, each with a proper train/test split.
+  \item Save results via \code{save\_probe\_results}.
+\end{enumerate}
+
+\subsection{Output Format}
+
+Running the CLI produces a \file{probe\_results/} directory inside the model directory (or at a custom \code{-{}-output-dir}) with files:
+\begin{itemize}
+  \item \file{layerwise\_metrics.csv} --- one row per layer with columns: \code{layer}, \code{train\_mse}, \code{test\_mse}, \code{train\_r2}, \code{test\_r2}, \code{baseline\_mse}.
+  \item \file{concat\_metrics.csv} --- single row for the concatenated probe.
+  \item \file{*\_regressors.pkl} --- pickled \code{LinearRegression} objects.
+  \item \file{*\_data.npz} --- (optional, with \code{-{}-save-data}) train/test predictions.
+\end{itemize}
+
+%----------------------------------------------------------------------
+\section{Usage Guide}
+%----------------------------------------------------------------------
+
+\subsection{Single Model}
+
+\begin{verbatim}
+python src/run_linear_probe.py \
+    --model-dir models/cylinderhmm/20250301_run1/
+\end{verbatim}
+
+\subsection{Batch Processing}
+
+\begin{verbatim}
+python src/run_linear_probe.py \
+    --model-dirs models/cylinderhmm/*/
+\end{verbatim}
+
+\subsection{MPI Parallelism}
+
+\begin{verbatim}
+mpirun -n 4 python src/run_linear_probe.py \
+    --model-dirs models/cylinderhmm/*/ --use-mpi
+\end{verbatim}
+
+\subsection{Loading Results in a Notebook}
+
+\begin{verbatim}
+from probe_io import load_probe_results
+results = load_probe_results("models/.../probe_results",
+                             run_id="layerwise")
+print(results["metrics"])
+\end{verbatim}
+
+%----------------------------------------------------------------------
 \section{Summary of Recommendations}
 %----------------------------------------------------------------------
 
 \begin{table}[htbp]
   \centering
-  \begin{tabular}{l l p{7cm}}
+  \begin{tabular}{l l p{5.5cm} l}
     \toprule
-    Category & Priority & Recommendation \\
+    Category & Priority & Recommendation & Status \\
     \midrule
-    Conceptual & High & Rename the module from \file{pca.py} to \file{linear\_probe.py}; the code performs linear regression, not PCA (Section~\ref{sec:misnomer}). \\
-    Conceptual & Medium & Add a train/test split to the probing evaluation to guard against overfitting and enable confidence intervals. \\
-    Conceptual & Low & Consider a nonlinear probe as a comparison baseline, to quantify how much information is linearly vs.\ nonlinearly accessible. \\
+    Conceptual & High & Rename module from \file{pca.py} to \file{linear\_probe.py} (Section~\ref{sec:misnomer}). & \textbf{Resolved} \\
+    Conceptual & Medium & Add train/test split to probing evaluation. & \textbf{Resolved} \\
+    Conceptual & Low & Consider nonlinear probe as comparison baseline. & Open \\
     \midrule
-    Engineering & High & Read the HMM process from \file{config.yaml} instead of hard-coding \code{Mess3Proc}. \\
-    Engineering & Medium & Replace \code{globals()} model lookup with a registry. \\
-    Engineering & Medium & Remove or document the unused imports; make the NNsight side-effect explicit. \\
-    Engineering & Low & Eliminate the GPU round-trip for belief states (line~611). \\
-    Engineering & Low & Unify the \code{run\_id} naming convention between layer-wise and concatenated modes. \\
+    Engineering & High & Read HMM process from \file{config.yaml} instead of hard-coding \code{Mess3Proc}. & \textbf{Resolved} \\
+    Engineering & Medium & Replace \code{globals()} model lookup with registry. & \textbf{Resolved} \\
+    Engineering & Medium & Remove unused imports; drop NNsight dependency. & \textbf{Resolved} \\
+    Engineering & Low & Eliminate GPU round-trip for belief states. & \textbf{Resolved} \\
+    Engineering & Low & Unify \code{run\_id} naming convention. & \textbf{Resolved} \\
     \bottomrule
   \end{tabular}
-  \caption{Summary of recommendations, ordered by priority within each category.}
+  \caption{Summary of recommendations with resolution status after refactoring.}
   \label{tab:recommendations}
 \end{table}
 

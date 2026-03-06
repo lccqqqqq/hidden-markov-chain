@@ -1,0 +1,123 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\hfuzz=\maxdimen
+
+\title{Experiment Plan: Redundant Belief-State Copies\\in Transformer Residual Streams}
+\author{C.~L.}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+%----------------------------------------------------------------------
+\section{Motivation}
+%----------------------------------------------------------------------
+
+The ablation experiments (Section~5 of the time-reversal report) established two facts:
+\begin{enumerate}
+  \item Ablating the fractal directions causes a \emph{much} larger loss increase than ablating the orthogonal complement, confirming the causal role of the belief-state subspace.
+  \item Nevertheless, the performance drop from ablating the fractal directions is surprisingly small, especially for models with larger embedding dimensions $d$.  The model retains substantial predictive ability even after its ``primary'' belief-state representation has been zeroed out.
+\end{enumerate}
+
+This raises a natural question: \textbf{why does the model still perform well after the fractal subspace is removed?}  Two competing hypotheses:
+
+\begin{description}
+  \item[H1 (Redundant copies)] The model stores multiple, approximately independent copies of the belief state across different directions in the residual stream.  Removing the leading copy (the one found by the first linear probe) still leaves other copies intact.  Larger $d$ allows more copies, explaining the weaker ablation effect.
+
+  \item[H2 (Non-belief information)] The model also exploits features beyond the belief state---e.g., higher-order correlations, $n$-gram statistics, or positional patterns---that are not captured by the linear probe to belief states but still contribute to next-token prediction.
+\end{description}
+
+H1 is the simpler hypothesis and can be tested directly with existing infrastructure.  H2 would require a more involved analysis (e.g., nonlinear probes, or probing for alternative features).  We address H1 first.
+
+%----------------------------------------------------------------------
+\section{Proposed Experiment}
+%----------------------------------------------------------------------
+
+\subsection{Core Idea}
+
+If redundant copies exist, then projecting out the fractal subspace found by the first probe should \emph{not} destroy all belief-state information in the residual stream.  A second linear probe, fitted on the \emph{remnant} activations (the component orthogonal to the first probe's row space), should still achieve a non-trivial $R^2$.
+
+Concretely, let $W^{(1)} \in \mathbb{R}^{N \times d}$ be the weight matrix of the first linear probe (the regressor's \texttt{coef\_}).  Its row space defines the fractal subspace $\mathcal{F}_1 \subseteq \mathbb{R}^d$.  The orthogonal projector onto $\mathcal{F}_1^\perp$ is
+\begin{equation}
+  P_\perp = I - V_r V_r^\top,
+\end{equation}
+where $V_r \in \mathbb{R}^{d \times r}$ contains the first $r = \mathrm{rank}(W^{(1)})$ right singular vectors of $W^{(1)}$.  The remnant activation is $\tilde{h}_t = P_\perp h_t$.
+
+The experiment then fits a second linear probe: $W^{(2)} \tilde{h}_t + b^{(2)} \approx \alpha_t$.
+
+\subsection{Iterative Procedure}
+
+This can be iterated: project out the combined subspace of probes 1 and 2, fit probe 3, and so on.  At each step $k$:
+\begin{enumerate}
+  \item Let $\mathcal{F}_{1:k-1}$ be the union of all previously found fractal subspaces.
+  \item Compute $\tilde{h}_t^{(k)} = P_{\mathcal{F}_{1:k-1}^\perp}\, h_t$.
+  \item Fit a linear probe on $\tilde{h}_t^{(k)}$ and record $R^2_k$.
+  \item Stop when $R^2_k$ drops below a threshold (e.g., $R^2_k < 0.1$) or the remnant subspace is exhausted ($d - \sum_{j<k} r_j \leq 0$).
+\end{enumerate}
+
+The sequence $R^2_1, R^2_2, \ldots$ directly answers H1: if it decays slowly, there are many copies; if $R^2_2 \approx 0$, there is essentially one copy.
+
+\subsection{Experimental Matrix}
+
+The experiment should be run across models with varying $d$ to test the prediction that larger $d$ supports more redundant copies:
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{l l}
+    \toprule
+    Variable & Values \\
+    \midrule
+    HMM process & Mess3 (3 states, 3 tokens) \\
+    Model pool & Existing trained models from the architecture sweep \\
+    Embedding dims & All available $d \in \{4, 8, 16, 32, \ldots\}$ \\
+    Layers probed & All layers (layer-wise analysis) \\
+    Position & Last position only (\texttt{use\_last\_pos=True}) \\
+    Max iterations & Until $R^2 < 0.1$ or subspace exhausted \\
+    \bottomrule
+  \end{tabular}
+  \caption{Experimental parameters.}
+\end{table}
+
+\subsection{Deliverables}
+
+\begin{enumerate}
+  \item \textbf{$R^2$ decay curves}: $R^2_k$ vs.\ iteration $k$, one curve per model (or per $d$), at the best-performing layer.
+  \item \textbf{Total explained dimensions}: The total number of directions $\sum_k r_k$ needed before belief-state information is exhausted, as a function of $d$.  If H1 holds, this should scale with $d$.
+  \item \textbf{Simplex visualisations}: Plot the predicted belief states from probe $k$ on the simplex, to see whether later copies recover the same fractal geometry or a degraded version.
+  \item \textbf{Comparison with ablation}: After removing all $K$ identified fractal subspaces, repeat the ablation experiment.  If H1 is the full story, the model should now show a much larger performance drop.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\section{Relation to H2}
+%----------------------------------------------------------------------
+
+If the iterative probing exhausts quickly ($R^2_2 \approx 0$) but the ablation deficit remains small, this would be evidence \emph{against} H1 and \emph{for} H2.  In that case, the follow-up would be to characterise what non-belief features the model uses.  Possible directions:
+\begin{itemize}
+  \item Nonlinear probes (MLP) on the remnant activations to test whether belief-state information is stored nonlinearly.
+  \item Probing for $n$-gram statistics or positional features in the orthogonal complement.
+  \item Logit lens analysis: project the remnant activations through the unembedding matrix to see what token predictions they support.
+\end{itemize}
+
+These are out of scope for the current experiment but would be natural next steps.
+
+%----------------------------------------------------------------------
+\section{Implementation Notes}
+%----------------------------------------------------------------------
+
+The experiment requires no changes to the existing probing code (\texttt{old\_src/pca.py}).  The pipeline is:
+\begin{enumerate}
+  \item Extract residual-stream activations using \texttt{extract\_residual\_stream} (already implemented).
+  \item Fit the first probe using \texttt{learn\_affine\_mapping} (already implemented).
+  \item Compute the remnant: $\tilde{h} = h - V_r V_r^\top h$ using the SVD of \texttt{regressor.coef\_} (the SVD is already computed in \texttt{get\_directions} in \texttt{old\_src/ablation.py}).
+  \item Call \texttt{learn\_affine\_mapping} again on the remnant.
+  \item Iterate.
+\end{enumerate}
+
+The only new code is a short loop that alternates projection and probing.  This can be implemented in a notebook or a lightweight script.
+
+\end{document}
