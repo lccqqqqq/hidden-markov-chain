@@ -85,9 +85,15 @@ def train(config_path: str = "base_config.yaml"):
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, pin_memory=(device=='cuda'))
 
     steps_per_epoch = len(train_loader)
-    total_steps = num_epochs * steps_per_epoch
+    max_steps = tcfg.get("max_steps", None)
+    total_steps = max_steps if max_steps else num_epochs * steps_per_epoch
+    step_checkpoint_interval = tcfg.get("step_checkpoint_interval", None)
     print(f"Dataset: {len(train_data)} train sequences, {len(test_data)} test sequences")
     print(f"Steps per epoch: {steps_per_epoch}, Total steps: {total_steps}")
+    if max_steps:
+        print(f"Early stopping after {max_steps} steps")
+    if step_checkpoint_interval:
+        print(f"Step checkpoints every {step_checkpoint_interval} steps")
 
     # Scheduler setup (configurable; defaults to cosine for backward compatibility)
     sched_cfg = tcfg.get("scheduler", {"type": "cosine"})
@@ -197,7 +203,22 @@ def train(config_path: str = "base_config.yaml"):
                     "epoch": epoch,
                 })
 
-        avg_epoch_loss = epoch_loss / len(train_loader)
+            # Step-level checkpointing (optional)
+            if step_checkpoint_interval and global_step % step_checkpoint_interval == 0:
+                step_ckpt = {
+                    'epoch': epoch,
+                    'global_step': global_step,
+                    'model_state_dict': model.state_dict(),
+                    'train_loss': loss.item(),
+                }
+                t.save(step_ckpt, run_dir / f"checkpoint_step_{global_step}.pt")
+
+            # Early stopping by max_steps
+            if max_steps and global_step >= max_steps:
+                print(f"Reached max_steps={max_steps}, stopping training.")
+                break
+
+        avg_epoch_loss = epoch_loss / (batch_idx + 1)
         print(f"Epoch {epoch+1} complete: Avg Train Loss = {avg_epoch_loss:.6f}")
         wandb.log({"epoch_train_loss": avg_epoch_loss, "epoch": epoch})
 
@@ -213,6 +234,9 @@ def train(config_path: str = "base_config.yaml"):
         t.save(checkpoint, run_dir / f"checkpoint_epoch_{epoch+1}.pt")
         t.save(checkpoint, run_dir / "latest.pt")
         print(f"  Saved checkpoint: checkpoint_epoch_{epoch+1}.pt")
+
+        if max_steps and global_step >= max_steps:
+            break
 
     # Update metadata with final results
     metadata["best_val_loss"] = best_val_loss

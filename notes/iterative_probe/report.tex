@@ -41,7 +41,9 @@
 \label{sec:intro}
 %----------------------------------------------------------------------
 
-Previous probing experiments on transformers trained on Hidden Markov Model (HMM) data have established that the residual stream encodes a high-fidelity linear image of the Bayesian belief state (the posterior distribution over hidden states given the observed token history).  A natural follow-up question is: \emph{how many independent copies} of this belief state does the network store, and \emph{which copies matter} for the model's actual next-token predictions?
+Previous probing experiments on transformers trained on Hidden Markov Model (HMM) data have established that the residual stream encodes a high-fidelity linear image of the Bayesian belief state (the posterior distribution over hidden states given the observed token history).  However, initial ablation experiments---in which the three SVD directions of a single linear probe's coefficient matrix were mean-ablated one at a time---produced KL divergences only marginally larger than those from ablating random directions.  This raised the possibility that the linearly decodable belief state is not the representation the model actually \emph{uses} for prediction, or that the causal signal is distributed across more directions than the three extracted from a single probe.
+
+These observations motivate two sharper questions: \emph{how many independent copies} of the belief state does the network store in its residual stream, and \emph{which copies matter} for the model's actual next-token predictions?
 
 These questions bear on two distinct aspects of the representation:
 
@@ -57,7 +59,7 @@ This report describes the \emph{iterative probing} algorithm and its application
 \label{sec:model}
 %----------------------------------------------------------------------
 
-The Mess3 process (\code{src/hmm.py}, class \code{Mess3Proc}) is a 3-state, 3-token HMM.  The model is a 4-layer HookedTransformer with $d_{\text{model}} = 64$, a single attention head ($d_{\text{head}} = 64$), MLP width 256, ReLU activations, and LayerNorm.  It was trained on 10M tokens with context length $n_{\text{ctx}} = 10$.  The model directory is:
+The Mess3 process (\code{src/hmm.py}, class \code{Mess3Proc}) is a 3-state, 3-token HMM.  The model is a 4-layer HookedTransformer with $d_{\text{model}} = 64$, a single attention head ($d_{\text{head}} = 64$), MLP width 256, ReLU activations, and LayerNorm.  It was trained on 10M tokens with context length $n_{\text{ctx}} = 10$.  The geometric structure of belief-state representations in transformers trained on HMMs has been studied by Shai et al.~\cite{shai2024transformers}.  The model directory is:
 \begin{center}
 \code{models/mess3/20260306\_150920\_L4\_d64\_H1\_full\_LN/}
 \end{center}
@@ -115,60 +117,79 @@ We additionally ablate each individual SVD direction within a subspace and the c
 \label{sec:results}
 %----------------------------------------------------------------------
 
-The experiment was run with 10{,}000 sequences of length 10, using the last token position.  The maximum number of iterations was set to 10.
+The experiment was run with 10{,}000 sequences of length 10, using the last token position.  The algorithm was run for all 32 possible iterations (exhausting the full 64-dimensional space with rank-2 subspaces), with no $R^2$ stopping threshold.
+
+\paragraph{Note on position selection.}
+We probe only the last sequence position, which gives 10{,}000 samples.  Using all positions would increase the sample count 10-fold to 100{,}000, potentially improving probe stability and revealing subtler structure at early positions where the belief state has not yet converged.  However, last-position probing is sufficient for the present analysis and avoids conflating position-dependent effects (e.g., the belief state is less well-determined at early positions) with the redundancy structure we aim to measure.
 
 \subsection{Iterative Probing: Many Redundant Copies}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.7\textwidth]{r2_vs_iteration}
-  \caption{Test $R^2$ as a function of iteration for each layer.  Even after 10 rounds of projection, $R^2$ remains above 0.98 at all layers.}
+  \caption{Test $R^2$ as a function of iteration for each layer across all 32 iterations.  $R^2$ remains above 0.95 through $\sim$25 iterations before collapsing as the residual stream is exhausted.}
   \label{fig:r2}
 \end{figure}
 
-Figure~\ref{fig:r2} shows the central finding: \textbf{all four layers sustain $R^2 > 0.98$ across all 10 iterations}.  The algorithm never triggers the $R^2 < 0.05$ stopping criterion.  Each iteration extracts a rank-2 subspace (consistent with the 2D simplex geometry of the Mess3 belief state), so 10 iterations consume $10 \times 2 = 20$ of the 64 available dimensions.
+Figure~\ref{fig:r2} shows the full trajectory of $R^2$ across all 32 iterations.  Each iteration extracts a rank-2 subspace (consistent with the 2D simplex geometry of the Mess3 belief state), so 32 iterations exhaust all $32 \times 2 = 64$ dimensions of the residual stream.
 
-This means the belief state can be linearly decoded from at least 10 mutually orthogonal 2D subspaces within each layer's residual stream.  The $R^2$ drop from iteration 0 to iteration 9 is modest: 0.0045 at layer 0, increasing to 0.013 at layer 3.
+The $R^2$ curve reveals three distinct regimes:
+\begin{enumerate}
+  \item \textbf{Plateau} (iterations 0--20, 0--40 dims): $R^2$ remains above 0.93 at all layers, declining only gradually.  The belief state is linearly decodable from at least 20 mutually orthogonal 2D subspaces.
+  \item \textbf{Transition} (iterations 20--28, 40--56 dims): $R^2$ begins to fall more steeply, particularly at later layers.  By iteration 27 (54 dims removed), layer 3 drops to $R^2 \approx 0.69$.
+  \item \textbf{Collapse} (iterations 28--31, 56--64 dims): $R^2$ drops sharply as the remaining dimensions are insufficient to represent the belief state.  The final iteration yields $R^2 \approx 0.19$--$0.24$, consistent with near-chance prediction from 2 remaining dimensions.
+\end{enumerate}
+
+The degradation is not uniform across layers.  Layer 0 retains the highest $R^2$ longest (0.93 at iteration 28), while layer 3 degrades fastest (0.62 at iteration 28).  This suggests that the belief-state signal is spread more uniformly across dimensions at layer 0, while at later layers it is more concentrated in a smaller subspace.
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.7\textwidth]{mse_vs_dims}
-  \caption{Test MSE increases approximately linearly with the number of dimensions projected out, but remains small relative to the target variance.}
+  \caption{Test MSE vs.\ the number of dimensions projected out.  MSE grows slowly through $\sim$40 dims, then accelerates as the remaining subspace can no longer support the belief state.}
   \label{fig:mse}
 \end{figure}
 
-Figure~\ref{fig:mse} shows the corresponding MSE growth.  Later layers start with lower MSE (layer 3 begins at $1.2 \times 10^{-4}$, vs.\ $4.3 \times 10^{-4}$ for layer 0), reflecting a more precise belief-state encoding deeper in the network.  The MSE growth is approximately linear in the number of removed dimensions, suggesting that the redundant copies contribute roughly equally to probe accuracy.
+Figure~\ref{fig:mse} shows the corresponding MSE growth.  Later layers start with lower MSE (layer 3 begins at $1.3 \times 10^{-4}$, vs.\ $4.4 \times 10^{-4}$ for layer 0), reflecting a more precise belief-state encoding deeper in the network.  The MSE growth is approximately linear through the first $\sim$40 dimensions removed, suggesting that the redundant copies contribute roughly equally to probe accuracy in this regime.  Beyond 40 dimensions, the MSE curve steepens superlinearly, and by 64 dimensions (all projected out) the MSE reaches 0.13--0.16, comparable to predicting the marginal mean.
 
 \subsection{Counterfactual Importance: A Strong Hierarchy}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.85\textwidth]{kl_per_iteration}
-  \caption{Mean KL divergence from ablating each iteration's subspace, broken down by layer.  Note the log scale.  Iteration 0 at layer 3 dominates.}
+  \caption{Mean KL divergence from ablating each iteration's subspace, broken down by layer.  Note the log scale.  Iteration 0 at layer 3 dominates by an order of magnitude.}
   \label{fig:kl-iter}
 \end{figure}
 
-Figure~\ref{fig:kl-iter} reveals a strikingly different picture from the probing results.  While all 10 subspaces are equally \emph{decodable}, they are far from equally \emph{important}:
+Figure~\ref{fig:kl-iter} reveals a strikingly different picture from the probing results.  While all 32 subspaces at each layer are \emph{decodable} (with $R^2 > 0.19$ even at the final iteration), they are far from equally \emph{important}:
 
 \begin{itemize}
-  \item \textbf{Layer 3, iteration 0} produces the largest KL shift by a wide margin: $\text{KL} = 0.039 \pm 0.027$.  The second iteration at layer 3 drops by nearly 10$\times$ to $\text{KL} = 0.004$.
-  \item \textbf{Layer 0} subspaces are almost entirely causally inert: even the cumulative ablation of all 20 dimensions yields KL $= 0.003$.  This suggests that the belief-state information in the early residual stream, while decodable, is not used by the model for prediction at the output.
+  \item \textbf{Layer 3, iteration 0} produces the largest KL shift by a wide margin: $\text{KL} = 0.040 \pm 0.027$.  The second iteration at layer 3 drops by $12\times$ to $\text{KL} = 0.003$.  Subsequent iterations fluctuate around $10^{-4}$--$10^{-3}$, with no systematic pattern.
+  \item \textbf{Layer 2} shows a similar but weaker pattern: iteration 0 gives $\text{KL} = 0.009$, iteration 1 gives 0.002, then the signal drops to $\sim 10^{-4}$.
+  \item \textbf{Layer 0} subspaces are almost entirely causally inert: individual iterations give KL $\sim 10^{-5}$--$10^{-4}$, though the later iterations (25--31) show slightly elevated KL ($\sim 10^{-3}$), likely because ablating the last few dimensions begins to disrupt the residual stream's overall structure regardless of belief-state content.
   \item The causal importance follows a clear \textbf{layer hierarchy}: layer 3 $\gg$ layer 2 $>$ layer 1 $\gg$ layer 0.
 \end{itemize}
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.55\textwidth]{cumulative_kl}
-  \caption{KL divergence from ablating the cumulative 20-dimensional subspace at each layer.}
-  \label{fig:kl-cum}
+  \includegraphics[width=0.75\textwidth]{cumulative_progressive_kl}
+  \caption{Cumulative-progressive ablation: KL divergence when subspaces $0, \ldots, k$ are jointly mean-ablated, as a function of the number of ablated dimensions $2(k{+}1)$.  Shaded regions show $\pm 1$ standard deviation across sequences.}
+  \label{fig:kl-prog}
 \end{figure}
 
-Figure~\ref{fig:kl-cum} confirms this hierarchy.  The cumulative KL grows roughly exponentially across layers: 0.003 (layer 0), 0.028 (layer 1), 0.058 (layer 2), 0.112 (layer 3).
+The per-iteration ablations (Figure~\ref{fig:kl-iter}) show each subspace's importance \emph{in isolation}.  A complementary question is: how does the causal impact accumulate as we ablate progressively more subspaces?  Figure~\ref{fig:kl-prog} answers this by jointly ablating subspaces $0$ through $k$ for each $k = 0, 1, \ldots, 31$, covering 2 to 64 dimensions.
+
+The cumulative-progressive curves reveal several features:
+\begin{itemize}
+  \item \textbf{Layer 3} rises steeply in the first few iterations (driven by the dominant iteration-0 subspace), then continues to grow steadily as additional subspaces contribute incrementally.  The final value (all 64 dims ablated) represents a complete erasure of all linear structure in the residual stream.
+  \item \textbf{Layer 0} remains nearly flat across all 64 dimensions, confirming that belief-state-correlated directions at layer 0 are collectively as well as individually inert.
+  \item At all layers, the curve is concave: the \emph{marginal} contribution of each additional subspace diminishes.  The first 2 dimensions account for the majority of the causal signal; subsequent subspaces add only small increments.
+  \item The layer ordering is preserved throughout the entire range: layer 3 $>$ layer 2 $>$ layer 1 $>$ layer 0 at every value of $k$.
+\end{itemize}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\textwidth]{combined_r2_kl}
-  \caption{Dual-axis plots showing decodability ($R^2$, green line) and causal importance (KL, red bars) together for each layer.  The contrast between flat $R^2$ and sharply decaying KL is most pronounced at layer 3.}
+  \caption{Dual-axis plots showing decodability ($R^2$, line) and causal importance of individual subspaces (KL, red bars) together for each layer.  The contrast between flat $R^2$ and sharply decaying KL is most pronounced at layer 3.}
   \label{fig:combined}
 \end{figure}
 
@@ -181,7 +202,7 @@ Figure~\ref{fig:combined} juxtaposes the two perspectives.  The flat $R^2$ curve
 
 \subsection{The Nature of Redundancy}
 
-The fact that the belief state is linearly readable from 10 independent subspaces spanning 20 out of 64 dimensions raises the question: is this deliberate or incidental?
+The fact that the belief state is linearly readable from over 25 independent subspaces spanning most of the 64-dimensional residual stream raises the question: is this deliberate or incidental?
 
 In a linear model, the output logits are computed as $\text{logit} = W_U \, a + b_U$, where $W_U \in \mathbb{R}^{3 \times 64}$ is the unembedding matrix and $a$ is the final residual stream.  The unembedding only ``reads'' the projection of $a$ onto the row space of $W_U$, which is at most 3-dimensional (for a 3-token vocabulary).  In a transformer with nonlinear MLP layers and attention, the situation is more complex: intermediate layers can route information through different subspaces, so multiple copies at an earlier layer may serve different downstream computations.
 
@@ -226,8 +247,15 @@ The CLI supports \code{-{}-skip-counterfactual} for running Phase 1 alone, and \
 \label{sec:conclusion}
 %----------------------------------------------------------------------
 
-Iterative probing reveals that a 4-layer, 64-dimensional transformer trained on the Mess3 HMM stores the 2D belief state in at least 10 mutually orthogonal subspaces at every layer, consuming 20 of 64 dimensions.  Despite this extensive redundancy, counterfactual ablation shows that only the first subspace at the final layer carries substantial causal weight for next-token prediction.
+Iterative probing reveals that a 4-layer, 64-dimensional transformer trained on the Mess3 HMM stores the 2D belief state across nearly all of its residual stream dimensions: $R^2$ remains above 0.93 through 25 successive projections (50 dims removed) before collapsing only as the space is exhausted.  Despite this pervasive redundancy, counterfactual ablation---both per-subspace and cumulative-progressive---shows that only the first subspace at the final layer carries substantial causal weight for next-token prediction.  The cumulative-progressive curves confirm that marginal causal importance diminishes rapidly: the first 2 dimensions at layer 3 account for the lion's share of the KL shift, with subsequent subspaces contributing only incrementally.
 
-This dissociation between decodability and causal importance has methodological implications: probe $R^2$ alone is insufficient for understanding which representations a network actually relies upon.  The iterative probing framework provides a structured way to quantify both the degree of redundancy and the causal hierarchy among redundant copies.
+This dissociation between decodability and causal importance has methodological implications: probe $R^2$ alone is insufficient for understanding which representations a network actually relies upon.  The iterative probing framework, augmented with cumulative-progressive ablation, provides a structured way to quantify both the degree of redundancy and the causal hierarchy among redundant copies.
+
+\begin{thebibliography}{1}
+\bibitem{shai2024transformers}
+S.~Shai, S.~Vardi, I.~Arad, and N.~Razin,
+``Transformers Represent Belief State Geometry in their Residual Stream,''
+\emph{arXiv preprint arXiv:2405.15943}, 2024.
+\end{thebibliography}
 
 \end{document}

@@ -83,21 +83,31 @@ ax.grid(True, alpha=0.3, axis="y")
 fig.tight_layout()
 plt.show()
 
-# %% Plot 4: Cumulative KL per layer (single bar chart)
-cum_df = cf_df[cf_df["ablation_type"] == "cumulative"].copy()
+# %% Plot 4: Cumulative-progressive KL vs dimensions ablated
+cprog = cf_df[cf_df["ablation_type"] == "cumulative_progressive"].copy()
 
-fig, ax = plt.subplots(figsize=(5, 4))
+if cprog.empty:
+    print("No cumulative_progressive data found — skipping Plot 4.")
+else:
+    fig, ax = plt.subplots(figsize=(7, 4))
 
-layers = cum_df["layer"].values
-ax.bar(layers, cum_df["mean_kl"].values, color=layer_colors,
-       yerr=cum_df["std_kl"].values, capsize=4)
-ax.set_xlabel("Layer")
-ax.set_ylabel("Mean KL(clean || ablated)")
-ax.set_title("Cumulative subspace ablation (all 20 dims)")
-ax.set_xticks(layers)
-ax.grid(True, alpha=0.3, axis="y")
-fig.tight_layout()
-plt.show()
+    for layer in range(n_layers):
+        ld = cprog[cprog["layer"] == layer].sort_values("iteration")
+        cum_dims = (ld["iteration"].values + 1) * 2
+        ax.plot(cum_dims, ld["mean_kl"].values, "o-",
+                color=layer_colors[layer], label=f"Layer {layer}", markersize=3)
+        ax.fill_between(cum_dims,
+                        ld["mean_kl"].values - ld["std_kl"].values,
+                        ld["mean_kl"].values + ld["std_kl"].values,
+                        color=layer_colors[layer], alpha=0.15)
+
+    ax.set_xlabel("Cumulative dimensions ablated")
+    ax.set_ylabel("KL(clean || ablated)")
+    ax.set_title("Cumulative-progressive ablation")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    plt.show()
 
 # %% Plot 5: Combined — R² (left) and KL (right) vs iteration, one panel per layer
 fig, axes = plt.subplots(1, n_layers, figsize=(14, 3.5), sharey=False)

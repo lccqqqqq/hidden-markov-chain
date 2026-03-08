@@ -1,0 +1,39 @@
+data_generator:
+  num_tokens: 10000000
+  process:
+    name: mess3
+    params: {}
+  save_dir: data/datasets/mess3
+model:
+  activation_function: relu
+  attn_only: false
+  d_head: 64
+  d_mlp: 256
+  n_ctx: 10
+  n_embd: 64
+  n_head: 1
+  n_layer: 4
+  normalization_type: LN
+  tie_word_embeddings: false
+  vocab_size: 3
+train:
+  batch_size: 64
+  log_interval_in_opt_steps: 100
+  num_epochs: 1
+  optimizer:
+    adam_beta1: 0.9
+    adam_beta2: 0.999
+    adam_epsilon: 1e-8
+    adam_weight_decay: 0.0
+    learning_rate: 2.0e-05
+  scheduler:
+    type: none
+  seq_length: 10
+  val_interval_in_opt_steps: 2000
+  step_checkpoint_interval: 2000
+wandb:
+  experiment: mess3_dense_checkpoints
+  project_name: hidden-markov-chain-src
+  tags:
+    - dense_checkpoints
+    - fractal_emergence

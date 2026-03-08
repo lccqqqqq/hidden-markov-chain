@@ -1,6 +1,6 @@
 #!/bin/bash -l
 echo =========================================================   
-echo Job submitted  date = Fri  6 Mar 18:39:54 GMT 2026      
+echo Job submitted  date = Sun  8 Mar 15:09:56 GMT 2026      
 date_start=`date +%s`
 echo $SLURM_JOB_NUM_NODES nodes \( $SLURM_CPUS_ON_NODE processes per node \)        
 echo $SLURM_JOB_NUM_NODES hosts used: $SLURM_JOB_NODELIST      
@@ -15,7 +15,7 @@ echo
 ulimit -l unlimited
 
 export OMP_NUM_THEADS=1
- nice -n 10 /usr/bin/python3 -u src/run_linear_probe.py --model-dir models/mess3/20260306_150051_L4_d64_H1_full_LN --seq-length 10 --device cpu --save-data
+ nice -n 10 /usr/bin/python3 src/reverse_hmm_analysis.py --num_samples 50000 --max_context 16 --output out/bayes_optimal_k16/reverse_hmm_analysis_k16.json
   echo ---------------                                           
   echo Job output ends                                           
 

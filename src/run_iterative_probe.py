@@ -368,24 +368,27 @@ def run_phase2(
                         **cf_dir,
                     })
 
-        # Also ablate cumulative subspace (all iterations combined)
-        full_sub = lr.full_subspace
-        if full_sub.shape[0] > 0 and lr.n_significant > 1:
-            print(f"  Cumulative ({full_sub.shape[0]} dims): ", end="", flush=True)
-            cf_cum = compute_counterfactual(
-                model, sequences, clean_log_probs, clean_ce,
-                layer=lr.layer, subspace=full_sub, device=device,
-                inference_batch_size=inference_batch_size,
-            )
-            print(f"KL={cf_cum['mean_kl']:.4f} ± {cf_cum['std_kl']:.4f}, "
-                  f"ΔCE={cf_cum['mean_delta_ce']:.4f}")
-            rows.append({
-                "layer": lr.layer,
-                "iteration": -1,
-                "ablation_type": "cumulative",
-                "direction_idx": -1,
-                **cf_cum,
-            })
+        # Cumulative-progressive ablation: ablate subspaces 0..k for each k
+        if lr.n_significant > 1:
+            print(f"  Cumulative-progressive ablations:")
+            for k in range(lr.n_significant):
+                cum_sub = np.vstack([it.subspace for it in lr.iterations[:k + 1]])
+                cum_dims = cum_sub.shape[0]
+                print(f"    0..{k} ({cum_dims} dims): ", end="", flush=True)
+                cf_cum = compute_counterfactual(
+                    model, sequences, clean_log_probs, clean_ce,
+                    layer=lr.layer, subspace=cum_sub, device=device,
+                    inference_batch_size=inference_batch_size,
+                )
+                print(f"KL={cf_cum['mean_kl']:.4f} ± {cf_cum['std_kl']:.4f}, "
+                      f"ΔCE={cf_cum['mean_delta_ce']:.4f}")
+                rows.append({
+                    "layer": lr.layer,
+                    "iteration": k,
+                    "ablation_type": "cumulative_progressive",
+                    "direction_idx": -1,
+                    **cf_cum,
+                })
 
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(output_dir, "counterfactual_metrics.csv"), index=False)
