@@ -1,0 +1,41 @@
+data_generator:
+  process:
+    name: "mess3"
+    params: {}
+
+  num_tokens: 10_000_000
+  save_dir: "data/datasets/mess3"
+
+model:
+  n_layer: 4
+  n_embd: 64
+  n_head: 1
+  d_head: 64
+  vocab_size: 3
+  n_ctx: 10
+  activation_function: "relu"
+  normalization_type: "LN"
+  attn_only: False
+  d_mlp: 256
+  tie_word_embeddings: False
+
+train:
+  optimizer:
+    adam_beta1: 0.9
+    adam_beta2: 0.999
+    adam_epsilon: 1e-8
+    adam_weight_decay: 0.0
+    learning_rate: 0.00002
+
+  scheduler:
+    type: "none"
+
+  num_epochs: 10
+  batch_size: 64
+  seq_length: 10
+  val_interval_in_opt_steps: 1000
+  log_interval_in_opt_steps: 100
+
+wandb:
+  project_name: "hidden-markov-chain-src"
+  experiment: "mess3"

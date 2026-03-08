@@ -1,3 +1,4 @@
+import argparse
 import os
 import torch as t
 from utils import initialize_transformer_from_yaml
@@ -5,18 +6,17 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 import yaml
 import json
 from datetime import datetime
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import wandb
 import time
 from pathlib import Path
 
-CONFIG_PATH = os.environ.get("TRAIN_CONFIG", "base_config.yaml")
 device = "cuda" if t.cuda.is_available() else "cpu"
 
 
-def train():
+def train(config_path: str = "base_config.yaml"):
     # Load base config
-    with open(CONFIG_PATH, 'r') as f:
+    with open(config_path, 'r') as f:
         cfg = yaml.safe_load(f)
 
     # Initialize wandb (sweep agent injects swept params as flat keys into wandb.config)
@@ -44,9 +44,10 @@ def train():
     run_name = f"L{mcfg['n_layer']}_d{mcfg['n_embd']}_H{mcfg['n_head']}_{attn_str}_{norm_str}"
     wandb.run.name = run_name
 
-    # Set up run output directory
+    # Set up run output directory (derived from process name)
+    process_name = cfg["data_generator"]["process"]["name"]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = Path("models/cylinderhmm") / f"{timestamp}_{run_name}"
+    run_dir = Path("models") / process_name / f"{timestamp}_{run_name}"
     run_dir.mkdir(parents=True, exist_ok=True)
 
     # Save the full resolved config for this run
@@ -69,8 +70,8 @@ def train():
         weight_decay=float(ocfg["adam_weight_decay"]),
     )
 
-    # Load data
-    data_dir = cfg.get("data", {}).get("data_dir", "data/datasets/cylinder_graph_hmm")
+    # Load data (default to data_generator.save_dir from config)
+    data_dir = cfg.get("data", {}).get("data_dir", cfg["data_generator"]["save_dir"])
     train_data = t.load(os.path.join(data_dir, "train", "observations.pt"))
     test_data = t.load(os.path.join(data_dir, "test", "observations.pt"))
 
@@ -88,7 +89,16 @@ def train():
     print(f"Dataset: {len(train_data)} train sequences, {len(test_data)} test sequences")
     print(f"Steps per epoch: {steps_per_epoch}, Total steps: {total_steps}")
 
-    scheduler = CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=float(ocfg["learning_rate"]) * 0.001)
+    # Scheduler setup (configurable; defaults to cosine for backward compatibility)
+    sched_cfg = tcfg.get("scheduler", {"type": "cosine"})
+    sched_type = sched_cfg.get("type", "cosine") if isinstance(sched_cfg, dict) else sched_cfg
+    if sched_type == "cosine":
+        eta_min = float(sched_cfg.get("eta_min", float(ocfg["learning_rate"]) * 0.001))
+        scheduler = CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=eta_min)
+    elif sched_type == "none":
+        scheduler = None
+    else:
+        raise ValueError(f"Unknown scheduler type: {sched_type}")
 
     best_val_loss = float('inf')
 
@@ -126,7 +136,8 @@ def train():
             loss = t.nn.functional.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
             loss.backward()
             optimizer.step()
-            scheduler.step()
+            if scheduler is not None:
+                scheduler.step()
 
             epoch_loss += loss.item()
             global_step += 1
@@ -157,14 +168,16 @@ def train():
 
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
-                    t.save({
+                    checkpoint_data = {
                         'epoch': epoch,
                         'global_step': global_step,
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
-                        'scheduler_state_dict': scheduler.state_dict(),
                         'val_loss': val_loss,
-                    }, run_dir / "best_model.pt")
+                    }
+                    if scheduler is not None:
+                        checkpoint_data['scheduler_state_dict'] = scheduler.state_dict()
+                    t.save(checkpoint_data, run_dir / "best_model.pt")
                     print(f"  Saved best model (val_loss: {val_loss:.6f})")
 
                 model.train()
@@ -193,9 +206,10 @@ def train():
             'global_step': global_step,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
             'train_loss': avg_epoch_loss,
         }
+        if scheduler is not None:
+            checkpoint['scheduler_state_dict'] = scheduler.state_dict()
         t.save(checkpoint, run_dir / f"checkpoint_epoch_{epoch+1}.pt")
         t.save(checkpoint, run_dir / "latest.pt")
         print(f"  Saved checkpoint: checkpoint_epoch_{epoch+1}.pt")
@@ -212,4 +226,8 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="Train transformer on HMM data")
+    parser.add_argument("--config", type=str, default="base_config.yaml",
+                        help="Path to config YAML file")
+    args = parser.parse_args()
+    train(config_path=args.config)

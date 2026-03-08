@@ -73,3 +73,19 @@
 2025-12-10 13:21:44,843 - INFO - Saved metadata to /mnt/extraspace/clin/records/metadata.parquet (1307 runs)
 2025-12-10 13:21:44,843 - INFO - Validating metadata...
 2025-12-10 13:21:44,849 - INFO - Metadata validation passed ✓
+2026-03-06 18:17:55,319 - INFO - Starting full metadata rebuild...
+2026-03-06 18:17:55,725 - INFO - Found 1329 run directories in /mnt/extraspace/clin/records
+2026-03-06 18:17:55,726 - INFO - Extracting metadata using 8 workers...
+2026-03-06 18:18:27,906 - INFO - Successfully built metadata for 1329 runs
+2026-03-06 18:18:27,973 - INFO - Saved metadata to /mnt/extraspace/clin/records/metadata.parquet (1329 runs)
+2026-03-06 18:18:27,973 - INFO - Validating metadata...
+2026-03-06 18:18:27,981 - INFO - Metadata validation passed ✓
+2026-03-06 18:21:23,989 - INFO - Loaded metadata from /mnt/extraspace/clin/records/metadata.parquet (1329 runs)
+2026-03-06 18:21:23,989 - INFO - Starting incremental metadata update...
+2026-03-06 18:21:24,600 - INFO - Found 1329 run directories in /mnt/extraspace/clin/records
+2026-03-06 18:21:24,602 - INFO - Found 0 new runs
+2026-03-06 18:21:24,605 - INFO - Re-scanning 0 previously running runs
+2026-03-06 18:21:24,605 - INFO - No updates needed
+2026-03-06 18:21:24,758 - INFO - Saved metadata to /mnt/extraspace/clin/records/metadata.parquet (1329 runs)
+2026-03-06 18:21:24,758 - INFO - Validating metadata...
+2026-03-06 18:21:24,771 - INFO - Metadata validation passed ✓

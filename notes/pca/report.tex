@@ -135,7 +135,7 @@ The code does not perform train/test splitting of the probing data.  All $10^5$ 
 
   \item \textbf{Model lookup via \code{globals()}.}  Line~54 resolves the model class by name from \code{globals()}, which depends on the specific imports at the top of the file (\code{HookedTransformerModel}, \code{MaskedHeadTransformerModel}).  This is fragile: adding a new model class requires editing the import block.  A registry pattern (as in \code{src/utils.py}'s \code{PROCESS\_REGISTRY}) would be more maintainable.
 
-  \item \textbf{Hard-coded HMM process.}  The entry point (line~518 onward) hard-codes \code{Mess3Proc()} and the filename \code{final\_model\_mess3.pt}.  The HMM process should be read from the model's \file{config.yaml} to support other processes (Z1R, RRXOR, CylinderGraphHMM) without code changes.
+  \item \textbf{Hard-coded HMM process.}  The entry point (line~518 onward) hard-codes \code{Mess3Proc()} and the filename \code{final\_model\_mess3.pt}.  The HMM process should be read from the model's \file{config.yaml} to support other processes (Z1R, RRXOR, CylinderGraphHMM) without code changes. 
 
   \item \textbf{Memory scaling.}  With \code{batch\_size=100\,000} and \code{seq\_length=16}, the belief-state tensor is shape $(10^5, 16, N)$ and the activation tensor is $(L, 10^5, 16, d)$.  For a 4-layer model with $d = 8$, this is only $\sim$50\,MB.  But for the CylinderGraphHMM with $N = 18$, $d = 64$, $L = 4$, the activation tensor alone is $\sim$3.3\,GB.  The code loads everything into memory simultaneously.  For larger models, a streaming or chunked approach would be needed.
 
