@@ -8,10 +8,11 @@
 \contentsline {paragraph}{Note on position selection.}{3}{section*.3}%
 \contentsline {subsection}{\numberline {4.1}Iterative Probing: Many Redundant Copies}{4}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Counterfactual Importance: A Strong Hierarchy}{5}{subsection.4.2}%
-\contentsline {section}{\numberline {5}Discussion}{7}{section.5}%
-\contentsline {subsection}{\numberline {5.1}The Nature of Redundancy}{7}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Layer Hierarchy and the Residual Stream}{7}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Decodability $\neq $ Causal Use}{8}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}Comparison to Superposition}{8}{subsection.5.4}%
-\contentsline {section}{\numberline {6}Implementation Notes}{8}{section.6}%
-\contentsline {section}{\numberline {7}Conclusion}{8}{section.7}%
+\contentsline {section}{\numberline {5}Training Dynamics: Emergence of Redundant Copies}{7}{section.5}%
+\contentsline {section}{\numberline {6}Discussion}{8}{section.6}%
+\contentsline {subsection}{\numberline {6.1}The Nature of Redundancy}{8}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Layer Hierarchy and the Residual Stream}{9}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Decodability $\neq $ Causal Use}{9}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Comparison to Superposition}{9}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Implementation Notes}{10}{section.7}%
+\contentsline {section}{\numberline {8}Conclusion}{10}{section.8}%

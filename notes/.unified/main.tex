@@ -1,0 +1,99 @@
+\documentclass[11pt]{report}
+
+% docmute: automatically strips \documentclass, preamble, \begin{document},
+% \end{document} from \input'd files, so originals compile standalone too.
+\usepackage{docmute}
+
+% ── Union of all packages used across reports ──
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+
+\hfuzz=\maxdimen
+
+% ── All figure directories ──
+\graphicspath{%
+  {../../figures/iterative_probe/}%
+  {../../figures/iterative_probe_emergence/}%
+  {../../figures/time_reversal/}%
+  {../../figures/training_dynamics/}%
+  {../model_comparison/}%
+  {../model_comparison/figures/}%
+  {../fixed_embedding/}%
+}
+
+% ── Shared macros ──
+\newcommand{\lcq}[1]{\textcolor{red}{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\providecommand{\file}[1]{\texttt{#1}}
+
+% Suppress \maketitle, \tableofcontents, \bigskip from included files.
+% Use \providecommand so re-definitions in sub-files don't cause errors.
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  language=Python,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+}
+
+% ── Title ──
+\title{How Do Transformers Learn Hidden Markov Models?\\[0.3em]
+       \large Project Notes}
+\author{C.~L.}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+% Suppress sub-document \maketitle and \tableofcontents
+\def\maketitle{}
+\def\tableofcontents{}
+
+% ──────────────────────────────────────────────────────────────────────
+\part{Foundations}
+% ──────────────────────────────────────────────────────────────────────
+
+\chapter{The Cylinder Graph HMM: A Case Study}
+% Source: notes/model_comparison/hmm_case_study.tex
+\input{../model_comparison/hmm_case_study}
+
+\chapter{Fixed-Embedding Experiment}
+% Source: notes/fixed_embedding/fixed_embedding_experiment.tex
+\input{../fixed_embedding/fixed_embedding_experiment}
+
+% ──────────────────────────────────────────────────────────────────────
+\part{Experiments}
+% ──────────────────────────────────────────────────────────────────────
+
+\chapter{Time-Reversal Symmetry}
+% Source: notes/time_reversal/report.tex
+\input{../time_reversal/report}
+
+% ──────────────────────────────────────────────────────────────────────
+\part{Mechanistic Analysis}
+% ──────────────────────────────────────────────────────────────────────
+
+\chapter{Linear Probing: Code Review and Methodology}
+% Source: notes/pca/report.tex
+\input{../pca/report}
+
+\chapter{Iterative Probing and Counterfactual Importance}
+% Source: notes/iterative_probe/report.tex
+\input{../iterative_probe/report}
+
+\end{document}

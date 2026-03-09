@@ -11,7 +11,7 @@
 
 \hfuzz=\maxdimen
 
-\graphicspath{{../../figures/time_reversal/}}
+\graphicspath{{../../figures/time_reversal/}{../../figures/training_dynamics/}}
 
 \newcommand{\lcq}[1]{\textcolor{red}{#1}}
 
@@ -33,7 +33,7 @@ A natural question in the study of transformers trained on Hidden Markov Model (
 
 However, a finite-context transformer may find one direction systematically easier if the latent belief state converges to its stationary distribution at a different rate in each temporal direction.  The convergence rate depends on the spectral properties of the transition matrix, which is generally different for the forward and reverse chains.
 
-This report investigates that question on the Cylinder Graph HMM (fully described in \texttt{notes/model\_comparison/cylinder\_hmm\_model\_comparison.tex}), whose directed transition structure creates an a priori asymmetry between the forward and reverse processes.  We formulate four testable hypotheses (Section~\ref{sec:hypotheses}), describe the experimental setup (Section~\ref{sec:setup}), present the theoretical predictions from the analytically constructed reverse HMM (Section~\ref{sec:theory}), and compare against a matched 36-run architecture sweep (Section~\ref{sec:results}).  We also report complementary experiments on belief-state localisation via activation ablations (Section~\ref{sec:ablation}) and on the structure of the learned token-embedding geometry (Section~\ref{sec:embedding}).
+This report investigates that question on the Cylinder Graph HMM (fully described in \texttt{notes/model\_comparison/cylinder\_hmm\_model\_comparison.tex}), whose directed transition structure creates an a priori asymmetry between the forward and reverse processes.  We formulate seven testable hypotheses (Section~\ref{sec:hypotheses}), describe the experimental setup (Section~\ref{sec:setup}), present theoretical predictions including the Bayes-optimal gap at context length $k = 16$ (Section~\ref{sec:theory}), and compare against a matched architecture sweep (Section~\ref{sec:results}).  We also report complementary experiments on belief-state localisation via activation ablations (Section~\ref{sec:ablation}), on the structure of the learned token-embedding geometry (Section~\ref{sec:embedding}), and on forward--reversed training dynamics (Section~\ref{sec:dynamics}).
 
 %----------------------------------------------------------------------
 \section{Theoretical Background}
@@ -97,6 +97,12 @@ which measures the intrinsic difficulty gap at finite context.
   \item[\textbf{H3}] \textbf{(Transformer learnability gap)} Transformers trained on reversed data converge to a \emph{higher} final validation loss than those trained on forward data (same architecture, same hyperparameters), reflecting the harder finite-context prediction problem.
 
   \item[\textbf{H4}] \textbf{(Architecture dependence)} The forward--reverse gap $\Delta = L_{\mathrm{rev}} - L_{\mathrm{fwd}}$ depends on model capacity: larger models may close the gap by implementing a longer effective context.
+
+  \item[\textbf{H5}] \textbf{(Transient dynamics asymmetry)} Even if the final validation losses are identical, the reversed direction should exhibit slower early-training improvement and a larger integrated excess loss over training.  The physical analogy is two systems relaxing to the same equilibrium from different initial conditions: the reversed process, which requires more context to form accurate beliefs, should provide noisier gradient signals early in training.
+
+  \item[\textbf{H6}] \textbf{(Learning phases)} Both loss curves decompose into Phase~I (unigram learning, direction-independent), Phase~II (context learning, potentially direction-dependent), and Phase~III (saturation).  H6~predicts that Phase~II onset is delayed and/or prolonged for the reversed direction.
+
+  \item[\textbf{H7}] \textbf{(Architecture-dependent convergence gap)} Models with more layers (longer effective context) should show a \emph{smaller} convergence speed gap between forward and reversed.
 \end{enumerate}
 
 %----------------------------------------------------------------------
@@ -157,13 +163,37 @@ For each of the $60$ architecture configurations (including additional capacity 
 The script \texttt{src/reverse\_hmm\_analysis.py} constructs the reverse HMM via Eq.~\eqref{eq:rev-hmm} and computes the Bayes-optimal cross-entropy $L^{*}(k)$ at each context position for both directions by Monte Carlo sampling.
 
 \paragraph{Entropy rates.}
-Running the forward algorithm over a long sequence (burn-in discarded) confirms H1: the empirical entropy rates agree to machine precision ($|h_{\mathrm{fwd}} - h_{\mathrm{rev}}| \sim 2\times10^{-15}$ nats).
+The joint entropy rate $H(X_t, S_{t+1} \mid S_t)$, computed analytically from the emission matrices, agrees to machine precision between forward and reverse ($|h_{\mathrm{fwd}} - h_{\mathrm{rev}}| \sim 2\times10^{-15}$\,nats), confirming H1.  The observation entropy rate $h_X$ is identical for both directions by the permutation-invariance argument, and the empirical estimates ($h_X \approx 2.44$\,nats) are consistent.
 
 \paragraph{Belief-state convergence.}
-Preliminary results with 500 samples show that the KL divergence from the fully converged belief is approximately $2$--$3\times$ larger at each context position for the reverse process, supporting H2.
+The excess Bayes-optimal loss $L^*(k) - h_X$ quantifies how far the optimal finite-context predictor is from the infinite-context limit.  At $k = 1$, the reversed excess is $\sim 6\times$ larger than the forward ($1.22$ vs.\ $0.22$\,nats), confirming H2.  Both curves decay rapidly and reach the Monte Carlo noise floor ($\lesssim 5 \times 10^{-3}$\,nats) by $k \approx 6$.
 
-\paragraph{Bayes-optimal gap.}
-At 500 samples the Monte Carlo estimate of $\Delta_{\mathrm{Bayes}}(k)$ is too noisy to quantify reliably.  A full run with 50{,}000 samples at $k \le 16$ is needed and is listed as future work in Section~\ref{sec:open}.
+\paragraph{Bayes-optimal gap at $k = 16$.}
+A full Monte Carlo run with 50{,}000 samples and $k \le 16$ yields:
+\begin{center}
+  \begin{tabular}{l r}
+    \toprule
+    Quantity & Value \\
+    \midrule
+    $L^{*}_{\mathrm{fwd}}(k{=}16)$ & $2.4362$ nats \\
+    $L^{*}_{\mathrm{rev}}(k{=}16)$ & $2.4368$ nats \\
+    $\Delta_{\mathrm{Bayes}}(k{=}16)$ & $+0.0006$ nats \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+The Bayes-optimal gap has essentially vanished by $k = 16$: both directions are within $0.001$\,nats of each other at the training context length.  This is a key result---it means the near-zero transformer loss gap (Section~\ref{sec:results}) is \emph{fully explained} by the information-theoretic gap closing at this context length.  The belief-state convergence asymmetry (H2) is real but irrelevant at $k = 16$: both forward and reverse Bayes-optimal predictors have converged to within $\sim 0.002$\,nats of the observation entropy rate $h_X \approx 2.44$.
+
+\paragraph{Note on the entropy rate.}
+The ``theoretical'' entropy rate $-\sum_i \pi(i) \sum_{j,k} E[j,i,k] \log E[j,i,k] = 2.534$\,nats is the entropy rate of the \emph{joint} $(X_t, S_{t+1})$ process, i.e.\ $H(X_t, S_{t+1} \mid S_t)$.  The observation entropy rate $h_X = H(X_t \mid X_{t-1}, X_{t-2}, \ldots)$ is lower because observing past emissions gives only partial information about the current hidden state.  We estimate $h_X \approx 2.44$\,nats empirically via the forward algorithm on a sequence of $10^5$ tokens.
+
+Figure~\ref{fig:bayes-gap} summarises these theoretical results.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{bayes_optimal_gap_k16.pdf}
+  \caption{Bayes-optimal analysis of forward vs.\ reversed CylinderGraph HMM (50{,}000 Monte Carlo samples).  (a)~Bayes-optimal loss $L^*(k)$ converges to the observation entropy rate $h_X \approx 2.44$\,nats for both directions by $k \approx 6$.  (b)~Excess Bayes-optimal loss $L^*(k) - h_X$ on a log scale.  The reversed process has $\sim 6\times$ higher excess loss at $k = 1$ ($1.22$ vs.\ $0.22$\,nats) but converges to the Monte Carlo noise floor ($\lesssim 5 \times 10^{-3}$\,nats) by $k \approx 6$, confirming H2 and explaining the near-zero transformer gap at $T = 16$.}
+  \label{fig:bayes-gap}
+\end{figure}
 
 %----------------------------------------------------------------------
 \section{Results}\label{sec:results}
@@ -272,15 +302,7 @@ Notable patterns in the per-configuration breakdown:
 
 \subsection{Interpretation}
 
-The near-zero mean gap suggests that at context length $T = 16$, the forward and reverse belief states are both sufficiently converged that there is negligible practical difference in prediction difficulty.  Two non-exclusive interpretations are:
-
-\begin{enumerate}
-  \item \textbf{Context window is sufficient.}  The mixing time of the reverse chain at $k = 16$ may be short enough that $\Delta_{\mathrm{Bayes}}(16) \approx 0$ for both directions.  If the Bayes-optimal gap itself vanishes at $k = 16$, no transformer can show a gap either.
-
-  \item \textbf{Transformers do not implement Bayesian filtering.}  The transformer may use a prediction strategy that is less sensitive to belief-state convergence rates, making the theoretical gap irrelevant to its empirical performance.
-\end{enumerate}
-
-A direct computation of $\Delta_{\mathrm{Bayes}}(16)$ with 50{,}000 Monte Carlo samples would distinguish these two explanations.
+The near-zero mean gap is now fully explained by the Bayes-optimal analysis (Section~\ref{sec:theory}): $\Delta_{\mathrm{Bayes}}(16) = +0.0006$\,nats, meaning the information-theoretic gap has already closed at the training context length.  \textbf{Interpretation~1 (context window is sufficient) is confirmed.}  The belief-state convergence asymmetry is real (the reverse process needs $\sim 2\times$ more context) but irrelevant at $T = 16$ because both directions have converged.  Since there is no Bayes-optimal gap to exploit, no transformer---regardless of architecture---can show a systematic forward--reverse difference.
 
 %----------------------------------------------------------------------
 \section{Activation Ablation Experiments}\label{sec:ablation}
@@ -401,6 +423,101 @@ where $\mathrm{PMI}(i, j) = \log [P(i, j) / (P(i)\, P(j))]$ is computed from the
 \end{figure}
 
 %----------------------------------------------------------------------
+\section{Training Dynamics}\label{sec:dynamics}
+%----------------------------------------------------------------------
+
+Having established that forward and reverse final losses are indistinguishable, a natural follow-up is whether the \emph{path} to equilibrium differs.  Even when two systems relax to the same equilibrium, the transient dynamics may differ if the gradient signal quality depends on direction.
+
+\subsection{Setup}
+
+We extract the full validation loss curve $L(t)$ for each of the 146 training runs in the original grid ($n_{\mathrm{layer}} \in \{1, 2, 4\}$, $n_{\mathrm{embd}} \in \{4, 8, 16\}$, attention-only or full, with or without LayerNorm), comprising 86 forward and 60 reversed runs.  Validation loss is recorded every 100 optimisation steps over 10 epochs ($\sim$483 data points per run).
+
+For each run, we compute:
+\begin{itemize}
+  \item $\tau_{50}$: steps to reach 50\% of total improvement (``half-life'' of learning);
+  \item $\tau_{90}$: steps to reach 90\% of total improvement;
+  \item AUC: area under the excess loss curve $\int [L(t) - L_{\mathrm{final}}]\, dt$ (total training cost);
+  \item Epoch-1 loss: $L(t \approx 4834)$, reflecting early-training performance.
+\end{itemize}
+Metrics are averaged across seeds for configurations with multiple runs, then paired by architecture.
+
+\subsection{H5: Transient Dynamics Asymmetry}
+
+Table~\ref{tab:h5} summarises the paired deltas across 36 matched architecture configurations.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{l r r r r}
+    \toprule
+    Metric & Mean $\Delta$ & Positive & $t$-test $p$ & Wilcoxon $p$ \\
+    \midrule
+    $\Delta\tau_{50}$ (steps) & $+7.2 \pm 123.6$ & 8/36 (22\%) & 0.73 & 0.90 \\
+    $\Delta\tau_{90}$ (steps) & $-207.8 \pm 841.3$ & 16/36 (44\%) & 0.15 & 0.47 \\
+    $\Delta$AUC & $+23.4 \pm 255.4$ & 18/36 (50\%) & 0.59 & 0.87 \\
+    $\Delta$\,epoch-1 loss (nats) & $-0.03 \pm 0.10$ & 15/36 (42\%) & 0.066 & 0.26 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Paired forward--reversed training dynamics metrics.  $\Delta = \mathrm{reversed} - \mathrm{forward}$; positive values indicate reversed is slower/higher.  None of the metrics reach statistical significance.}
+  \label{tab:h5}
+\end{table}
+
+\textbf{Result: H5 is not supported.}  There is no significant difference in convergence speed between forward and reversed training.  The marginally significant epoch-1 result ($p = 0.066$) has the \emph{wrong sign}: reversed is slightly \emph{faster} early in training, contrary to the prediction.
+
+Figure~\ref{fig:loss-curves} shows representative training curves.  The forward and reversed loss curves are nearly indistinguishable across all architectures, with the largest visible differences attributable to seed variance rather than a systematic directional effect.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{loss_curves_grid_full.pdf}
+  \caption{Validation loss curves for forward (blue) and reversed (red) training across the full architecture grid.  Each panel shows one $(n_{\mathrm{layer}}, n_{\mathrm{embd}})$ combination for full (attn + MLP) models, with norm variants averaged.  Shaded bands show $\pm 1$ s.d.\ across seeds; the dashed grey line marks the entropy rate $h \approx 2.44$.  The two directions are visually indistinguishable in most panels.}
+  \label{fig:loss-curves}
+\end{figure}
+
+\subsection{H6: Learning Phases}
+
+The early dynamics (Figure~\ref{fig:early-zoom}) show no evidence of a direction-dependent Phase~II onset.  Both forward and reversed curves decrease at the same rate during the first 1000 steps (Phase~I unigram learning), consistent with the prediction that direction-independent marginal statistics dominate early training.  However, the expected delayed Phase~II onset for the reversed direction is not observed: the transition to context-dependent learning appears simultaneous for both directions.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{early_dynamics_zoom.pdf}
+  \caption{Early training dynamics (first 1000 steps) zoomed in.  Forward and reversed curves are essentially overlapping during the unigram-learning phase, and no delayed Phase~II onset is visible for the reversed direction.}
+  \label{fig:early-zoom}
+\end{figure}
+
+\textbf{Result: H6 is not supported.}  No phase-dependent directional asymmetry is detectable in the training dynamics.
+
+\subsection{H7: Architecture-Dependent Convergence Gap}
+
+Figure~\ref{fig:dynamics-arch} shows the convergence speed gap as a function of model architecture and size.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{delta_vs_architecture.pdf}
+  \caption{Architecture dependence of training dynamics gaps.  Left: $\Delta\tau_{50}$ vs.\ number of layers.  Centre: $\Delta\tau_{50}$ vs.\ parameter count.  Right: $\Delta$AUC vs.\ parameter count.  Colours indicate $n_{\mathrm{embd}}$ (blue: 4, orange: 8, green: 16); triangles are attention-only, circles are full models.}
+  \label{fig:dynamics-arch}
+\end{figure}
+
+The Pearson correlations are:
+\begin{center}
+  \begin{tabular}{l r r}
+    \toprule
+    & $\mathrm{Corr}(\cdot, \Delta\tau_{50})$ & $p$-value \\
+    \midrule
+    $n_{\mathrm{layer}}$ & $-0.136$ & 0.43 \\
+    $n_{\mathrm{embd}}$ & $-0.477$ & \textbf{0.003} \\
+    $n_{\mathrm{params}}$ & $-0.484$ & \textbf{0.003} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\textbf{Result: H7 is partially supported, but with the opposite sign.}  Larger models (in embedding dimension) show a significantly \emph{smaller} $\Delta\tau_{50}$, meaning they slightly favour the reversed direction in convergence speed.  The effect of depth alone ($n_{\mathrm{layer}}$) is not significant.
+
+\subsection{Training Dynamics: Summary}
+
+The training dynamics analysis yields a clean null result for the central prediction (H5): forward and reversed training curves are statistically indistinguishable in convergence speed, excess training cost, and early-training performance.  Combined with the Bayes-optimal gap vanishing at $k = 16$ ($\Delta_{\mathrm{Bayes}} = +0.0006$\,nats), this confirms that the context window is long enough to render the belief-state convergence asymmetry irrelevant---both to the optimal predictor and to the gradient-based optimisation process.
+
+Additional figures (per-architecture bar charts, convergence scatter plots, epoch-1 vs.\ final gap comparison) are in \texttt{figures/training\_dynamics/}.
+
+%----------------------------------------------------------------------
 \section{Discussion and Open Questions}\label{sec:open}
 %----------------------------------------------------------------------
 
@@ -409,7 +526,7 @@ where $\mathrm{PMI}(i, j) = \log [P(i, j) / (P(i)\, P(j))]$ is computed from the
 \begin{enumerate}
   \item \textbf{H1 (entropy rate invariance) is confirmed.}  Forward and reverse entropy rates agree to machine precision, as required by the stationarity of the process.
 
-  \item \textbf{H2 (finite-context asymmetry) has theoretical support.}  Preliminary calculations show that the belief state converges $\sim 2$--$3\times$ more slowly for the reverse process at each context position, implying $\Delta_{\mathrm{Bayes}}(k) > 0$ for small~$k$.  Whether this gap survives at $k = 16$ is not yet established.
+  \item \textbf{H2 (finite-context asymmetry) is confirmed and quantified.}  The reversed process has $\sim 6\times$ higher excess Bayes-optimal loss at $k = 1$, but the gap closes rapidly: by $k \approx 6$ both directions have converged to within Monte Carlo noise of $h_X \approx 2.44$\,nats.  At $k = 16$, $\Delta_{\mathrm{Bayes}} = +0.0006$\,nats.
 
   \item \textbf{H3 (transformer learnability gap) is not supported.}  The mean forward--reverse loss difference is $+0.0002 \pm 0.0086$\,nats across 60 configurations, consistent with zero.
 
@@ -418,18 +535,27 @@ where $\mathrm{PMI}(i, j) = \log [P(i, j) / (P(i)\, P(j))]$ is computed from the
   \item \textbf{Belief-state geometry is spatially localised.}  Activation ablations confirm that the model stores its belief-state representation in a low-dimensional subspace of the residual stream, with the fractal directions carrying substantially more predictive information than the orthogonal complement.
 
   \item \textbf{Embedding geometry is consistent with PMI structure.}  The learned embeddings satisfy an approximate $W_E^\top W_E \approx \log \mathrm{PMI}$ relationship, connecting the empirical geometry to the theoretical optimum for linear models.
+
+  \item \textbf{H5 (transient dynamics asymmetry) is not supported.}  Forward and reversed training curves are statistically indistinguishable in convergence speed ($\Delta\tau_{50}$: $p = 0.73$), excess training cost ($\Delta$AUC: $p = 0.59$), and early-training loss ($p = 0.066$, wrong sign).
+
+  \item \textbf{H6 (learning phases) is not supported.}  No direction-dependent Phase~II onset is observed.
+
+  \item \textbf{H7 (architecture-dependent convergence gap) is partially supported with opposite sign.}  Larger embedding dimension correlates with slightly faster reversed convergence ($r = -0.48$, $p = 0.003$), opposite to the prediction.
 \end{enumerate}
+
+\paragraph{Unified interpretation.}
+The Bayes-optimal gap at $k = 16$ ($\Delta_{\mathrm{Bayes}} = +0.0006$\,nats) provides the key to interpreting all null results.  The belief-state convergence asymmetry (H2) is real: the reverse process needs $\sim 2\times$ more context to converge.  However, at the training context length of $T = 16$, both directions have already converged to within $0.001$\,nats of the entropy rate.  This means there is no information-theoretic basis for a learnability gap (H3), no reason for the optimisation landscape to differ (H5), and no phase-specific directional asymmetry (H6).  The picture is complete: the context window is simply long enough to erase the asymmetry.
+
+This suggests a clear experimental prediction: training on longer sequences ($T \gg 16$) is unnecessary to reveal a gap, but training on \emph{shorter} sequences ($T \le 4$, where $\Delta_{\mathrm{Bayes}}$ is large) should produce a measurable forward--reverse difference.
 
 \subsection{Open Questions}
 
 \begin{itemize}
-  \item \textbf{Bayes-optimal gap at $k=16$:} Run \texttt{src/reverse\_hmm\_analysis.py} with 50{,}000 samples and \texttt{--max\_context~16}.  If $\Delta_{\mathrm{Bayes}}(16) \approx 0$, the near-zero transformer gap is fully explained by the HMM geometry.
+  \item \textbf{Short-context regime:} Training with $T \le 4$ (where $\Delta_{\mathrm{Bayes}}(k) \approx 0.13$\,nats at $k = 4$) should reveal the predicted forward--reverse gap.  This is the most direct test of whether transformers are sensitive to belief-state convergence asymmetry when it is information-theoretically relevant.
 
-  \item \textbf{$N$-gram baselines on reversed data:} Do $n$-gram models also show no forward--reverse gap?  If they do, the near-zero $\Delta$ is a general property of any fixed-context predictor and not specific to transformers.
+  \item \textbf{$N$-gram baselines on reversed data:} Do $n$-gram models also show no forward--reverse gap at $T = 16$?  If they do, the near-zero $\Delta$ is a general property of any fixed-context predictor and not specific to transformers.
 
   \item \textbf{Outlier investigation:} The \texttt{L4\_d8\_attn\_only\_noLN} configuration achieves $\Delta = -0.025$\,nats.  What mechanism makes an attention-only model find reversed sequences \emph{easier}?
-
-  \item \textbf{Longer context:} Training on sequences of length $T > 16$ would test whether the near-zero gap persists or whether a gap emerges when the context window exceeds the mixing time of the reverse chain.
 
   \item \textbf{Ablations at full scale:} The activation ablations were performed on a single model.  Repeating across the full architecture sweep would determine whether fractal-direction localisation is universal or architecture-dependent.
 

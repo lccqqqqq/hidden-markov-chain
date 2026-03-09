@@ -2,31 +2,39 @@
 \contentsline {section}{\numberline {2}Theoretical Background}{2}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Entropy Rate Invariance}{2}{subsection.2.1}%
 \contentsline {paragraph}{Consequence.}{2}{section*.2}%
-\contentsline {subsection}{\numberline {2.2}Reverse HMM Construction}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.2}Reverse HMM Construction}{3}{subsection.2.2}%
 \contentsline {subsection}{\numberline {2.3}Belief-State Convergence and Finite-Context Effects}{3}{subsection.2.3}%
 \contentsline {section}{\numberline {3}Hypotheses}{3}{section.3}%
 \contentsline {section}{\numberline {4}Experimental Setup}{4}{section.4}%
 \contentsline {subsection}{\numberline {4.1}HMM and Dataset}{4}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Architecture Sweep}{4}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Matched Comparison}{4}{subsection.4.3}%
-\contentsline {section}{\numberline {5}Theoretical Predictions}{4}{section.5}%
+\contentsline {subsection}{\numberline {4.3}Matched Comparison}{5}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Theoretical Predictions}{5}{section.5}%
 \contentsline {paragraph}{Entropy rates.}{5}{section*.4}%
 \contentsline {paragraph}{Belief-state convergence.}{5}{section*.5}%
-\contentsline {paragraph}{Bayes-optimal gap.}{5}{section*.6}%
-\contentsline {section}{\numberline {6}Results}{5}{section.6}%
-\contentsline {subsection}{\numberline {6.1}H3: Is the Reversed Direction Harder?}{5}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}H4: Architecture Dependence of the Gap}{5}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Architectural Breakdown}{7}{subsection.6.3}%
-\contentsline {subsection}{\numberline {6.4}Interpretation}{8}{subsection.6.4}%
-\contentsline {section}{\numberline {7}Activation Ablation Experiments}{8}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Overview}{8}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Direction Identification}{8}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Ablation Protocol}{8}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Results}{9}{subsection.7.4}%
-\contentsline {section}{\numberline {8}Embedding Geometry}{9}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{9}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Norm Structure}{11}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Relationship to PMI Embeddings}{11}{subsection.8.3}%
-\contentsline {section}{\numberline {9}Discussion and Open Questions}{11}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Summary of Findings}{11}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Open Questions}{13}{subsection.9.2}%
+\contentsline {paragraph}{Bayes-optimal gap at $k = 16$.}{5}{section*.6}%
+\contentsline {paragraph}{Note on the entropy rate.}{6}{section*.7}%
+\contentsline {section}{\numberline {6}Results}{6}{section.6}%
+\contentsline {subsection}{\numberline {6.1}H3: Is the Reversed Direction Harder?}{6}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}H4: Architecture Dependence of the Gap}{8}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Architectural Breakdown}{8}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Interpretation}{9}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Activation Ablation Experiments}{9}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Overview}{9}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Direction Identification}{9}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Ablation Protocol}{9}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Results}{10}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Embedding Geometry}{10}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{10}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Norm Structure}{12}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Relationship to PMI Embeddings}{12}{subsection.8.3}%
+\contentsline {section}{\numberline {9}Training Dynamics}{12}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Setup}{14}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}H5: Transient Dynamics Asymmetry}{14}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}H6: Learning Phases}{14}{subsection.9.3}%
+\contentsline {subsection}{\numberline {9.4}H7: Architecture-Dependent Convergence Gap}{17}{subsection.9.4}%
+\contentsline {subsection}{\numberline {9.5}Training Dynamics: Summary}{17}{subsection.9.5}%
+\contentsline {section}{\numberline {10}Discussion and Open Questions}{17}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Summary of Findings}{17}{subsection.10.1}%
+\contentsline {paragraph}{Unified interpretation.}{18}{section*.24}%
+\contentsline {subsection}{\numberline {10.2}Open Questions}{18}{subsection.10.2}%

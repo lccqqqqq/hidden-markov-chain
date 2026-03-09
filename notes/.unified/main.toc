@@ -1,0 +1,125 @@
+\contentsline {part}{I\hspace {1em}Foundations}{4}{part.1}%
+\contentsline {chapter}{\numberline {1}The Cylinder Graph HMM: A Case Study}{5}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Introduction}{5}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Technical Preliminaries}{6}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Hidden Markov Models}{6}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}The Forward Algorithm}{7}{subsection.1.2.2}%
+\contentsline {paragraph}{Initialisation ($t=1$):}{7}{section*.2}%
+\contentsline {paragraph}{Recursion ($t = 1,\ldots ,T{-}1$):}{7}{section*.3}%
+\contentsline {paragraph}{Termination:}{8}{section*.4}%
+\contentsline {subsection}{\numberline {1.2.3}Belief States and Optimal Prediction}{8}{subsection.1.2.3}%
+\contentsline {paragraph}{Sufficiency.}{8}{section*.5}%
+\contentsline {subsection}{\numberline {1.2.4}Belief-State Geometry}{8}{subsection.1.2.4}%
+\contentsline {subsection}{\numberline {1.2.5}Transformers}{9}{subsection.1.2.5}%
+\contentsline {section}{\numberline {1.3}The Cylinder Graph HMM}{9}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Transition structure}{9}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Emission structure}{10}{subsection.1.3.2}%
+\contentsline {section}{\numberline {1.4}Information-Theoretic Baselines}{10}{section.1.4}%
+\contentsline {subsection}{\numberline {1.4.1}Entropy rate}{10}{subsection.1.4.1}%
+\contentsline {subsection}{\numberline {1.4.2}Bayes-optimal loss at finite context}{10}{subsection.1.4.2}%
+\contentsline {subsection}{\numberline {1.4.3}$N$-gram baseline}{11}{subsection.1.4.3}%
+\contentsline {subsection}{\numberline {1.4.4}Summary of baselines}{11}{subsection.1.4.4}%
+\contentsline {section}{\numberline {1.5}Transformer Architectures}{11}{section.1.5}%
+\contentsline {section}{\numberline {1.6}Results}{12}{section.1.6}%
+\contentsline {subsection}{\numberline {1.6.1}Model size vs.\ validation loss}{12}{subsection.1.6.1}%
+\contentsline {subsection}{\numberline {1.6.2}$N$-gram comparison}{12}{subsection.1.6.2}%
+\contentsline {subsection}{\numberline {1.6.3}Embedding structure}{14}{subsection.1.6.3}%
+\contentsline {paragraph}{Cluster similarity across architectures}{14}{section*.10}%
+\contentsline {section}{\numberline {1.7}Summary and Open Questions}{15}{section.1.7}%
+\contentsline {section}{\numberline {.1}$N$-gram Backoff Details}{15}{section.Alph0.1}%
+\contentsline {paragraph}{Backoff}{15}{section*.12}%
+\contentsline {chapter}{\numberline {A}Fixed-Embedding Experiment}{17}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Motivation}{17}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Experimental Conditions}{17}{section.A.2}%
+\contentsline {paragraph}{Frozen parameter count.}{18}{section*.14}%
+\contentsline {section}{\numberline {A.3}Expected Outcomes}{18}{section.A.3}%
+\contentsline {paragraph}{Metrics.}{18}{section*.15}%
+\contentsline {section}{\numberline {A.4}Results}{19}{section.A.4}%
+\contentsline {section}{\numberline {A.5}Usage}{20}{section.A.5}%
+\contentsline {part}{II\hspace {1em}Experiments}{21}{part.2}%
+\contentsline {chapter}{\numberline {B}Time-Reversal Symmetry}{22}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Introduction}{22}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Theoretical Background}{22}{section.B.2}%
+\contentsline {subsection}{\numberline {B.2.1}Entropy Rate Invariance}{22}{subsection.B.2.1}%
+\contentsline {paragraph}{Consequence.}{23}{section*.18}%
+\contentsline {subsection}{\numberline {B.2.2}Reverse HMM Construction}{23}{subsection.B.2.2}%
+\contentsline {subsection}{\numberline {B.2.3}Belief-State Convergence and Finite-Context Effects}{23}{subsection.B.2.3}%
+\contentsline {section}{\numberline {B.3}Hypotheses}{23}{section.B.3}%
+\contentsline {section}{\numberline {B.4}Experimental Setup}{24}{section.B.4}%
+\contentsline {subsection}{\numberline {B.4.1}HMM and Dataset}{24}{subsection.B.4.1}%
+\contentsline {subsection}{\numberline {B.4.2}Architecture Sweep}{25}{subsection.B.4.2}%
+\contentsline {subsection}{\numberline {B.4.3}Matched Comparison}{25}{subsection.B.4.3}%
+\contentsline {section}{\numberline {B.5}Theoretical Predictions}{25}{section.B.5}%
+\contentsline {paragraph}{Entropy rates.}{25}{section*.20}%
+\contentsline {paragraph}{Belief-state convergence.}{25}{section*.21}%
+\contentsline {paragraph}{Bayes-optimal gap at $k = 16$.}{25}{section*.22}%
+\contentsline {section}{\numberline {B.6}Results}{26}{section.B.6}%
+\contentsline {subsection}{\numberline {B.6.1}H3: Is the Reversed Direction Harder?}{26}{subsection.B.6.1}%
+\contentsline {subsection}{\numberline {B.6.2}H4: Architecture Dependence of the Gap}{26}{subsection.B.6.2}%
+\contentsline {subsection}{\numberline {B.6.3}Architectural Breakdown}{26}{subsection.B.6.3}%
+\contentsline {subsection}{\numberline {B.6.4}Interpretation}{29}{subsection.B.6.4}%
+\contentsline {section}{\numberline {B.7}Activation Ablation Experiments}{29}{section.B.7}%
+\contentsline {subsection}{\numberline {B.7.1}Overview}{29}{subsection.B.7.1}%
+\contentsline {subsection}{\numberline {B.7.2}Direction Identification}{29}{subsection.B.7.2}%
+\contentsline {subsection}{\numberline {B.7.3}Ablation Protocol}{29}{subsection.B.7.3}%
+\contentsline {subsection}{\numberline {B.7.4}Results}{30}{subsection.B.7.4}%
+\contentsline {section}{\numberline {B.8}Embedding Geometry}{30}{section.B.8}%
+\contentsline {subsection}{\numberline {B.8.1}Cosine Similarity Structure}{30}{subsection.B.8.1}%
+\contentsline {subsection}{\numberline {B.8.2}Norm Structure}{32}{subsection.B.8.2}%
+\contentsline {subsection}{\numberline {B.8.3}Relationship to PMI Embeddings}{32}{subsection.B.8.3}%
+\contentsline {section}{\numberline {B.9}Training Dynamics}{32}{section.B.9}%
+\contentsline {subsection}{\numberline {B.9.1}Setup}{34}{subsection.B.9.1}%
+\contentsline {subsection}{\numberline {B.9.2}H5: Transient Dynamics Asymmetry}{34}{subsection.B.9.2}%
+\contentsline {subsection}{\numberline {B.9.3}H6: Learning Phases}{34}{subsection.B.9.3}%
+\contentsline {subsection}{\numberline {B.9.4}H7: Architecture-Dependent Convergence Gap}{37}{subsection.B.9.4}%
+\contentsline {subsection}{\numberline {B.9.5}Training Dynamics: Summary}{37}{subsection.B.9.5}%
+\contentsline {section}{\numberline {B.10}Discussion and Open Questions}{37}{section.B.10}%
+\contentsline {subsection}{\numberline {B.10.1}Summary of Findings}{37}{subsection.B.10.1}%
+\contentsline {paragraph}{Unified interpretation.}{38}{section*.39}%
+\contentsline {subsection}{\numberline {B.10.2}Open Questions}{38}{subsection.B.10.2}%
+\contentsline {part}{III\hspace {1em}Mechanistic Analysis}{40}{part.3}%
+\contentsline {chapter}{\numberline {C}Linear Probing: Code Review and Methodology}{41}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Purpose of This Document}{41}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Conceptual Background}{41}{section.C.2}%
+\contentsline {subsection}{\numberline {C.2.1}Belief States as an Iterated Function System}{41}{subsection.C.2.1}%
+\contentsline {subsection}{\numberline {C.2.2}The Probing Question}{41}{subsection.C.2.2}%
+\contentsline {subsection}{\numberline {C.2.3}Why ``Fractal Directions''?}{42}{subsection.C.2.3}%
+\contentsline {section}{\numberline {C.3}What the Code Computes}{42}{section.C.3}%
+\contentsline {section}{\numberline {C.4}Conceptual Critique}{42}{section.C.4}%
+\contentsline {subsection}{\numberline {C.4.1}The Name ``PCA'' Is a Misnomer}{42}{subsection.C.4.1}%
+\contentsline {subsection}{\numberline {C.4.2}Appropriateness of a Linear Probe}{43}{subsection.C.4.2}%
+\contentsline {subsection}{\numberline {C.4.3}Last-Position vs.\ All-Position Analysis}{43}{subsection.C.4.3}%
+\contentsline {subsection}{\numberline {C.4.4}Metric Interpretation}{43}{subsection.C.4.4}%
+\contentsline {subsection}{\numberline {C.4.5}Missing: Statistical Rigour}{43}{subsection.C.4.5}%
+\contentsline {section}{\numberline {C.5}Engineering Critique}{43}{section.C.5}%
+\contentsline {subsection}{\numberline {C.5.1}Strengths}{43}{subsection.C.5.1}%
+\contentsline {subsection}{\numberline {C.5.2}Issues}{44}{subsection.C.5.2}%
+\contentsline {section}{\numberline {C.6}Refactored Implementation}{44}{section.C.6}%
+\contentsline {subsection}{\numberline {C.6.1}Architecture}{45}{subsection.C.6.1}%
+\contentsline {subsection}{\numberline {C.6.2}Data Flow}{45}{subsection.C.6.2}%
+\contentsline {subsection}{\numberline {C.6.3}Output Format}{45}{subsection.C.6.3}%
+\contentsline {section}{\numberline {C.7}Usage Guide}{46}{section.C.7}%
+\contentsline {subsection}{\numberline {C.7.1}Single Model}{46}{subsection.C.7.1}%
+\contentsline {subsection}{\numberline {C.7.2}Batch Processing}{46}{subsection.C.7.2}%
+\contentsline {subsection}{\numberline {C.7.3}MPI Parallelism}{46}{subsection.C.7.3}%
+\contentsline {subsection}{\numberline {C.7.4}Loading Results in a Notebook}{46}{subsection.C.7.4}%
+\contentsline {section}{\numberline {C.8}Summary of Recommendations}{46}{section.C.8}%
+\contentsline {chapter}{\numberline {D}Iterative Probing and Counterfactual Importance}{49}{appendix.D}%
+\contentsline {section}{\numberline {D.1}Introduction}{49}{section.D.1}%
+\contentsline {section}{\numberline {D.2}Model and Process}{49}{section.D.2}%
+\contentsline {section}{\numberline {D.3}Algorithm}{50}{section.D.3}%
+\contentsline {subsection}{\numberline {D.3.1}Iterative Probing}{50}{subsection.D.3.1}%
+\contentsline {paragraph}{Why $R^2$ and not MSE?}{50}{section*.43}%
+\contentsline {subsection}{\numberline {D.3.2}Counterfactual Importance via Mean Ablation}{50}{subsection.D.3.2}%
+\contentsline {section}{\numberline {D.4}Results}{51}{section.D.4}%
+\contentsline {paragraph}{Note on position selection.}{51}{section*.44}%
+\contentsline {subsection}{\numberline {D.4.1}Iterative Probing: Many Redundant Copies}{51}{subsection.D.4.1}%
+\contentsline {subsection}{\numberline {D.4.2}Counterfactual Importance: A Strong Hierarchy}{52}{subsection.D.4.2}%
+\contentsline {section}{\numberline {D.5}Training Dynamics: Emergence of Redundant Copies}{54}{section.D.5}%
+\contentsline {section}{\numberline {D.6}Discussion}{55}{section.D.6}%
+\contentsline {subsection}{\numberline {D.6.1}The Nature of Redundancy}{55}{subsection.D.6.1}%
+\contentsline {subsection}{\numberline {D.6.2}Layer Hierarchy and the Residual Stream}{57}{subsection.D.6.2}%
+\contentsline {subsection}{\numberline {D.6.3}Decodability $\neq $ Causal Use}{57}{subsection.D.6.3}%
+\contentsline {subsection}{\numberline {D.6.4}Comparison to Superposition}{57}{subsection.D.6.4}%
+\contentsline {section}{\numberline {D.7}Implementation Notes}{57}{section.D.7}%
+\contentsline {section}{\numberline {D.8}Conclusion}{58}{section.D.8}%

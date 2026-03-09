@@ -203,18 +203,47 @@ def aggregate_loss_curves(df_loss):
     return grouped
 
 
+def select_best_run_curves(df_loss):
+    """Select the best run (lowest final val_loss) per exact config.
+
+    Returns the full loss curve for the best run of each
+    (n_layer, n_embd, attn_only, norm, direction) config.
+    """
+    key_cols = ["n_layer", "n_embd", "attn_only", "norm", "direction"]
+
+    # Find final val_loss per run
+    final_loss = df_loss.groupby(["run_id"] + key_cols).agg(
+        final_val_loss=("val_loss", "last"),
+    ).reset_index()
+
+    # Select best run_id per config
+    best_idx = final_loss.groupby(key_cols)["final_val_loss"].idxmin()
+    best_runs = final_loss.loc[best_idx, ["run_id"] + key_cols]
+
+    # Extract full curves for best runs only
+    df_best = df_loss.merge(best_runs[["run_id"]], on="run_id", how="inner")
+    return df_best
+
+
 # ============================================================
 # Plotting functions
 # ============================================================
 
-def plot_loss_curves_grid(df_curves, fig_dir):
-    """Figure 1: Grid of loss curves, n_layer x n_embd, fwd vs rev overlay."""
-    layers = sorted(df_curves["n_layer"].unique())
-    embds = sorted(df_curves["n_embd"].unique())
+def plot_loss_curves_grid(df_best, fig_dir):
+    """Figure 1: Grid of loss curves, n_layer x n_embd, fwd vs rev overlay.
+
+    Each panel shows one (n_layer, n_embd) combination. Within each panel,
+    each exact config (attn_only, norm) is a separate fwd/rev pair. For
+    multi-seed configs, only the best run (lowest final val_loss) is shown.
+    Separate figures for full vs attn_only models.
+    """
+    layers = sorted(df_best["n_layer"].unique())
+    embds = sorted(df_best["n_embd"].unique())
     n_rows = len(layers)
     n_cols = len(embds)
 
-    # Separate panels for attn_only=True and attn_only=False
+    norm_styles = {"none": "-", "LN": "--"}
+
     for attn_only, attn_label in [(False, "full"), (True, "attn_only")]:
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3.5 * n_rows),
                                  sharex=True, sharey=True)
@@ -227,41 +256,25 @@ def plot_loss_curves_grid(df_curves, fig_dir):
             for j, n_embd in enumerate(embds):
                 ax = axes[i, j]
 
-                for direction, color, label in [
-                    ("forward", COLOR_FWD, "Forward"),
-                    ("reversed", COLOR_REV, "Reversed"),
-                ]:
-                    # Average over norm variants for cleaner plot
-                    mask = (
-                        (df_curves["n_layer"] == n_layer) &
-                        (df_curves["n_embd"] == n_embd) &
-                        (df_curves["attn_only"] == attn_only) &
-                        (df_curves["direction"] == direction)
-                    )
-                    sub = df_curves[mask].sort_values("step")
-                    if len(sub) == 0:
-                        continue
-
-                    # If multiple norm variants, average them
-                    curve = sub.groupby("step").agg(
-                        val_loss=("mean_val_loss", "mean"),
-                    ).reset_index()
-
-                    ax.plot(curve["step"], curve["val_loss"],
-                            color=color, label=label, linewidth=1.2, alpha=0.85)
-
-                    # Shade std if available (from multi-seed)
-                    if sub["n_runs"].max() > 1:
-                        curve_std = sub.groupby("step").agg(
-                            val_loss=("mean_val_loss", "mean"),
-                            std=("std_val_loss", "mean"),
-                        ).reset_index()
-                        ax.fill_between(
-                            curve_std["step"],
-                            curve_std["val_loss"] - curve_std["std"],
-                            curve_std["val_loss"] + curve_std["std"],
-                            color=color, alpha=0.12,
+                for norm, ls in norm_styles.items():
+                    for direction, color in [
+                        ("forward", COLOR_FWD),
+                        ("reversed", COLOR_REV),
+                    ]:
+                        mask = (
+                            (df_best["n_layer"] == n_layer) &
+                            (df_best["n_embd"] == n_embd) &
+                            (df_best["attn_only"] == attn_only) &
+                            (df_best["norm"] == norm) &
+                            (df_best["direction"] == direction)
                         )
+                        sub = df_best[mask].sort_values("step")
+                        if len(sub) == 0:
+                            continue
+
+                        ax.plot(sub["step"], sub["val_loss"],
+                                color=color, linestyle=ls,
+                                linewidth=1.0, alpha=0.85)
 
                 ax.axhline(ENTROPY_RATE, color="gray", linestyle="--",
                            linewidth=0.8, alpha=0.6)
@@ -272,8 +285,16 @@ def plot_loss_curves_grid(df_curves, fig_dir):
                     ax.set_xlabel("Step")
                 if j == 0:
                     ax.set_ylabel("Val Loss")
-                if i == 0 and j == n_cols - 1:
-                    ax.legend(fontsize=8)
+
+        # Custom legend
+        from matplotlib.lines import Line2D
+        legend_elements = [
+            Line2D([0], [0], color=COLOR_FWD, linestyle="-", label="Forward"),
+            Line2D([0], [0], color=COLOR_REV, linestyle="-", label="Reversed"),
+            Line2D([0], [0], color="gray", linestyle="-", label="noLN"),
+            Line2D([0], [0], color="gray", linestyle="--", label="LN"),
+        ]
+        axes[0, -1].legend(handles=legend_elements, fontsize=7, loc="upper right")
 
         fig.suptitle(f"Training Dynamics: Forward vs Reversed ({attn_label})", fontsize=13)
         plt.tight_layout()
@@ -283,10 +304,10 @@ def plot_loss_curves_grid(df_curves, fig_dir):
         print(f"Saved: {path}")
 
 
-def plot_loss_curves_by_norm(df_curves, fig_dir):
-    """Figure 1b: Grid with norm variants shown separately (not averaged)."""
-    layers = sorted(df_curves["n_layer"].unique())
-    embds = sorted(df_curves["n_embd"].unique())
+def plot_loss_curves_by_norm(df_best, fig_dir):
+    """Figure 1b: All configs in one grid, best run per config."""
+    layers = sorted(df_best["n_layer"].unique())
+    embds = sorted(df_best["n_embd"].unique())
     n_rows = len(layers)
     n_cols = len(embds)
 
@@ -297,28 +318,34 @@ def plot_loss_curves_by_norm(df_curves, fig_dir):
     if n_cols == 1:
         axes = axes[:, np.newaxis]
 
+    norm_styles = {"none": "-", "LN": "--"}
+    attn_widths = {False: 1.0, True: 0.6}
+
     for i, n_layer in enumerate(layers):
         for j, n_embd in enumerate(embds):
             ax = axes[i, j]
 
-            for direction, color in [("forward", COLOR_FWD), ("reversed", COLOR_REV)]:
-                for attn_only in [False, True]:
-                    for norm in ["none", "LN"]:
+            for attn_only in [False, True]:
+                for norm, ls in norm_styles.items():
+                    for direction, color in [
+                        ("forward", COLOR_FWD),
+                        ("reversed", COLOR_REV),
+                    ]:
                         mask = (
-                            (df_curves["n_layer"] == n_layer) &
-                            (df_curves["n_embd"] == n_embd) &
-                            (df_curves["attn_only"] == attn_only) &
-                            (df_curves["norm"] == norm) &
-                            (df_curves["direction"] == direction)
+                            (df_best["n_layer"] == n_layer) &
+                            (df_best["n_embd"] == n_embd) &
+                            (df_best["attn_only"] == attn_only) &
+                            (df_best["norm"] == norm) &
+                            (df_best["direction"] == direction)
                         )
-                        sub = df_curves[mask].sort_values("step")
+                        sub = df_best[mask].sort_values("step")
                         if len(sub) == 0:
                             continue
 
-                        ls = "-" if not attn_only else "--"
-                        alpha = 0.9 if norm == "none" else 0.5
-                        ax.plot(sub["step"], sub["mean_val_loss"],
-                                color=color, linestyle=ls, linewidth=0.8, alpha=alpha)
+                        lw = attn_widths[attn_only]
+                        alpha = 0.9 if not attn_only else 0.5
+                        ax.plot(sub["step"], sub["val_loss"],
+                                color=color, linestyle=ls, linewidth=lw, alpha=alpha)
 
             ax.axhline(ENTROPY_RATE, color="gray", linestyle="--",
                        linewidth=0.8, alpha=0.6)
@@ -329,17 +356,18 @@ def plot_loss_curves_by_norm(df_curves, fig_dir):
             if j == 0:
                 ax.set_ylabel("Val Loss")
 
-    # Custom legend
     from matplotlib.lines import Line2D
     legend_elements = [
         Line2D([0], [0], color=COLOR_FWD, label="Forward"),
         Line2D([0], [0], color=COLOR_REV, label="Reversed"),
-        Line2D([0], [0], color="gray", linestyle="-", label="Full"),
-        Line2D([0], [0], color="gray", linestyle="--", label="Attn-only"),
+        Line2D([0], [0], color="gray", linestyle="-", label="noLN"),
+        Line2D([0], [0], color="gray", linestyle="--", label="LN"),
+        Line2D([0], [0], color="gray", linewidth=1.0, label="Full"),
+        Line2D([0], [0], color="gray", linewidth=0.6, alpha=0.5, label="Attn-only"),
     ]
-    axes[0, -1].legend(handles=legend_elements, fontsize=7, loc="upper right")
+    axes[0, -1].legend(handles=legend_elements, fontsize=6, loc="upper right")
 
-    fig.suptitle("Training Dynamics: All Configs", fontsize=13)
+    fig.suptitle("Training Dynamics: All Configs (best run per config)", fontsize=13)
     plt.tight_layout()
     path = os.path.join(fig_dir, "loss_curves_grid_all.pdf")
     fig.savefig(path, bbox_inches="tight")
@@ -507,57 +535,75 @@ def plot_delta_vs_architecture(df_paired, fig_dir):
     print(f"Saved: {path}")
 
 
-def plot_early_dynamics_zoom(df_curves, fig_dir):
-    """Figure 6: Zoom into first 1000 steps to check Phase I (unigram)."""
-    layers = sorted(df_curves["n_layer"].unique())
-    embds = sorted(df_curves["n_embd"].unique())
+def plot_early_dynamics_zoom(df_best, fig_dir):
+    """Figure 6: Zoom into first 1000 steps to check Phase I (unigram).
 
-    fig, axes = plt.subplots(len(layers), len(embds),
-                             figsize=(4 * len(embds), 3.5 * len(layers)),
-                             sharex=True, sharey=True)
-    if len(layers) == 1:
-        axes = axes[np.newaxis, :]
-    if len(embds) == 1:
-        axes = axes[:, np.newaxis]
+    Uses best run per exact config, with norm distinguished by linestyle.
+    Separate figures for full vs attn_only.
+    """
+    layers = sorted(df_best["n_layer"].unique())
+    embds = sorted(df_best["n_embd"].unique())
 
-    early = df_curves[df_curves["step"] <= 1000]
+    norm_styles = {"none": "-", "LN": "--"}
 
-    for i, n_layer in enumerate(layers):
-        for j, n_embd in enumerate(embds):
-            ax = axes[i, j]
-            for direction, color, label in [
-                ("forward", COLOR_FWD, "Forward"),
-                ("reversed", COLOR_REV, "Reversed"),
-            ]:
-                mask = (
-                    (early["n_layer"] == n_layer) &
-                    (early["n_embd"] == n_embd) &
-                    (early["direction"] == direction)
-                )
-                sub = early[mask].sort_values("step")
-                if len(sub) == 0:
-                    continue
-                curve = sub.groupby("step").agg(
-                    val_loss=("mean_val_loss", "mean"),
-                ).reset_index()
-                ax.plot(curve["step"], curve["val_loss"],
-                        color=color, label=label, linewidth=1.2)
+    early = df_best[df_best["step"] <= 1000]
 
-            ax.set_title(f"L={n_layer}, d={n_embd}", fontsize=10)
-            ax.grid(alpha=0.3)
-            if i == len(layers) - 1:
-                ax.set_xlabel("Step")
-            if j == 0:
-                ax.set_ylabel("Val Loss")
-            if i == 0 and j == len(embds) - 1:
-                ax.legend(fontsize=8)
+    for attn_only, attn_label in [(False, "full"), (True, "attn_only")]:
+        fig, axes = plt.subplots(len(layers), len(embds),
+                                 figsize=(4 * len(embds), 3.5 * len(layers)),
+                                 sharex=True, sharey=True)
+        if len(layers) == 1:
+            axes = axes[np.newaxis, :]
+        if len(embds) == 1:
+            axes = axes[:, np.newaxis]
 
-    fig.suptitle("Early Training Dynamics (first 1000 steps)", fontsize=13)
-    plt.tight_layout()
-    path = os.path.join(fig_dir, "early_dynamics_zoom.pdf")
-    fig.savefig(path, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Saved: {path}")
+        for i, n_layer in enumerate(layers):
+            for j, n_embd in enumerate(embds):
+                ax = axes[i, j]
+
+                for norm, ls in norm_styles.items():
+                    for direction, color in [
+                        ("forward", COLOR_FWD),
+                        ("reversed", COLOR_REV),
+                    ]:
+                        mask = (
+                            (early["n_layer"] == n_layer) &
+                            (early["n_embd"] == n_embd) &
+                            (early["attn_only"] == attn_only) &
+                            (early["norm"] == norm) &
+                            (early["direction"] == direction)
+                        )
+                        sub = early[mask].sort_values("step")
+                        if len(sub) == 0:
+                            continue
+
+                        ax.plot(sub["step"], sub["val_loss"],
+                                color=color, linestyle=ls,
+                                linewidth=1.0, alpha=0.85)
+
+                ax.set_title(f"L={n_layer}, d={n_embd}", fontsize=10)
+                ax.grid(alpha=0.3)
+                if i == len(layers) - 1:
+                    ax.set_xlabel("Step")
+                if j == 0:
+                    ax.set_ylabel("Val Loss")
+
+        from matplotlib.lines import Line2D
+        legend_elements = [
+            Line2D([0], [0], color=COLOR_FWD, label="Forward"),
+            Line2D([0], [0], color=COLOR_REV, label="Reversed"),
+            Line2D([0], [0], color="gray", linestyle="-", label="noLN"),
+            Line2D([0], [0], color="gray", linestyle="--", label="LN"),
+        ]
+        axes[0, -1].legend(handles=legend_elements, fontsize=7, loc="upper right")
+
+        fig.suptitle(f"Early Training Dynamics, first 1000 steps ({attn_label})",
+                     fontsize=13)
+        plt.tight_layout()
+        path = os.path.join(fig_dir, f"early_dynamics_zoom_{attn_label}.pdf")
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved: {path}")
 
 
 def run_statistical_tests(df_paired):
@@ -645,6 +691,9 @@ def main():
     # Aggregate loss curves for plotting
     df_curves = aggregate_loss_curves(df_loss)
 
+    # Select best run per config for loss curve plots
+    df_best = select_best_run_curves(df_loss)
+
     # Print summary
     print(f"\n{'='*60}")
     print("H5: Transient Dynamics Asymmetry")
@@ -723,13 +772,13 @@ def main():
     print(f"\n{'='*60}")
     print("Generating Figures")
     print(f"{'='*60}")
-    plot_loss_curves_grid(df_curves, args.fig_dir)
-    plot_loss_curves_by_norm(df_curves, args.fig_dir)
+    plot_loss_curves_grid(df_best, args.fig_dir)
+    plot_loss_curves_by_norm(df_best, args.fig_dir)
     plot_convergence_scatter(df_paired, args.fig_dir)
     plot_delta_epoch1_vs_final(df_paired, args.fig_dir)
     plot_delta_by_arch(df_paired, args.fig_dir)
     plot_delta_vs_architecture(df_paired, args.fig_dir)
-    plot_early_dynamics_zoom(df_curves, args.fig_dir)
+    plot_early_dynamics_zoom(df_best, args.fig_dir)
 
     # Save summary JSON
     summary = {
