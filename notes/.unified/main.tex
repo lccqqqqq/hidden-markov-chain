@@ -31,6 +31,7 @@
   {../model_comparison/}%
   {../model_comparison/figures/}%
   {../fixed_embedding/}%
+  {../../figures/unembed_analysis/}%
 }
 
 % ── Shared macros ──
@@ -53,7 +54,7 @@
 % ── Title ──
 \title{How Do Transformers Learn Hidden Markov Models?\\[0.3em]
        \large Project Notes}
-\author{C.~L.}
+\author{Claude, C.~L.}
 \date{\today}
 
 \begin{document}
@@ -63,6 +64,11 @@
 % Suppress sub-document \maketitle and \tableofcontents
 \def\maketitle{}
 \def\tableofcontents{}
+
+% Neutralise \appendix from sub-files so it doesn't turn all
+% subsequent chapters into appendices.  We restore it at the end.
+\let\origappendix\appendix
+\def\appendix{}
 
 % ──────────────────────────────────────────────────────────────────────
 \part{Foundations}

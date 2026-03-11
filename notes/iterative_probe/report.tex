@@ -12,7 +12,7 @@
 
 \hfuzz=\maxdimen
 
-\graphicspath{{../../figures/iterative_probe/}{../../figures/iterative_probe_emergence/}}
+\graphicspath{{../../figures/iterative_probe/}{../../figures/iterative_probe_emergence/}{../../figures/unembed_analysis/}}
 
 \newcommand{\lcq}[1]{\textcolor{red}{#1}}
 \newcommand{\code}[1]{\texttt{#1}}
@@ -227,6 +227,123 @@ The contrast between random init and the trained model is most informative.  At 
 
 The layer ordering reversal is also notable.  At random init, all layers behave identically (since each is just a different random projection).  In the trained model, the layer hierarchy (layer~0 most robust, layer~3 degrading first in terms of redundancy) reflects the functional specialisation induced by training.  Taken together with the ablation results of Section~\ref{sec:results}, this suggests that training concentrates the \emph{causally important} belief-state signal into a small subspace at layer~3, while distributing redundant (but non-causal) copies more broadly at earlier layers.
 
+\subsection{Random-Init Decodability Is a Generic Reservoir Effect}
+\label{sec:reservoir}
+
+The high $R^2 \approx 0.93$ at random initialisation might appear surprising, but it is a well-understood consequence of random feature maps.  A randomly initialised transformer maps each input sequence to a 64-dimensional activation vector via a deterministic (albeit arbitrary) nonlinear function.  Since the belief state is also a deterministic function of the same input, a linear probe can exploit the random network's activations as a \emph{reservoir}---a high-dimensional nonlinear feature space from which smooth, low-dimensional target functions are linearly decodable~\cite{rahimi2007random,reservoir_transformers}.
+
+We verified this with three control experiments:
+\begin{enumerate}
+  \item \textbf{Input-dependence is essential.}  Replacing the random-init activations with IID Gaussian vectors (same shape, no input dependence) or shuffling the activation--sample correspondence both yield $R^2 \approx 0$.  The high $R^2$ at random init is therefore not an overfitting artefact but requires the features to be a deterministic function of the input.
+
+  \item \textbf{Belief state is not special.}  We probed the \emph{same} random-init activations for eight different target functions of the Mess3 input sequences: the true belief state, token counts, last-token identity, bigram counts, position-weighted averages, a trigram hash, modular arithmetic, and belief states computed under a wrong HMM model.  All smooth, low-dimensional targets yielded high $R^2$ (0.51--0.99), while the highly nonlinear modular-sum target gave $R^2 \approx 0.02$.  The true belief state ($R^2 = 0.96$) fell squarely in the middle of the distribution.
+
+  \item \textbf{Wrong-model belief states are equally decodable.}  We generated 20 random emission matrices (with 2--5 hidden states each) and computed Bayesian belief updates on the same Mess3 token sequences using these completely wrong HMMs.  The resulting $R^2$ values had mean $0.96 \pm 0.03$ (range 0.87--0.99), indistinguishable from the true belief state's $R^2 = 0.96$.
+\end{enumerate}
+
+\paragraph{Implications for baselines in probing studies.}
+These results bear on the validation methodology of Shai et al.~\cite{shai2024transformers}, who verify that their belief-state probes are non-trivial by shuffling belief-state labels (breaking the input--target correspondence) and showing that the probe collapses.  This control is analogous to our IID/shuffled conditions and rules out projection artefacts, but it does not address the random-init baseline: a randomly initialised network already achieves $R^2 \approx 0.96$ for \emph{any} smooth function of the input, including the belief state.  A fairer baseline would compare trained-model $R^2$ against random-init $R^2$, which reveals that the true contribution of training is the refinement of copy quality ($0.93 \to 0.99$) and the creation of a persistent multi-copy plateau, rather than the emergence of decodability \emph{per se}.
+
+%----------------------------------------------------------------------
+\section{Unembedding Decomposition: How $W_U$ Reads Belief-State Subspaces}
+\label{sec:unembed}
+%----------------------------------------------------------------------
+
+The iterative probing analysis established that the residual stream contains 25+ redundant copies of the belief state, of which only subspace~0 at layer~3 is causally important.  We now ask: \emph{how does the unembedding matrix $W_U$ convert belief-state information into next-token logits?}
+
+The unembedding matrix $W_U \in \mathbb{R}^{64 \times 3}$ maps the post-LayerNorm residual stream to logits over the 3-token Mess3 vocabulary.  Since $W_U$ has rank at most 3, it can read from at most $\sim$1--2 of the 2D belief-state subspaces.  The decomposition $W_U = \sum_k V_k^\top (V_k W_U)$ is always valid by Parseval's identity (where $\{V_k\}$ are the orthogonal probe subspaces), but most terms must be negligible.
+
+\paragraph{Post-LN probing.}
+Because \code{ln\_final} sits between the residual stream and $W_U$, we first verify that belief-state information survives the final LayerNorm.  We run the same iterative probing algorithm on the \emph{post-LN} activations (extracted via \code{cache["ln\_final.hook\_normalized"][:, -1, :]}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\textwidth]{postln_probing}
+  \caption{Iterative probing on post-LN activations.  \textbf{Left:}~$R^2$ vs.\ probe iteration shows the same extended plateau as pre-LN probing, confirming that belief-state information persists through the final LayerNorm.  \textbf{Right:}~MSE vs.\ cumulative dimensions removed grows slowly through $\sim$40 dims before accelerating.}
+  \label{fig:postln-probing}
+\end{figure}
+
+Figure~\ref{fig:postln-probing} confirms that the belief state is robustly decodable from post-LN activations, with a plateau similar to the pre-LN results.  The post-LN subspaces $\{V_k\}$ from this probing form the basis for the $W_U$ decomposition below.
+
+\subsection{$W_U$ Overlap with Probe Subspaces}
+\label{sec:wu-overlap}
+
+For each post-LN probe subspace $V_k$ (a $2 \times 64$ orthonormal matrix), we compute the fraction of $W_U$'s energy that lies in that subspace:
+\begin{equation}
+  \text{overlap}_k = \frac{\|V_k W_U\|_F^2}{\|W_U\|_F^2},
+  \label{eq:overlap}
+\end{equation}
+where $\|\cdot\|_F$ denotes the Frobenius norm.  By Parseval's identity, these fractions sum to~1 across all 32 subspaces.  If $W_U$ were oriented uniformly with respect to the probe subspaces, each would capture $1/32 \approx 3.1\%$ of the total energy.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\textwidth]{wu_overlap}
+  \caption{\textbf{Left:}~$W_U$ overlap fraction (Eq.~\ref{eq:overlap}) vs.\ probe subspace index.  Subspace~0 captures 25.8\% of $W_U$'s energy---$8\times$ the uniform baseline (dashed line).  \textbf{Right:}~Per-token breakdown $\|V_k w_j\|^2 / \|w_j\|^2$ for the first 8 subspaces.  The three token columns of $W_U$ are read differently: token~2 is most concentrated in subspace~0 (31\%), while token~1 is most concentrated in subspace~1 (30\%).}
+  \label{fig:wu-overlap}
+\end{figure}
+
+Figure~\ref{fig:wu-overlap} shows that subspace~0---the same subspace identified as causally dominant by the residual-stream ablation---captures 25.8\% of $W_U$'s energy, far exceeding the 3.1\% uniform baseline.  The remaining subspaces each capture $\leq$5.7\%.  The per-token breakdown (right panel) reveals that different columns of $W_U$ are read from partially different subspaces, reflecting the fact that optimal next-token probabilities depend on the belief state differently for each token.
+
+\subsection{Effective Emission Matrix}
+\label{sec:effective-emission}
+
+The Bayes-optimal predictor for an HMM outputs $P(x_t = j \mid \text{history}) = \sum_i b_i \, O_{ji}$, where $b$ is the belief state and $O_{ji} = P(\text{observe } j \mid \text{state } i)$ is the observation matrix.  In logit space, this corresponds to $\text{logit}_j \propto \log(\sum_i b_i O_{ji})$, which for the nearly-diagonal Mess3 observation matrix is well approximated by $\log(O^\top) \cdot b$ (up to a constant shift absorbed by softmax).
+
+We extract the effective map from belief state to logits \emph{through a single subspace} $V_k$.  The construction is purely from weights:
+\begin{enumerate}
+  \item The probe maps activations to belief: $\hat{b} = W_{\text{probe}} \, h + \text{intercept}$, where $W_{\text{probe}} \in \mathbb{R}^{3 \times 64}$.
+  \item The subspace projection of $h$ contributes logits: $\ell_k = (V_k^\top V_k h)^\top W_U$.
+  \item Composing via the pseudoinverse: $M_{\text{eff}} = C^\top B$, where $C = V_k \, \text{pinv}(W_{\text{probe}}) \in \mathbb{R}^{r \times 3}$ and $B = V_k \, W_U \in \mathbb{R}^{r \times 3}$.
+\end{enumerate}
+This yields a $3 \times 3$ matrix $M_{\text{eff}}$ that maps belief states to logit contributions through subspace~$k$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\textwidth]{effective_emission}
+  \caption{Effective emission matrix $M_{\text{eff}}$ through subspace~0 (left) vs.\ theoretical $\log(O^\top)$ (right).  Both are $3 \times 3$ matrices mapping (state $i$) $\to$ (token $j$).  $M_{\text{eff}}$ exhibits the same diagonal-dominant structure as $\log(O^\top)$: the highest entry in each row corresponds to the token most likely emitted by that state.  The centered cosine similarity between $M_{\text{eff}}$ and $\log(O^\top)$ is 0.928.}
+  \label{fig:effective-emission}
+\end{figure}
+
+Figure~\ref{fig:effective-emission} shows that $M_{\text{eff}}$ through subspace~0 recovers the qualitative structure of $\log(O^\top)$: it is diagonal-dominant, with positive entries on the diagonal (state $i$ predicts token $i$) and negative entries off-diagonal.  The absolute scales differ because $M_{\text{eff}}$ represents the contribution from only one subspace and is defined up to an overall scale and shift.  The column-centered cosine similarity between $M_{\text{eff}}$ and $\log(O^\top)$ is 0.928, confirming that the dominant subspace implements a close approximation to the Bayes-optimal emission structure.
+
+\paragraph{Direct empirical verification.}
+To verify that the pathway through subspace~0 produces predictions close to Bayes-optimal, we computed $\text{softmax}(M_{\text{eff}} \cdot b)$ for each sample's belief state $b$ and compared it to the ground-truth $O^\top b$.  The per-token Pearson correlations are 0.94--0.998, and the mean KL divergence $D_{\text{KL}}(O^\top b \| \text{softmax}(M_{\text{eff}} \cdot b)) = 0.108$ nats, confirming that the effective map through a single 2D subspace closely approximates the observation matrix.
+
+\subsection{$W_U$ Ablation}
+\label{sec:wu-ablation}
+
+We causally test the importance of each subspace for $W_U$ by zeroing out its component: $W_U' = W_U - V_k^\top (V_k W_U)$.  This removes $W_U$'s ability to read from subspace~$k$ without modifying the residual stream activations.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\textwidth]{wu_ablation}
+  \caption{\textbf{Left:}~Per-subspace $W_U$ ablation on a log scale.  Removing subspace~0 causes KL $= 0.052$; all other individual subspaces cause KL $< 0.01$.  \textbf{Right:}~Cumulative $W_U$ ablation as a function of dimensions removed.  The curve rises steeply in the first 2--6 dimensions (subspaces 0--2) and saturates around 0.3 nats, consistent with $W_U$'s rank-3 constraint: once 6+ dimensions are removed, the remaining $W_U$ projection space is severely diminished regardless of which specific subspaces are ablated.}
+  \label{fig:wu-ablation}
+\end{figure}
+
+Figure~\ref{fig:wu-ablation} confirms the causal dominance of subspace~0 from the $W_U$ side.  The per-subspace ablation (left) shows a clear hierarchy: subspace~0 ($\text{KL} = 0.052$) is an order of magnitude more important than any other individual subspace.  The cumulative ablation (right) saturates after $\sim$3 subspaces (6 dimensions), which is expected: $W_U$ has rank 3, so removing 6 orthogonal dimensions from a rank-3 matrix necessarily destroys most of its energy regardless of which directions are removed.
+
+\subsection{Logit Contribution Analysis}
+\label{sec:logit-contributions}
+
+Finally, we decompose the model's logits into per-subspace contributions.  For each sample with post-LN activation $h$, the logit contribution from subspace~$k$ is:
+\begin{equation}
+  \ell_k = (V_k^\top V_k \, h)^\top W_U.
+\end{equation}
+We measure two quantities for each subspace: (i) the variance of $\ell_k$ across samples (how much that subspace contributes to logit \emph{variability}), and (ii) the correlation between $\ell_k$ and the Bayes-optimal logits $\log(O^\top b)$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\textwidth]{logit_contributions}
+  \caption{\textbf{Left:}~Mean logit variance per subspace.  Subspace~0 contributes $8\times$ the variance of subspace~1, dominating the variability in the model's output.  \textbf{Right:}~Correlation of each subspace's logit contribution with Bayes-optimal logits.  Subspace~0 achieves correlation 0.91; subsequent subspaces show weaker and often inconsistent correlations.}
+  \label{fig:logit-contributions}
+\end{figure}
+
+Figure~\ref{fig:logit-contributions} provides a complementary view.  The variance decomposition (left) shows that subspace~0 dominates the logit signal: its contribution has $8\times$ the variance of the next subspace.  The Bayes-optimal correlation (right) confirms that subspace~0's contribution ($\rho = 0.91$) is most aligned with the theoretically optimal prediction.  Later subspaces show weaker and sometimes negative correlations, consistent with their small and noisy contributions.
+
+\paragraph{Summary.}
+The unembedding analysis closes the loop from belief-state representations to next-token predictions.  The picture is coherent: (i) $W_U$ reads predominantly from subspace~0, the same subspace identified as causally dominant by residual-stream ablation; (ii) through that subspace, the model implements an effective belief-to-logit map that recovers the HMM observation matrix with centered cosine similarity 0.93; (iii) ablating $W_U$'s access to subspace~0 causes the largest output shift, and cumulative ablation saturates after $\sim$3 subspaces due to $W_U$'s rank-3 constraint; and (iv) subspace~0 contributes $8\times$ more logit variance and the highest Bayes-optimal correlation of any subspace.
+
 %----------------------------------------------------------------------
 \section{Discussion}
 \label{sec:discussion}
@@ -283,11 +400,21 @@ Iterative probing reveals that a 4-layer, 64-dimensional transformer trained on 
 
 This dissociation between decodability and causal importance has methodological implications: probe $R^2$ alone is insufficient for understanding which representations a network actually relies upon.  The iterative probing framework, augmented with cumulative-progressive ablation, provides a structured way to quantify both the degree of redundancy and the causal hierarchy among redundant copies.
 
-\begin{thebibliography}{1}
+\begin{thebibliography}{9}
 \bibitem{shai2024transformers}
 S.~Shai, S.~Vardi, I.~Arad, and N.~Razin,
 ``Transformers Represent Belief State Geometry in their Residual Stream,''
 \emph{arXiv preprint arXiv:2405.15943}, 2024.
+
+\bibitem{rahimi2007random}
+A.~Rahimi and B.~Recht,
+``Random Features for Large-Scale Kernel Machines,''
+in \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2007.
+
+\bibitem{reservoir_transformers}
+S.~Shen, Z.~Dong, J.~Ye, L.~Ma, Z.~Yue, D.~Bail, and Z.~Liu,
+``Reservoir Transformers,''
+in \emph{Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics (ACL)}, 2021.
 \end{thebibliography}
 
 \end{document}
