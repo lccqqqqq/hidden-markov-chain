@@ -5,7 +5,7 @@
 Use the conda environment `z2test` for running scripts:
 
 ```bash
-/home/ylias/anaconda3/bin/conda run -n z2test python <script.py>
+/home/ylias/anaconda3/envs/z2test/bin/python3 <script.py>
 ```
 
-Conda binary is at `/home/ylias/anaconda3/bin/conda` (not on default shell PATH).
+PyTorch is installed via pip (CPU-only).
