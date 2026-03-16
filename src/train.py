@@ -14,7 +14,16 @@ from pathlib import Path
 device = "cuda" if t.cuda.is_available() else "cpu"
 
 
-def train(config_path: str = "base_config.yaml"):
+def train(config_path: str = "base_config.yaml", model_seed: int = None,
+          loss_curve_path: str = None):
+    """
+    Train a transformer on HMM data.
+
+    Args:
+        config_path: Path to YAML config file
+        model_seed: If set, seeds torch/numpy for reproducible weight init
+        loss_curve_path: If set, save per-step val_loss to this JSON file
+    """
     # Load base config
     with open(config_path, 'r') as f:
         cfg = yaml.safe_load(f)
@@ -37,6 +46,14 @@ def train(config_path: str = "base_config.yaml"):
 
     mcfg["d_head"] = mcfg["n_embd"] // mcfg["n_head"]
     mcfg["d_mlp"] = 4 * mcfg["n_embd"]
+
+    # Set model seed for reproducible weight initialization
+    if model_seed is not None:
+        t.manual_seed(model_seed)
+        import numpy as np
+        np.random.seed(model_seed)
+        if t.cuda.is_available():
+            t.cuda.manual_seed_all(model_seed)
 
     # Set descriptive run name
     norm_str = mcfg["normalization_type"] or "noLN"
@@ -107,6 +124,7 @@ def train(config_path: str = "base_config.yaml"):
         raise ValueError(f"Unknown scheduler type: {sched_type}")
 
     best_val_loss = float('inf')
+    loss_curve = []  # Collect (step, val_loss) for export
 
     # Save metadata at the start
     metadata = {
@@ -169,6 +187,7 @@ def train(config_path: str = "base_config.yaml"):
                         num_batches += 1
 
                 val_loss /= num_batches
+                loss_curve.append({"step": global_step, "val_loss": val_loss})
                 wandb.log({"val_loss": val_loss, "global_step": global_step})
                 print(f"Step {global_step}: Val Loss = {val_loss:.6f}")
 
@@ -245,6 +264,20 @@ def train(config_path: str = "base_config.yaml"):
     with open(run_dir / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
 
+    # Save loss curve if requested
+    if loss_curve_path:
+        os.makedirs(os.path.dirname(loss_curve_path), exist_ok=True)
+        curve_data = {
+            "run_name": run_name,
+            "model_seed": model_seed,
+            "loss_curve": loss_curve,
+            "best_val_loss": best_val_loss,
+            "final_train_loss": avg_epoch_loss,
+        }
+        with open(loss_curve_path, "w") as f:
+            json.dump(curve_data, f, indent=2)
+        print(f"Loss curve saved to {loss_curve_path}")
+
     print(f"Training complete! Output saved to {run_dir}")
     wandb.finish()
 
@@ -253,5 +286,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train transformer on HMM data")
     parser.add_argument("--config", type=str, default="base_config.yaml",
                         help="Path to config YAML file")
+    parser.add_argument("--model_seed", type=int, default=None,
+                        help="Random seed for reproducible weight initialization")
+    parser.add_argument("--loss_curve_path", type=str, default=None,
+                        help="Path to save per-step val_loss as JSON")
     args = parser.parse_args()
-    train(config_path=args.config)
+    train(config_path=args.config, model_seed=args.model_seed,
+          loss_curve_path=args.loss_curve_path)
