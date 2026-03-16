@@ -141,6 +141,93 @@ def wu_read_subspace(W_U: np.ndarray) -> np.ndarray:
     return U[:, mask].T  # (rank, d_model)
 
 
+def wu_block_isometry_analysis(
+    W_U: np.ndarray,
+    subspaces: list[np.ndarray],
+    n_random: int = 10000,
+) -> dict:
+    """Compare W_U blocks B_k = V_k @ W_U across subspaces via Procrustes.
+
+    For each subspace k, compute B_k = V_k @ W_U (shape rank_k x d_vocab),
+    normalize to unit Frobenius norm, and find the best orthogonal alignment
+    R_k mapping B_hat_0 to B_hat_k via the Procrustes problem.
+
+    Only subspaces with rank == rank of subspace 0 are compared (others get NaN).
+
+    Args:
+        W_U: (d_model, d_vocab) unembed weight matrix
+        subspaces: list of (rank_k, d_model) orthonormal row matrices
+        n_random: number of Monte Carlo samples for random baseline
+
+    Returns:
+        dict with arrays indexed by subspace k:
+          - blocks: list of B_k = V_k @ W_U arrays
+          - frob_norms: ||B_k||_F
+          - procrustes_residuals: ||R_k B_hat_0 - B_hat_k||_F
+          - aligned_cosines: trace(R_k B_hat_0 B_hat_k^T) / rank
+          - det_R: det(R_k) (+1 rotation, -1 reflection)
+          - random_baseline_mean: expected residual for random matrices
+          - random_baseline_std: std of random baseline
+    """
+    n_sub = len(subspaces)
+    rank0 = subspaces[0].shape[0]
+    d_vocab = W_U.shape[1]
+
+    # Compute blocks
+    blocks = [V @ W_U for V in subspaces]
+    frob_norms = np.array([norm(B, 'fro') for B in blocks])
+
+    # Normalize
+    B_hat = []
+    for B, fn in zip(blocks, frob_norms):
+        if fn > 1e-12:
+            B_hat.append(B / fn)
+        else:
+            B_hat.append(B * 0.0)
+
+    # Reference block
+    B_ref = B_hat[0]  # (rank0, d_vocab)
+
+    residuals = np.full(n_sub, np.nan)
+    cosines = np.full(n_sub, np.nan)
+    det_R = np.full(n_sub, np.nan)
+
+    for k in range(n_sub):
+        if subspaces[k].shape[0] != rank0:
+            continue
+        # Procrustes: find R minimizing ||R @ B_ref - B_hat_k||_F
+        # SVD of B_hat_k @ B_ref^T  (rank0 x rank0)
+        M = B_hat[k] @ B_ref.T
+        U, S, Vt = svd(M)
+        R = U @ Vt
+        residuals[k] = norm(R @ B_ref - B_hat[k], 'fro')
+        cosines[k] = np.trace(M @ R.T) / rank0  # = sum(S) / rank0
+        det_R[k] = np.linalg.det(R)
+
+    # Random baseline: pairs of random (rank0, d_vocab) Gaussian matrices
+    rng = np.random.default_rng(42)
+    rand_residuals = np.zeros(n_random)
+    for i in range(n_random):
+        A = rng.standard_normal((rank0, d_vocab))
+        B = rng.standard_normal((rank0, d_vocab))
+        A /= norm(A, 'fro')
+        B /= norm(B, 'fro')
+        M = B @ A.T
+        U, S, Vt = svd(M)
+        R = U @ Vt
+        rand_residuals[i] = norm(R @ A - B, 'fro')
+
+    return {
+        "blocks": blocks,
+        "frob_norms": frob_norms,
+        "procrustes_residuals": residuals,
+        "aligned_cosines": cosines,
+        "det_R": det_R,
+        "random_baseline_mean": float(rand_residuals.mean()),
+        "random_baseline_std": float(rand_residuals.std()),
+    }
+
+
 def logit_subspace_contributions(
     h_postLN: np.ndarray,
     W_U: np.ndarray,
