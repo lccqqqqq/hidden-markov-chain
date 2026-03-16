@@ -19,15 +19,15 @@ data:
 
 model:
   n_layer: 4
-  n_embd: 8
-  n_head: 1
-  d_head: 8
+  n_embd: 32
+  n_head: 2
+  d_head: 16
   vocab_size: 48 # should be depth * tokens_per_cluster
   n_ctx: 16 # should be the same as seq_length in the trainer setup
   activation_function: "relu"
   normalization_type: null # Use null or ~ for Python None (disables layer normalization)
   attn_only: False
-  d_mlp: 32 # should be 4 * d_model (conventional choice)
+  d_mlp: 128 # should be 4 * d_model (conventional choice)
   tie_word_embeddings: True
 
 train:
