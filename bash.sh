@@ -1,6 +1,6 @@
 #!/bin/bash -l
 echo =========================================================   
-echo Job submitted  date = Mon 16 Mar 15:29:42 GMT 2026      
+echo Job submitted  date = Mon 16 Mar 14:46:04 GMT 2026      
 date_start=`date +%s`
 echo $SLURM_JOB_NUM_NODES nodes \( $SLURM_CPUS_ON_NODE processes per node \)        
 echo $SLURM_JOB_NUM_NODES hosts used: $SLURM_JOB_NODELIST      
@@ -15,7 +15,7 @@ echo
 ulimit -l unlimited
 
 export OMP_NUM_THEADS=1
- nice -n 10 /usr/bin/python3 src/train.py --config config/bpe_config_reversed.yaml --model_seed 4 --loss_curve_path data/loss_curves/bpe/rev_seed4.json
+ nice -n 10 /bin/bash -c /usr/bin/python3 src/bpe_tokenizer.py --shards_dir data/datasets/cylinder_graph_hmm/shards --vocab_size 128 --save_path data/bpe_tokenizer_128.json && /usr/bin/python3 src/prepare_bpe_data.py --tokenizer_path data/bpe_tokenizer_128.json --shards_dir data/datasets/cylinder_graph_hmm/shards --seq_length 16
   echo ---------------                                           
   echo Job output ends                                           
 
