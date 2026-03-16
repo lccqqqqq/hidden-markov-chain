@@ -166,7 +166,7 @@ The script \texttt{src/reverse\_hmm\_analysis.py} constructs the reverse HMM via
 The joint entropy rate $H(X_t, S_{t+1} \mid S_t)$, computed analytically from the emission matrices, agrees to machine precision between forward and reverse ($|h_{\mathrm{fwd}} - h_{\mathrm{rev}}| \sim 2\times10^{-15}$\,nats), confirming H1.  The observation entropy rate $h_X$ is identical for both directions by the permutation-invariance argument, and the empirical estimates ($h_X \approx 2.44$\,nats) are consistent.
 
 \paragraph{Belief-state convergence.}
-The excess Bayes-optimal loss $L^*(k) - h_X$ quantifies how far the optimal finite-context predictor is from the infinite-context limit.  At $k = 1$, the reversed excess is $\sim 6\times$ larger than the forward ($1.22$ vs.\ $0.22$\,nats), confirming H2.  Both curves decay rapidly and reach the Monte Carlo noise floor ($\lesssim 5 \times 10^{-3}$\,nats) by $k \approx 6$.
+The excess Bayes-optimal loss $L^*(k) - h_X$ quantifies how far the optimal finite-context predictor is from the infinite-context limit.  Notably, the forward and reverse excess losses are nearly identical at all context lengths: both start at $\sim 1.22$\,nats at $k = 1$ and decay to the Monte Carlo noise floor ($\lesssim 5 \times 10^{-3}$\,nats) by $k \approx 6$.  This stands in contrast to the belief-state KL divergence, which shows a persistent $\sim 2\times$ asymmetry (reverse beliefs converge more slowly).  The decoupling suggests that the hidden states the reverse process is confused between have sufficiently similar emission distributions that the additional state uncertainty does not affect prediction quality.
 
 \paragraph{Bayes-optimal gap at $k = 16$.}
 A full Monte Carlo run with 50{,}000 samples and $k \le 16$ yields:
@@ -191,7 +191,7 @@ Figure~\ref{fig:bayes-gap} summarises these theoretical results.
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{bayes_optimal_gap_k16.pdf}
-  \caption{Bayes-optimal analysis of forward vs.\ reversed CylinderGraph HMM (50{,}000 Monte Carlo samples).  (a)~Bayes-optimal loss $L^*(k)$ converges to the observation entropy rate $h_X \approx 2.44$\,nats for both directions by $k \approx 6$.  (b)~Excess Bayes-optimal loss $L^*(k) - h_X$ on a log scale.  The reversed process has $\sim 6\times$ higher excess loss at $k = 1$ ($1.22$ vs.\ $0.22$\,nats) but converges to the Monte Carlo noise floor ($\lesssim 5 \times 10^{-3}$\,nats) by $k \approx 6$, confirming H2 and explaining the near-zero transformer gap at $T = 16$.}
+  \caption{Bayes-optimal analysis of forward vs.\ reversed CylinderGraph HMM (50{,}000 Monte Carlo samples).  (a)~Bayes-optimal loss $L^*(k)$ converges to the observation entropy rate $h_X \approx 2.44$\,nats for both directions by $k \approx 6$.  (b)~Excess Bayes-optimal loss $L^*(k) - h_X$ on a log scale.  Forward and reverse excess losses are nearly identical at all $k$ (both $\sim 1.22$\,nats at $k = 1$), despite a $\sim 2\times$ asymmetry in belief-state KL convergence.  Both reach the Monte Carlo noise floor ($\lesssim 5 \times 10^{-3}$\,nats) by $k \approx 6$.}
   \label{fig:bayes-gap}
 \end{figure}
 
@@ -526,7 +526,7 @@ Additional figures (per-architecture bar charts, convergence scatter plots, epoc
 \begin{enumerate}
   \item \textbf{H1 (entropy rate invariance) is confirmed.}  Forward and reverse entropy rates agree to machine precision, as required by the stationarity of the process.
 
-  \item \textbf{H2 (finite-context asymmetry) is confirmed and quantified.}  The reversed process has $\sim 6\times$ higher excess Bayes-optimal loss at $k = 1$, but the gap closes rapidly: by $k \approx 6$ both directions have converged to within Monte Carlo noise of $h_X \approx 2.44$\,nats.  At $k = 16$, $\Delta_{\mathrm{Bayes}} = +0.0006$\,nats.
+  \item \textbf{H2 (finite-context asymmetry) is partially confirmed.}  The belief-state KL divergence shows a persistent $\sim 2\times$ asymmetry (reverse beliefs converge more slowly), but this does \emph{not} translate into a Bayes-optimal loss asymmetry: the excess loss $L^*(k) - h_X$ is nearly identical for both directions at all context lengths.  By $k \approx 6$ both have converged to within Monte Carlo noise of $h_X \approx 2.44$\,nats; at $k = 16$, $\Delta_{\mathrm{Bayes}} = +0.0006$\,nats.
 
   \item \textbf{H3 (transformer learnability gap) is not supported.}  The mean forward--reverse loss difference is $+0.0002 \pm 0.0086$\,nats across 60 configurations, consistent with zero.
 
@@ -544,14 +544,14 @@ Additional figures (per-architecture bar charts, convergence scatter plots, epoc
 \end{enumerate}
 
 \paragraph{Unified interpretation.}
-The Bayes-optimal gap at $k = 16$ ($\Delta_{\mathrm{Bayes}} = +0.0006$\,nats) provides the key to interpreting all null results.  The belief-state convergence asymmetry (H2) is real: the reverse process needs $\sim 2\times$ more context to converge.  However, at the training context length of $T = 16$, both directions have already converged to within $0.001$\,nats of the entropy rate.  This means there is no information-theoretic basis for a learnability gap (H3), no reason for the optimisation landscape to differ (H5), and no phase-specific directional asymmetry (H6).  The picture is complete: the context window is simply long enough to erase the asymmetry.
+The Bayes-optimal analysis provides the key to interpreting all null results.  The belief-state convergence asymmetry is real at the level of state inference: the reverse process has $\sim 2\times$ higher belief-state KL at each context position.  However, this state-level asymmetry does not translate into a prediction-level asymmetry---the Bayes-optimal loss $L^*(k)$ is nearly identical for both directions at all $k$.  The decoupling between state uncertainty and prediction quality means there is no information-theoretic basis for a learnability gap (H3), no reason for the optimisation landscape to differ (H5), and no phase-specific directional asymmetry (H6).
 
-This suggests a clear experimental prediction: training on longer sequences ($T \gg 16$) is unnecessary to reveal a gap, but training on \emph{shorter} sequences ($T \le 4$, where $\Delta_{\mathrm{Bayes}}$ is large) should produce a measurable forward--reverse difference.
+Since the Bayes-optimal loss itself shows no forward--reverse asymmetry even at small $k$, any training dynamics gap would have to arise from the optimisation landscape rather than from the target function.  Whether the belief-state convergence asymmetry can induce such an optimisation-level effect remains an open question, potentially testable at shorter context lengths ($T \le 4$) where the belief asymmetry is largest.
 
 \subsection{Open Questions}
 
 \begin{itemize}
-  \item \textbf{Short-context regime:} Training with $T \le 4$ (where $\Delta_{\mathrm{Bayes}}(k) \approx 0.13$\,nats at $k = 4$) should reveal the predicted forward--reverse gap.  This is the most direct test of whether transformers are sensitive to belief-state convergence asymmetry when it is information-theoretically relevant.
+  \item \textbf{Short-context regime:} Training with $T \le 4$ (where the belief-state KL asymmetry is largest) could test whether state-inference difficulty affects optimisation dynamics, even though the Bayes-optimal loss is symmetric.  A positive result would indicate an optimisation-level effect decoupled from the information-theoretic target.
 
   \item \textbf{$N$-gram baselines on reversed data:} Do $n$-gram models also show no forward--reverse gap at $T = 16$?  If they do, the near-zero $\Delta$ is a general property of any fixed-context predictor and not specific to transformers.
 
