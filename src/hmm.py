@@ -291,6 +291,47 @@ class PSL7HMM(HMM):
     def emission_matrices(self) -> np.ndarray:
         return self._emission_matrices
 
+class DirectedCycleHMM(HMM):
+    """
+    HMM on a directed cycle with noisy emissions.
+
+    Hidden states sit on a cycle of length num_states.
+    Transition: state i -> (i+1)%N with prob `bias`, (i-1)%N with prob `1-bias`.
+    Emission: state i emits token i with prob `1-emission_noise`, uniform noise elsewhere.
+    d_vocab = num_states (one token per state).
+    """
+
+    def __init__(self, num_states=5, bias=0.9, emission_noise=0.3, seed=None):
+        self.num_states = num_states
+        self.bias = bias
+        self.emission_noise = emission_noise
+        # seed unused — HMM is fully deterministic given (num_states, bias, emission_noise)
+        self._E = self._build_emission_matrices()
+
+    def _build_emission_matrices(self):
+        N = self.num_states
+        b = self.bias
+        eps = self.emission_noise
+
+        # Transition matrix: T[i, j] = P(next=j | current=i)
+        T = np.zeros((N, N))
+        for i in range(N):
+            T[i, (i + 1) % N] = b
+            T[i, (i - 1) % N] = 1 - b
+
+        # Observation matrix: O[j, i] = P(emit token j | state i)
+        O = np.full((N, N), eps / (N - 1))
+        np.fill_diagonal(O, 1 - eps)
+
+        # Emission matrices: E[j, i, k] = P(observe j AND transition to k | state i) = O[j,i] * T[i,k]
+        E = np.einsum('ji,ik->jik', O, T)
+        return E
+
+    @property
+    def emission_matrices(self):
+        return self._E
+
+
 class CylinderGraphHMM(HMM):
     """HMM based on a cylinder graph structure with depth and nodes per level."""
 

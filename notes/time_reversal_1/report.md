@@ -103,6 +103,40 @@ For a generic HMM, time reversal preserves the entropy rate (and the full eigenv
 
 The fact that there's no natural "forward" for an HMM means the label is arbitrary; we could equally call the current "reverse" direction "forward" and get the opposite conclusion. The scientifically meaningful quantity is the magnitude of the asymmetry (|Xi| = 0.66 nats), not its sign.
 
+## DirectedCycleHMM: attempt to amplify the asymmetry
+
+### Motivation
+
+The CylinderGraphHMM crypticity asymmetry (chi_fwd/chi_rev ~ 3x) is a property of one particular random realization (seed=42). We wanted a minimal HMM with a single tunable parameter (`bias`) that controls the asymmetry magnitude, so we can dial it up for cleaner training experiments.
+
+### Design
+
+`DirectedCycleHMM(num_states=5, bias=0.9, emission_noise=0.3)` in `src/hmm.py`:
+- `num_states` hidden states on a cycle
+- Transition: `T[i, (i+1)%N] = bias`, `T[i, (i-1)%N] = 1 - bias`
+- Emission: noisy identity — state `i` emits token `i` with prob `1 - emission_noise`, uniform noise elsewhere
+- `d_vocab = num_states`
+- Registered as `"directed_cycle"` in `src/utils.py`
+
+### Result: zero asymmetry (by symmetry)
+
+Swept `bias` in {0.5, 0.6, 0.7, 0.8, 0.9, 0.95} with `emission_noise=0.3`, computed Bayes-optimal excess loss curves for forward and reverse (`scripts/verify_directed_cycle.py`).
+
+**Finding:** The integrated gap Σ_k [L*_rev(k) - L*_fwd(k)] fluctuates around zero (~0.02 nats) at all bias values. The forward and reverse curves are indistinguishable. See `figures/directed_cycle/bayes_optimal_excess_loss.png` and `figures/directed_cycle/integrated_gap_vs_bias.png`.
+
+**Explanation:** For the directed cycle with uniform stationary distribution (guaranteed by cycle symmetry), the reverse transition matrix is the cycle going the other direction: T_rev[k, (k-1)%N] = bias. But the noisy identity emission O(j|i) = (1-eps)δ_{ij} + eps/(N-1) is invariant under the state relabeling i → (N-i)%N. This makes the reversed process **isomorphic** to the forward process — they have identical Bayes-optimal loss curves by symmetry.
+
+To break this symmetry and get a genuine forward/reverse gap, the emissions must distinguish "which direction you're going on the cycle." Options:
+1. Use Dirichlet-sampled random emission distributions per state (like CylinderGraphHMM)
+2. Use asymmetric/non-uniform emission noise
+3. Use a non-cyclic topology where the reverse isn't related by a simple relabeling
+
+### Verification checks (all passed)
+
+- Emission matrices sum to 1 per source state (forward and reverse)
+- Entropy rates match exactly (forward = reverse, to machine precision)
+- Stationary distribution is uniform [0.2, 0.2, 0.2, 0.2, 0.2] at all bias values
+
 ## Next steps
 
 1. **Run the multi-seed training experiment** (Step 3): submit `sbatch out/learning_dynamics/submit_learning_dynamics.sh` on the cluster, or run locally with `python src/learning_dynamics_experiment.py --mode local --n_seeds 20`.
@@ -119,6 +153,10 @@ The fact that there's no natural "forward" for an HMM means the label is arbitra
 | `src/learning_dynamics_experiment.py` | Multi-seed training experiment manager |
 | `src/analyze_learning_dynamics.py` | Training dynamics analysis and statistical tests |
 | `src/train.py` | Modified: added `--model_seed`, `--loss_curve_path` |
+| `src/hmm.py` | Added `DirectedCycleHMM` class |
+| `src/utils.py` | Registered `"directed_cycle"` in `PROCESS_REGISTRY` |
+| `scripts/verify_directed_cycle.py` | Theoretical verification: bias sweep, Bayes-optimal loss curves |
 | `out/epsilon_machine_analysis.json` | Full numerical results from Step 1 |
 | `out/belief_convergence.json` | Full numerical results from Step 2 |
 | `figures/belief_convergence/` | Generated figures (PDF + PNG) |
+| `figures/directed_cycle/` | DirectedCycleHMM excess loss and gap-vs-bias figures |

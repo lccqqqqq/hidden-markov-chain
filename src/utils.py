@@ -2,7 +2,7 @@ from transformer_lens import HookedTransformer, HookedTransformerConfig
 import yaml
 import inspect
 from hmm import HMM
-from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM
+from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM, DirectedCycleHMM
 
 # Process Registry
 PROCESS_REGISTRY = {
@@ -11,6 +11,7 @@ PROCESS_REGISTRY = {
     "mess3": Mess3Proc,
     "psl7": PSL7HMM,
     "cylinder_graph": CylinderGraphHMM,
+    "directed_cycle": DirectedCycleHMM,
 }
 
 
