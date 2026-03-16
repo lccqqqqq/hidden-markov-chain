@@ -248,11 +248,11 @@ def plot_mean_loss_curves(data, entropy_rate, fig_dir):
     ax.grid(alpha=0.3)
 
     plt.tight_layout()
-    for ext in ["pdf", "png"]:
+    for ext in ["pdf"]:
         path = os.path.join(fig_dir, f"mean_loss_curves.{ext}")
         fig.savefig(path, bbox_inches="tight", dpi=150)
     plt.close(fig)
-    print(f"Saved: {fig_dir}/mean_loss_curves.{{pdf,png}}")
+    print(f"Saved: {fig_dir}/mean_loss_curves.pdf")
 
 
 def plot_excess_loss_curves(data, entropy_rate, fig_dir):
@@ -291,11 +291,11 @@ def plot_excess_loss_curves(data, entropy_rate, fig_dir):
     ax.grid(alpha=0.3)
 
     plt.tight_layout()
-    for ext in ["pdf", "png"]:
+    for ext in ["pdf"]:
         path = os.path.join(fig_dir, f"excess_loss_curves.{ext}")
         fig.savefig(path, bbox_inches="tight", dpi=150)
     plt.close(fig)
-    print(f"Saved: {fig_dir}/excess_loss_curves.{{pdf,png}}")
+    print(f"Saved: {fig_dir}/excess_loss_curves.pdf")
 
 
 def plot_convergence_histograms(metrics_fwd, metrics_rev, fig_dir):
@@ -333,11 +333,11 @@ def plot_convergence_histograms(metrics_fwd, metrics_rev, fig_dir):
         ax.legend(fontsize=8)
 
     plt.tight_layout()
-    for ext in ["pdf", "png"]:
+    for ext in ["pdf"]:
         path = os.path.join(fig_dir, f"convergence_histograms.{ext}")
         fig.savefig(path, bbox_inches="tight", dpi=150)
     plt.close(fig)
-    print(f"Saved: {fig_dir}/convergence_histograms.{{pdf,png}}")
+    print(f"Saved: {fig_dir}/convergence_histograms.pdf")
 
 
 def plot_variance_evolution(data, fig_dir):
@@ -364,11 +364,11 @@ def plot_variance_evolution(data, fig_dir):
     ax.grid(alpha=0.3)
 
     plt.tight_layout()
-    for ext in ["pdf", "png"]:
+    for ext in ["pdf"]:
         path = os.path.join(fig_dir, f"variance_evolution.{ext}")
         fig.savefig(path, bbox_inches="tight", dpi=150)
     plt.close(fig)
-    print(f"Saved: {fig_dir}/variance_evolution.{{pdf,png}}")
+    print(f"Saved: {fig_dir}/variance_evolution.pdf")
 
 
 def plot_all_seeds(data, entropy_rate, fig_dir):
@@ -402,11 +402,11 @@ def plot_all_seeds(data, entropy_rate, fig_dir):
         ax.grid(alpha=0.3)
 
     plt.tight_layout()
-    for ext in ["pdf", "png"]:
+    for ext in ["pdf"]:
         path = os.path.join(fig_dir, f"all_seeds.{ext}")
         fig.savefig(path, bbox_inches="tight", dpi=150)
     plt.close(fig)
-    print(f"Saved: {fig_dir}/all_seeds.{{pdf,png}}")
+    print(f"Saved: {fig_dir}/all_seeds.pdf")
 
 
 def estimate_entropy_rate():
