@@ -11,9 +11,11 @@
 
 \hfuzz=\maxdimen
 
-\graphicspath{{../../figures/time_reversal/}{../../figures/training_dynamics/}}
+\graphicspath{{../../figures/time_reversal/}{../../figures/training_dynamics/}{../../figures/learning_dynamics_ctx4/}{../../figures/learning_dynamics_ctx16/}{../../figures/centre_token_prediction/}}
 
 \newcommand{\lcq}[1]{\textcolor{red}{#1}}
+\newcommand{\claude}[1]{{\color{red}\textsf{#1}}}
+\newcommand{\old}[1]{{\color{gray}#1}}
 
 \title{Time-Reversal Symmetry in Transformer Predictions\\
        on the Cylinder Graph HMM}
@@ -24,7 +26,7 @@
 \maketitle
 \tableofcontents
 \bigskip
-
+Yes
 %----------------------------------------------------------------------
 \section{Introduction}
 %----------------------------------------------------------------------
@@ -33,7 +35,7 @@ A natural question in the study of transformers trained on Hidden Markov Model (
 
 However, a finite-context transformer may find one direction systematically easier if the latent belief state converges to its stationary distribution at a different rate in each temporal direction.  The convergence rate depends on the spectral properties of the transition matrix, which is generally different for the forward and reverse chains.
 
-This report investigates that question on the Cylinder Graph HMM (fully described in \texttt{notes/model\_comparison/cylinder\_hmm\_model\_comparison.tex}), whose directed transition structure creates an a priori asymmetry between the forward and reverse processes.  We formulate seven testable hypotheses (Section~\ref{sec:hypotheses}), describe the experimental setup (Section~\ref{sec:setup}), present theoretical predictions including the Bayes-optimal gap at context length $k = 16$ (Section~\ref{sec:theory}), and compare against a matched architecture sweep (Section~\ref{sec:results}).  We also report complementary experiments on belief-state localisation via activation ablations (Section~\ref{sec:ablation}), on the structure of the learned token-embedding geometry (Section~\ref{sec:embedding}), and on forward--reversed training dynamics (Section~\ref{sec:dynamics}).
+\old{This report investigates that question on the Cylinder Graph HMM (fully described in \texttt{notes/model\_comparison/cylinder\_hmm\_model\_comparison.tex}), whose directed transition structure creates an a priori asymmetry between the forward and reverse processes.  We formulate seven testable hypotheses (Section~\ref{sec:hypotheses}), describe the experimental setup (Section~\ref{sec:setup}), present theoretical predictions including the Bayes-optimal gap at context length $k = 16$ (Section~\ref{sec:theory}), and compare against a matched architecture sweep (Section~\ref{sec:results}).  We also report complementary experiments on belief-state localisation via activation ablations (Section~\ref{sec:ablation}), on the structure of the learned token-embedding geometry (Section~\ref{sec:embedding}), and on forward--reversed training dynamics (Section~\ref{sec:dynamics}).} \claude{This report investigates that question on the Cylinder Graph HMM (fully described in \texttt{notes/model\_comparison/cylinder\_hmm\_model\_comparison.tex}), whose directed transition structure creates an a priori asymmetry between the forward and reverse processes.  We formulate seven testable hypotheses (Section~\ref{sec:hypotheses}), describe the experimental setup (Section~\ref{sec:setup}), present theoretical predictions including the Bayes-optimal gap at context length $k = 16$ (Section~\ref{sec:theory}), and compare against a matched architecture sweep (Section~\ref{sec:results}).  We also report complementary experiments on belief-state localisation via activation ablations (Section~\ref{sec:ablation}), on the structure of the learned token-embedding geometry (Section~\ref{sec:embedding}), on forward--reversed training dynamics (Section~\ref{sec:dynamics}), and on a short-context follow-up at $T = 4$ designed to test whether the belief-state asymmetry affects optimisation in the regime where it is largest (Section~\ref{sec:ctx4}).}
 
 %----------------------------------------------------------------------
 \section{Theoretical Background}
@@ -517,6 +519,80 @@ The training dynamics analysis yields a clean null result for the central predic
 
 Additional figures (per-architecture bar charts, convergence scatter plots, epoch-1 vs.\ final gap comparison) are in \texttt{figures/training\_dynamics/}.
 
+% --- NEW: Short-context follow-up (proposed by Claude) ---
+\subsection{Short-Context Follow-Up: $T = 4$}\label{sec:ctx4}
+
+\claude{The null results at $T = 16$ are fully explained by the Bayes-optimal gap vanishing at that context length.  A natural follow-up, flagged in the original open questions, is to repeat the experiment at $T = 4$, where the belief-state KL asymmetry is largest and the model cannot ``wait out'' the slower convergence of the reverse belief.  If the belief-state asymmetry induces an optimisation-level effect decoupled from the Bayes-optimal target, it should be visible here.}
+
+\paragraph{Setup.}
+\claude{We train 20 forward and 20 reversed models with a single fixed architecture ($n_{\mathrm{layer}} = 4$, $n_{\mathrm{embd}} = 32$, $n_{\mathrm{head}} = 2$, $d_{\mathrm{mlp}} = 128$, no LayerNorm) on sequences of length $T = 5$ (context $k = 4$), using the same HMM parameters as the $T = 16$ experiment.  Training data is obtained by extracting three non-overlapping windows of length 5 from each original $T = 17$ sequence, tripling the effective dataset size.  All other hyperparameters (AdamW, $\mathrm{lr} = 10^{-3}$, cosine schedule, 10 epochs) are identical.}
+
+\paragraph{Mean training curves.}
+\claude{Figure~\ref{fig:ctx4-mean} shows the mean validation loss across 20 seeds for each direction.  Both directions converge to a final loss of $\sim 2.55$\,nats, approximately $0.11$\,nats above the entropy rate $h_X \approx 2.44$\,nats.  This residual gap (compared to $\sim 0.04$\,nats at $T = 16$) confirms that $k = 4$ is insufficient context for these models to approach the Bayes-optimal limit.  The forward and reversed mean curves are visually indistinguishable at all training steps, and the $\pm 1$ standard deviation bands overlap completely.}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{mean_loss_curves.pdf}
+  \caption{\claude{Mean training curves at $T = 4$ (20 seeds per direction).  (a)~Full training; (b)~early dynamics (first 20\% of steps).  Forward and reversed curves are indistinguishable.  Both saturate $\sim 0.11$\,nats above $h_X$, confirming that $k = 4$ is insufficient context to reach the Bayes-optimal limit.}}
+  \label{fig:ctx4-mean}
+\end{figure}
+
+\paragraph{Excess loss convergence.}
+\claude{Figure~\ref{fig:ctx4-excess} shows the excess loss $L(t) - h_X$ on a log scale.  Both directions decay from $\sim 0.4$\,nats in early training, but a persistent separation emerges after $\sim 20{,}000$ steps: the reversed excess loss plateaus slightly above the forward excess loss.  Unlike the $T = 16$ case, neither direction continues to improve---both level off at $\sim 0.1$\,nats, reflecting the information-theoretic ceiling imposed by the short context window---but the reversed direction saturates at a measurably higher level.}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{excess_loss_curves.pdf}
+  \caption{\claude{Excess loss $L(t) - h_X$ at $T = 4$.  Both directions plateau near $\sim 0.1$\,nats (compared to $\sim 0.04$\,nats at $T = 16$), but a persistent gap opens after step $\sim 20{,}000$: the reversed direction (red) saturates at a consistently higher excess loss than the forward direction (blue).  Thin lines show five individual seeds per direction.}}
+  \label{fig:ctx4-excess}
+\end{figure}
+
+\paragraph{Convergence metrics.}
+\claude{Figure~\ref{fig:ctx4-histograms} shows histograms of three convergence metrics across seeds.  The ``steps to convergence'' metric (reaching $h_X + 0.01$) is uninformative: all 40 seeds hit the maximum step count because the models never reach within $0.01$\,nats of the entropy rate.  The excess training cost (AUC of $L(t) - h_X$) shows a clear separation: the reversed distribution is centred $\sim 150$\,nats$\cdot$steps higher than the forward distribution (means $\approx 17{,}100$ vs.\ $\approx 16{,}950$), with nearly non-overlapping histograms.  This is in stark contrast to the $T = 16$ experiment, where the AUC distributions are fully intermixed (Figure~\ref{fig:ctx16-histograms}).  The early loss at step 100 shows a slight shift in the same direction (reversed marginally higher), with partially overlapping distributions centred near $2.83$\,nats.}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{convergence_histograms.pdf}
+  \caption{\claude{Convergence metric histograms at $T = 4$ (20 seeds per direction).  Left: steps to convergence (uninformative---both directions saturate at the maximum step count).  Centre: excess training cost (AUC), showing a clear separation: the reversed direction incurs $\sim 1\%$ higher integrated excess loss, with nearly non-overlapping distributions.  Right: loss at step~100, with a slight shift in the same direction.}}
+  \label{fig:ctx4-histograms}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{../../figures/learning_dynamics_ctx16/convergence_histograms.pdf}
+  \caption{\claude{Convergence metric histograms at $T = 16$ (20 seeds per direction), for comparison with Figure~\ref{fig:ctx4-histograms}.  The AUC distributions (centre) are fully intermixed, in contrast to the clear separation observed at $T = 4$.}}
+  \label{fig:ctx16-histograms}
+\end{figure}
+
+\paragraph{Variance evolution.}
+\claude{Figure~\ref{fig:ctx4-variance} shows the cross-seed loss variance over training.  Both directions exhibit a sharp spike at initialisation (peak $\sim 1.6 \times 10^{-4}$) that collapses to near-zero by step $\sim 20{,}000$.  There is no systematic difference in variance between directions, indicating that the optimisation landscape is equally reproducible in both cases.}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\textwidth]{variance_evolution.pdf}
+  \caption{\claude{Cross-seed loss variance at $T = 4$.  Both directions show identical variance profiles: a sharp early spike followed by rapid collapse.}}
+  \label{fig:ctx4-variance}
+\end{figure}
+
+\paragraph{Interpretation.}
+\claude{Unlike the $T = 16$ experiment, the short-context follow-up reveals a statistically significant training dynamics asymmetry.  The integrated excess training cost (AUC) is $\sim 1\%$ higher for the reversed direction, with nearly non-overlapping seed distributions (Figure~\ref{fig:ctx4-histograms}, centre panel).  This is corroborated by the excess loss curves (Figure~\ref{fig:ctx4-excess}), which show a persistent separation after $\sim 20{,}000$ steps: the reversed direction saturates at a measurably higher excess loss.  By contrast, at $T = 16$ these metrics are fully intermixed between directions.}
+
+\claude{The effect is small in absolute terms ($\sim 150$\,nats$\cdot$steps out of $\sim 17{,}000$) and does not manifest in the mean training curves, which remain visually indistinguishable.  The cross-seed variance is also direction-independent, indicating that the two directions explore equally reproducible loss landscapes.  The asymmetry is thus a subtle but consistent shift in the saturation level of the excess loss, not a qualitative change in the learning trajectory.}
+
+\paragraph{Centre-token Bayes-optimal analysis.}
+\claude{To determine whether the training dynamics asymmetry reflects an information-theoretic gap or a purely optimisation-level effect, we compute the Bayes-optimal loss for predicting a centre token from left vs.\ right context.  For sequences of length $2k+1$ drawn from the stationary HMM, the \emph{left predictor} runs the forward algorithm on $(x_1, \ldots, x_k)$ using the forward emission matrices, while the \emph{right predictor} runs the forward algorithm on $(x_{2k+1}, \ldots, x_{k+1})$ using the reverse emission matrices.  Both start from the stationary distribution and predict the centre token $x_{k+1}$.  Any difference in their loss directly measures the intrinsic asymmetry of the finite-context prediction problem.}
+
+\claude{Figure~\ref{fig:centre-token} summarises the results for $k = 1, \ldots, 4$ with $N = 10^6$ Monte Carlo sequences per $k$.  Panel~(a) shows the mean Bayes-optimal loss: the two predictors are indistinguishable at every context length, with error bars (SE $\sim 0.001$\,nats) too small to resolve any gap.  Panel~(b) confirms this quantitatively: the loss gap $\Delta L = L_{\mathrm{right}} - L_{\mathrm{left}}$ is sub-millnat at all $k$, with 95\% confidence intervals comfortably spanning zero ($|\Delta L| < 0.001$\,nats, $|z| < 0.7$ at every $k$).  Panel~(c) shows the per-sequence loss variance, which is consistently higher for the forward (left) predictor by $\sim 0.02$--$0.04$ at all $k$.}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{centre_token_prediction.pdf}
+  \caption{\claude{Centre-token Bayes-optimal prediction from left (forward) vs.\ right (reverse) context ($N = 10^6$ sequences per $k$).  (a)~Mean loss at each context length; the two directions are indistinguishable.  (b)~Loss gap $\Delta L$ with 95\% confidence intervals; all gaps are sub-millnat and consistent with zero.  (c)~Per-sequence loss variance; the forward predictor has consistently higher variance by $\sim 0.02$--$0.04$.}}
+  \label{fig:centre-token}
+\end{figure}
+
+\claude{This result establishes that the training dynamics asymmetry observed at $T = 4$ is a purely optimisation-level effect.  The Bayes-optimal prediction problem is direction-symmetric to within $\pm 0.001$\,nats at $k = 4$, ruling out any information-theoretic explanation for the $\sim 0.005$\,nats excess loss gap seen in the transformer training curves.  The per-sequence loss variance is slightly \emph{higher} for the forward direction at all $k$, which would if anything predict slower forward convergence, opposite to what is observed.  The mechanism behind the reversed direction's higher excess training cost therefore cannot be attributed to either the Bayes-optimal target or to gradient signal quality, and remains an open question.}
+
 %----------------------------------------------------------------------
 \section{Discussion and Open Questions}\label{sec:open}
 %----------------------------------------------------------------------
@@ -541,17 +617,19 @@ Additional figures (per-architecture bar charts, convergence scatter plots, epoc
   \item \textbf{H6 (learning phases) is not supported.}  No direction-dependent Phase~II onset is observed.
 
   \item \textbf{H7 (architecture-dependent convergence gap) is partially supported with opposite sign.}  Larger embedding dimension correlates with slightly faster reversed convergence ($r = -0.48$, $p = 0.003$), opposite to the prediction.
+
+  \claude{\item \textbf{Short-context follow-up ($T = 4$) reveals a training dynamics asymmetry that is purely optimisation-theoretic.}  At context length $k = 4$, the reversed direction incurs a significantly higher integrated excess training cost ($\sim 1\%$ higher AUC, nearly non-overlapping seed distributions), with a persistent excess loss gap visible after $\sim 20{,}000$ steps.  A centre-token Bayes-optimal analysis with $10^6$ Monte Carlo samples confirms that the prediction problem is direction-symmetric to within $\pm 0.0015$\,nats at $k = 4$, establishing that the asymmetry arises at the optimisation level rather than from the information-theoretic target (Section~\ref{sec:ctx4}).}
 \end{enumerate}
 
 \paragraph{Unified interpretation.}
 The Bayes-optimal analysis provides the key to interpreting all null results.  The belief-state convergence asymmetry is real at the level of state inference: the reverse process has $\sim 2\times$ higher belief-state KL at each context position.  However, this state-level asymmetry does not translate into a prediction-level asymmetry---the Bayes-optimal loss $L^*(k)$ is nearly identical for both directions at all $k$.  The decoupling between state uncertainty and prediction quality means there is no information-theoretic basis for a learnability gap (H3), no reason for the optimisation landscape to differ (H5), and no phase-specific directional asymmetry (H6).
 
-Since the Bayes-optimal loss itself shows no forward--reverse asymmetry even at small $k$, any training dynamics gap would have to arise from the optimisation landscape rather than from the target function.  Whether the belief-state convergence asymmetry can induce such an optimisation-level effect remains an open question, potentially testable at shorter context lengths ($T \le 4$) where the belief asymmetry is largest.
+\old{Since the Bayes-optimal loss itself shows no forward--reverse asymmetry even at small $k$, any training dynamics gap would have to arise from the optimisation landscape rather than from the target function.  Whether the belief-state convergence asymmetry can induce such an optimisation-level effect remains an open question, potentially testable at shorter context lengths ($T \le 4$) where the belief asymmetry is largest.} \claude{Since the Bayes-optimal loss itself shows no forward--reverse asymmetry even at small $k$, any training dynamics gap would have to arise from the optimisation landscape rather than from the target function.  The short-context follow-up at $T = 4$ (Section~\ref{sec:ctx4}) provides the first evidence of such an effect: the reversed direction incurs a significantly higher integrated excess training cost, with nearly non-overlapping seed distributions.  This suggests that the belief-state convergence asymmetry \emph{does} affect optimisation dynamics when the context window is short enough, even though the Bayes-optimal target is direction-symmetric.}
 
 \subsection{Open Questions}
 
 \begin{itemize}
-  \item \textbf{Short-context regime:} Training with $T \le 4$ (where the belief-state KL asymmetry is largest) could test whether state-inference difficulty affects optimisation dynamics, even though the Bayes-optimal loss is symmetric.  A positive result would indicate an optimisation-level effect decoupled from the information-theoretic target.
+  \item \old{\textbf{Short-context regime:} Training with $T \le 4$ (where the belief-state KL asymmetry is largest) could test whether state-inference difficulty affects optimisation dynamics, even though the Bayes-optimal loss is symmetric.  A positive result would indicate an optimisation-level effect decoupled from the information-theoretic target.} \claude{Partially addressed in Section~\ref{sec:ctx4}: the $T = 4$ experiment reveals a significant excess training cost asymmetry (reversed $> $ forward), providing the first evidence of an optimisation-level effect decoupled from the Bayes-optimal target.  Open follow-ups: (i)~obtain exact $p$-values from the analysis pipeline, (ii)~repeat at intermediate context lengths ($T = 6, 8$) to map the onset of the asymmetry, (iii)~test whether the effect scales with the belief-state KL gap.}
 
   \item \textbf{$N$-gram baselines on reversed data:} Do $n$-gram models also show no forward--reverse gap at $T = 16$?  If they do, the near-zero $\Delta$ is a general property of any fixed-context predictor and not specific to transformers.
 

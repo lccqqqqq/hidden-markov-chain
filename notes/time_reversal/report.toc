@@ -1,13 +1,13 @@
 \contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
-\contentsline {section}{\numberline {2}Theoretical Background}{2}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Entropy Rate Invariance}{2}{subsection.2.1}%
-\contentsline {paragraph}{Consequence.}{2}{section*.2}%
+\contentsline {section}{\numberline {2}Theoretical Background}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Entropy Rate Invariance}{3}{subsection.2.1}%
+\contentsline {paragraph}{Consequence.}{3}{section*.2}%
 \contentsline {subsection}{\numberline {2.2}Reverse HMM Construction}{3}{subsection.2.2}%
 \contentsline {subsection}{\numberline {2.3}Belief-State Convergence and Finite-Context Effects}{3}{subsection.2.3}%
-\contentsline {section}{\numberline {3}Hypotheses}{3}{section.3}%
+\contentsline {section}{\numberline {3}Hypotheses}{4}{section.3}%
 \contentsline {section}{\numberline {4}Experimental Setup}{4}{section.4}%
 \contentsline {subsection}{\numberline {4.1}HMM and Dataset}{4}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Architecture Sweep}{4}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.2}Architecture Sweep}{5}{subsection.4.2}%
 \contentsline {subsection}{\numberline {4.3}Matched Comparison}{5}{subsection.4.3}%
 \contentsline {section}{\numberline {5}Theoretical Predictions}{5}{section.5}%
 \contentsline {paragraph}{Entropy rates.}{5}{section*.4}%
@@ -22,19 +22,27 @@
 \contentsline {section}{\numberline {7}Activation Ablation Experiments}{9}{section.7}%
 \contentsline {subsection}{\numberline {7.1}Overview}{9}{subsection.7.1}%
 \contentsline {subsection}{\numberline {7.2}Direction Identification}{9}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Ablation Protocol}{9}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.3}Ablation Protocol}{10}{subsection.7.3}%
 \contentsline {subsection}{\numberline {7.4}Results}{10}{subsection.7.4}%
-\contentsline {section}{\numberline {8}Embedding Geometry}{10}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{10}{subsection.8.1}%
+\contentsline {section}{\numberline {8}Embedding Geometry}{12}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Cosine Similarity Structure}{12}{subsection.8.1}%
 \contentsline {subsection}{\numberline {8.2}Norm Structure}{12}{subsection.8.2}%
 \contentsline {subsection}{\numberline {8.3}Relationship to PMI Embeddings}{12}{subsection.8.3}%
-\contentsline {section}{\numberline {9}Training Dynamics}{12}{section.9}%
+\contentsline {section}{\numberline {9}Training Dynamics}{14}{section.9}%
 \contentsline {subsection}{\numberline {9.1}Setup}{14}{subsection.9.1}%
 \contentsline {subsection}{\numberline {9.2}H5: Transient Dynamics Asymmetry}{14}{subsection.9.2}%
 \contentsline {subsection}{\numberline {9.3}H6: Learning Phases}{14}{subsection.9.3}%
 \contentsline {subsection}{\numberline {9.4}H7: Architecture-Dependent Convergence Gap}{17}{subsection.9.4}%
 \contentsline {subsection}{\numberline {9.5}Training Dynamics: Summary}{17}{subsection.9.5}%
-\contentsline {section}{\numberline {10}Discussion and Open Questions}{17}{section.10}%
-\contentsline {subsection}{\numberline {10.1}Summary of Findings}{17}{subsection.10.1}%
-\contentsline {paragraph}{Unified interpretation.}{18}{section*.24}%
-\contentsline {subsection}{\numberline {10.2}Open Questions}{18}{subsection.10.2}%
+\contentsline {subsection}{\numberline {9.6}Short-Context Follow-Up: $T = 4$}{17}{subsection.9.6}%
+\contentsline {paragraph}{Setup.}{18}{section*.24}%
+\contentsline {paragraph}{Mean training curves.}{18}{section*.25}%
+\contentsline {paragraph}{Excess loss convergence.}{18}{section*.27}%
+\contentsline {paragraph}{Convergence metrics.}{18}{section*.29}%
+\contentsline {paragraph}{Variance evolution.}{20}{section*.32}%
+\contentsline {paragraph}{Interpretation.}{20}{section*.34}%
+\contentsline {paragraph}{Centre-token Bayes-optimal analysis.}{21}{section*.35}%
+\contentsline {section}{\numberline {10}Discussion and Open Questions}{22}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Summary of Findings}{22}{subsection.10.1}%
+\contentsline {paragraph}{Unified interpretation.}{23}{section*.37}%
+\contentsline {subsection}{\numberline {10.2}Open Questions}{23}{subsection.10.2}%
