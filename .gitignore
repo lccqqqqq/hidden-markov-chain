@@ -54,5 +54,22 @@ out/
 # Archive (old code, notebooks, tokenizers moved here during refactor)
 archive/
 
+# LaTeX build artifacts
+*.aux
+*.log
+*.fls
+*.fdb_latexmk
+*.toc
+*.synctex.gz
+*.bbl
+*.blg
+
+# macOS
+.DS_Store
+
+# Large data files
+*.npz
+
 # Claude Code
 .claude/
+*.mcp.json

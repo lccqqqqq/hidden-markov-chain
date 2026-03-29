@@ -1,6 +1,6 @@
 #!/bin/bash -l
 echo =========================================================   
-echo Job submitted  date = Mon 23 Mar 22:35:02 GMT 2026      
+echo Job submitted  date = Sat 28 Mar 22:48:08 GMT 2026      
 date_start=`date +%s`
 echo $SLURM_JOB_NUM_NODES nodes \( $SLURM_CPUS_ON_NODE processes per node \)        
 echo $SLURM_JOB_NUM_NODES hosts used: $SLURM_JOB_NODELIST      
@@ -15,7 +15,7 @@ echo
 ulimit -l unlimited
 
 export OMP_NUM_THEADS=1
- nice -n 10 /usr/bin/python3 gaussian-embedding/gaussian_approx.py --L 500 --N 100000
+ nice -n 10 /usr/bin/python3 train.py --mode gaussian --A 2.0 --p0 0.5 --L 50 --N 50000 --epochs 500 --lr 0.01 --batch_size 512 --model_seed 19 --save_dir results/gaussian_A2.0_p0.5_L50
   echo ---------------                                           
   echo Job output ends                                           
 

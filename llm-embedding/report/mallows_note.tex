@@ -1,0 +1,156 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{bm}
+\usepackage{booktabs}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\newcommand{\vw}{\bm{v}}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\PMI}{\mathrm{PMI}}
+\newcommand{\BoW}{\mathrm{BoW}}
+
+\title{Weak Sequence Dependence via Mallows-Penalized\\Bag-of-Words Models}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We propose a minimal extension of the bag-of-words energy model for word co-occurrence that introduces weak sequential dependence through a Mallows-type penalty on the symmetric group. The observed word ordering is penalized by its Kendall $\tau$ distance from a reference (normal) ordering, with coupling strength $\theta$. At $\theta = 0$ the model reduces to the permutation-invariant bag-of-words theory; at small $\theta$ a perturbative expansion yields a directional correction to the pointwise mutual information (PMI) that captures word-order preference. The Mallows partition function is a $q$-factorial, and the pairwise structure of the Kendall distance meshes naturally with pairwise co-occurrence interactions, keeping the model analytically tractable.
+\end{abstract}
+
+\section{The bag-of-words baseline}
+
+Consider a vocabulary of $N$ tokens and a text window of length $L$ with word sequence $(w_1, \ldots, w_L)$. The bag-of-words energy model assigns
+\begin{equation}\label{eq:bow}
+    p_{\BoW}(w_1, \ldots, w_L) \propto \exp\!\Big(-\sum_{i,j} G_{ij}\, n_i\, n_j\Big)\,,
+\end{equation}
+where $n_i = \sum_{p=1}^{L} \delta_{i,y_p} - P_i$ is the count fluctuation of token $i$ and $G_{ij}$ is a coupling matrix. This distribution is invariant under permutations of the positions $\{1, \ldots, L\}$: it depends only on the multiset of tokens, not their ordering.
+
+The central result of the bag-of-words theory is that embedding vectors $\vw_i$ fitted to this model satisfy $\vw_i \cdot \vw_j \propto \PMI(i,j)$, with the dot product encoding the pointwise mutual information.
+
+\section{Breaking permutation symmetry: the Mallows penalty}
+
+\subsection{Setup}
+
+A word sequence $(w_1, \ldots, w_L)$ of distinct tokens determines an ordering $\sigma \in S_L$. We introduce a \emph{normal ordering} $\sigma_0 \in S_L$---a reference permutation representing the ``expected'' order of the tokens---and penalize deviations from it. The extended model is
+\begin{equation}\label{eq:mallows-bow}
+    \boxed{\;p(w_1, \ldots, w_L;\, \sigma) \;\propto\; \exp\!\Big(-\sum_{i,j} G_{ij}\, n_i\, n_j \;-\; \theta\, d(\sigma, \sigma_0)\Big)\;}
+\end{equation}
+where $d(\sigma, \sigma_0)$ is a distance on the symmetric group $S_L$ and $\theta \geq 0$ controls the strength of the ordering preference. At $\theta = 0$ we recover~\eqref{eq:bow} exactly.
+
+This is a \emph{Mallows model}~\cite{mallows1957} coupled to an energy-based co-occurrence model. The Mallows model assigns $p(\sigma \mid \sigma_0, \theta) \propto e^{-\theta\, d(\sigma, \sigma_0)}$ and is a standard exponential family on $S_L$.
+
+\subsection{Choice of distance: Kendall $\tau$}
+
+Three natural right-invariant metrics on $S_L$ are:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Distance} & \textbf{Definition} & \textbf{Structure} \\
+\midrule
+Kendall $\tau$ & \# pairwise inversions & pairwise: $\sum_{i<j} \mathbb{1}[\sigma \text{ inverts } (i,j)]$ \\
+Cayley & min \# transpositions & $L - \#\text{cycles}(\sigma\sigma_0^{-1})$ \\
+Hamming & \# displaced positions & $\sum_i \mathbb{1}[\sigma(i) \neq \sigma_0(i)]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We choose the \textbf{Kendall $\tau$ distance} $d_K$ for two reasons:
+\begin{enumerate}
+    \item \textbf{Pairwise decomposition.} The Kendall distance is a sum over pairs, so the ordering penalty has the same two-body structure as the co-occurrence energy $\sum G_{ij}\, n_i n_j$. The full model remains a sum of pairwise terms---one set over token types, one set over positions.
+    \item \textbf{Closed-form partition function.} The Mallows partition function with Kendall distance factorizes as a $q$-factorial:
+    \begin{equation}\label{eq:mallows-Z}
+        Z_{\text{Mallows}}(\theta) = \sum_{\sigma \in S_L} e^{-\theta\, d_K(\sigma, \sigma_0)} = \prod_{k=1}^{L} [k]_q = [L]_q!\,,
+    \end{equation}
+    where $q = e^{-\theta}$ and $[k]_q = \frac{1 - q^k}{1 - q}$ is the $q$-analog of $k$. This closed form makes the model analytically tractable.
+\end{enumerate}
+
+\section{Perturbative expansion at small $\theta$}
+
+\subsection{Free energy correction}
+
+Write the full partition function as
+\begin{equation}
+    Z(\theta) = \sum_{\{w\}} \sum_{\sigma \in S_L} \exp\!\Big(-\sum_{i,j} G_{ij}\, n_i n_j - \theta\, d_K(\sigma, \sigma_0)\Big)\,.
+\end{equation}
+At $\theta = 0$, the sum over $\sigma$ gives $L!$ (all orderings equally weighted), recovering the bag-of-words model up to normalization. For small $\theta$, the free energy $F(\theta) = -\log Z(\theta)$ admits the expansion
+\begin{equation}\label{eq:free-energy}
+    F(\theta) = F_{\BoW} + \theta\, \langle d_K(\sigma, \sigma_0) \rangle_{\BoW} + \frac{\theta^2}{2}\Big(\langle d_K^2 \rangle_{\BoW} - \langle d_K \rangle_{\BoW}^2\Big) + O(\theta^3)\,,
+\end{equation}
+where $\langle \cdot \rangle_{\BoW}$ denotes expectation under the $\theta = 0$ (bag-of-words) distribution. The first-order correction is the expected number of inversions relative to $\sigma_0$ in the unordered model.
+
+\subsection{Directional PMI}
+
+The ordering penalty introduces an asymmetry between the pair $(w_i, w_j)$ appearing as $(\ldots w_i \ldots w_j \ldots)$ versus $(\ldots w_j \ldots w_i \ldots)$. To first order in $\theta$, the effective PMI splits into symmetric and antisymmetric parts:
+\begin{equation}\label{eq:directional-pmi}
+    \PMI_{\text{eff}}(i, j) = \underbrace{\PMI_{\BoW}(i, j)}_{\text{symmetric}} + \;\theta \cdot \underbrace{\PMI_{\to}(i, j)}_{\text{directional}} + \;O(\theta^2)\,,
+\end{equation}
+where $\PMI_{\BoW}(i,j)$ is the standard (permutation-invariant) pointwise mutual information and
+\begin{equation}\label{eq:pmi-directional}
+    \PMI_{\to}(i, j) = \log \frac{p(i \text{ precedes } j \mid \text{co-occur})}{p(i \text{ follows } j \mid \text{co-occur})}
+\end{equation}
+measures the tendency of token $i$ to appear before token $j$, conditioned on their co-occurrence. Note that $\PMI_{\to}(i,j) = -\PMI_{\to}(j,i)$: the directional correction is antisymmetric.
+
+\subsection{Implications for embedding geometry}
+
+In the bag-of-words theory, embedding dot products encode the symmetric PMI: $\vw_i \cdot \vw_j \propto \PMI_{\BoW}(i,j)$. The directional correction~\eqref{eq:directional-pmi} suggests that, at $\theta > 0$, the embedding must encode both symmetric and antisymmetric information. A natural ansatz is to decompose each embedding into a symmetric part $\vw_i^{(s)}$ and a directional part $\vw_i^{(d)}$:
+\begin{equation}\label{eq:embedding-decomposition}
+    \vw_i^{(s)} \cdot \vw_j^{(s)} \;\propto\; \PMI_{\BoW}(i,j)\,, \qquad \vw_i^{(d)} \cdot \vw_j^{(s)} - \vw_j^{(d)} \cdot \vw_i^{(s)} \;\propto\; \theta\, \PMI_{\to}(i,j)\,.
+\end{equation}
+This is analogous to decomposing a tensor into symmetric and antisymmetric parts, or to the word/context vector distinction in skip-gram models---but here the decomposition is derived from a symmetry-breaking principle rather than imposed by algorithmic design.
+
+\section{The normal ordering $\sigma_0$}
+
+The choice of reference ordering $\sigma_0$ is a modeling decision. Three natural options within the existing framework:
+
+\paragraph{Discourse-vector projection.} In the RAND-WALK model~\cite{arora2016}, the discourse vector $\bm{c}_t$ provides a salience ordering at each time step: rank words by $\langle \bm{c}_t, \vw_{w_i} \rangle$. The most discourse-relevant word comes first. This makes $\sigma_0$ context-dependent.
+
+\paragraph{Frequency ordering.} Rank tokens by unigram probability $P_i$ (most frequent first). This gives a universal, context-independent reference connected to Zipf's law. The Kendall distance from frequency order measures how ``surprising'' the word arrangement is.
+
+\paragraph{Family of normal orders.} Let $\sigma_0$ be drawn from a prior distribution---for instance, a Mallows distribution centered on a syntactic template (SVO order). Marginalizing over $\sigma_0$:
+\begin{equation}
+    p(w_1, \ldots, w_L) = \sum_{\sigma_0} p(\sigma_0)\, \frac{1}{Z(\theta)\, Z_{\BoW}} \exp\!\Big(-\sum_{i,j} G_{ij}\, n_i n_j - \theta\, d_K(\sigma, \sigma_0)\Big)\,.
+\end{equation}
+Mallows mixtures are well-studied and admit efficient inference~\cite{lu2011}, so this remains tractable.
+
+\section{Discussion}
+
+The proposed model has several attractive features:
+
+\textbf{Controlled symmetry breaking.} The parameter $\theta$ interpolates continuously between the fully permutation-invariant bag-of-words model ($\theta = 0$) and a strongly order-dependent model ($\theta \to \infty$). The perturbative expansion in $\theta$ gives systematic corrections to the PMI, with the zeroth-order term recovering the established theory exactly.
+
+\textbf{$q$-deformation.} The Mallows partition function~\eqref{eq:mallows-Z} is a $q$-deformation of the factorial, with $q = e^{-\theta}$. At $\theta = 0$, $q = 1$ and $[L]_q! = L!$ (full permutation symmetry). As $\theta$ increases, $q < 1$ and the effective number of accessible orderings shrinks. This is the combinatorial analogue of lowering the temperature in a spin system.
+
+\textbf{Pairwise consistency.} The Kendall distance decomposes into independent pair contributions, preserving the pairwise structure of the co-occurrence energy. The full model is a product of two-body interactions---one in ``token space'' and one in ``position space.''
+
+\textbf{Open questions.} (1)~What is the exact form of the corrected embedding geometry at finite $\theta$---does the antisymmetric part of the PMI induce a symplectic-like structure on the embedding space? (2)~Can the $q$-factorial structure be connected to quantum group symmetries of the embedding? (3)~Does the perturbative expansion converge, or is there a phase transition at some critical $\theta_c$ where the permutation symmetry breaks spontaneously?
+
+\begin{thebibliography}{10}
+
+\bibitem{mallows1957}
+C.~L.~Mallows,
+``Non-null ranking models. I,''
+\emph{Biometrika}, vol.~44, no.~1/2, pp.~114--130, 1957.
+
+\bibitem{arora2016}
+S.~Arora, Y.~Li, Y.~Liang, T.~Ma, and A.~Risteski,
+``A Latent Variable Model Approach to PMI-based Word Embeddings,''
+\emph{Transactions of the Association for Computational Linguistics}, vol.~4, pp.~385--399, 2016.
+arXiv:1502.03520.
+
+\bibitem{lu2011}
+T.~Lu and C.~Boutilier,
+``Learning Mallows models with pairwise preferences,''
+\emph{Proceedings of the 28th International Conference on Machine Learning}, pp.~145--152, 2011.
+
+\end{thebibliography}
+
+\end{document}

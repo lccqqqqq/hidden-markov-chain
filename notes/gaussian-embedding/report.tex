@@ -1,0 +1,148 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\newcommand{\lcq}[1]{\textcolor{red}{#1}}
+\newcommand{\vf}{\mathbf{f}}
+\newcommand{\vx}{\mathbf{x}}
+\newcommand{\Strue}{\Sigma_{\mathrm{true}}}
+
+\title{Gaussian Approximation of Token Frequencies\\for Hidden Markov Models}
+\author{Research Notes}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\section{Setup}
+
+Consider a Hidden Markov Model generating sequences $\vx = (x_1, \ldots, x_L)$ of length $L$ over a vocabulary of size $d$. For each sequence, define the \emph{empirical frequency vector}
+\begin{equation}
+  f_j(\vx) = \frac{1}{L} \sum_{t=1}^{L} \mathbf{1}[x_t = j], \quad j = 1, \ldots, d,
+\end{equation}
+and the deviation from the stationary mean $\delta\vf = \vf - \mu$, where $\mu_j = \mathbb{E}[f_j]$ under the stationary distribution.
+
+By the central limit theorem for functionals of HMMs, $\sqrt{L}\,\delta\vf$ converges in distribution to a multivariate Gaussian:
+\begin{equation}\label{eq:clt}
+  \sqrt{L}\,(\vf - \mu) \;\xrightarrow{d}\; \mathcal{N}(0, \Strue),
+\end{equation}
+where $\Strue$ is the asymptotic covariance matrix (independent of $L$). In particular, $\mathrm{Var}(\vf) \approx \Strue / L$ for large $L$.
+
+\paragraph{Goal.} We verify this CLT numerically for the Mess3 process ($d = 3$ tokens, 3 hidden states, uniform stationary token distribution $\mu = (1/3, 1/3, 1/3)$), and extract the inverse covariance $\Strue^{-1}$ from two independent estimates that should agree as $L \to \infty$.
+
+\section{Methodology}
+
+For each sequence length $L$, we generate $N$ sequences from the Mess3 HMM. For each sequence $\vx_i$, we compute:
+\begin{enumerate}
+  \item The exact log-likelihood $\log P(\vx_i)$ via the forward algorithm.
+  \item The empirical frequency vector $\vf_i$ and its deviation $\delta\vf_i = \vf_i - \mu$.
+\end{enumerate}
+
+\subsection{Types and the histogram estimator}
+
+The \emph{type} of a sequence is its frequency vector. All sequences sharing the same type form a type class. The probability of a type is
+\begin{equation}
+  P(\text{type } \vf) = \sum_{\vx:\,\mathrm{freq}(\vx) = \vf} P(\vx).
+\end{equation}
+If the CLT~\eqref{eq:clt} holds, the type distribution is approximately Gaussian:
+\begin{equation}\label{eq:type-gaussian}
+  \log P(\text{type } \vf) \approx \text{const} - \frac{L}{2}\,\delta\vf^T \Strue^{-1} \delta\vf.
+\end{equation}
+Since $\vf$ lies on the $(d{-}1)$-simplex, $\delta\vf$ has $d - 1 = 2$ independent degrees of freedom. We project to 2D by dropping the last component.
+
+\paragraph{Estimate 1: Empirical covariance.} From $N$ sampled frequency vectors, we compute the sample covariance $\Sigma_{\mathrm{emp}} = \mathrm{Cov}(\delta\vf)$ and estimate $\Strue \approx L \cdot \Sigma_{\mathrm{emp}}$, giving $\Strue^{-1}_{\mathrm{emp}} = (L \cdot \Sigma_{\mathrm{emp}})^{-1}$.
+
+\paragraph{Estimate 2: Quadratic fit to type probabilities.} We estimate $P(\text{type } \vf)$ via the histogram: group the $N$ sequences by type and set $\hat{P}(\text{type } \vf) = \text{count}_\vf / N$. We then fit a weighted quadratic regression of $\log(\text{count}_\vf / N)$ on the CLT-scaled variable $\mathbf{z} = \sqrt{L}\,\delta\vf$:
+\begin{equation}
+  \log \hat{P}(\text{type}) \approx a + \mathbf{b}^T \mathbf{z} + \frac{1}{2}\,\mathbf{z}^T J_z\, \mathbf{z},
+\end{equation}
+weighted by the count in each type. The fitted Hessian gives $\Strue^{-1}_{\mathrm{fit}} = -J_z$.
+
+If the Gaussian approximation holds, these two estimates should agree: $\Strue^{-1}_{\mathrm{fit}} \to \Strue^{-1}_{\mathrm{emp}}$ as $L \to \infty$.
+
+\subsection{Sequence-level analysis}
+
+One might also try to approximate $\log P(\vx)$ itself (not the type probability) as a quadratic in $\delta\vf$. We briefly report this for completeness, but it has two fundamental limitations:
+\begin{enumerate}
+  \item \textbf{Ordering noise.} For an HMM, $\log P(\vx)$ depends on the full sequence ordering, not just the frequency vector. This within-type variance is $O(\sqrt{L})$ in standard deviation, while the total variance of $\log P(\vx)$ grows as $O(L)$. The fraction explainable by a quadratic in $\delta\vf$ therefore shrinks: $R^2 \sim O(1/L) \to 0$.
+  \item \textbf{Multinomial contamination.} The OLS fit to $\log P(\vx)$ captures $\mathbb{E}[\log P(\vx) \mid \vf]$, which includes the effect of the multinomial coefficient $M(\vf) = L!/\prod_j (Lf_j)!$. By Stirling's approximation, $\log M(\vf) \approx L\,H(\vf)$, where $H(\vf) = -\sum_j f_j \log f_j$ is the entropy of $\vf$. This contributes a quadratic term of the same $O(L)$ scaling as the Gaussian curvature, so the two effects never separate.
+\end{enumerate}
+
+\section{Results}
+
+All experiments use the Mess3 process with uniform stationary distribution $\mu = (1/3, 1/3, 1/3)$.
+
+\subsection{Sequence-level fit}
+
+\begin{table}[h]
+\centering
+\caption{Quadratic fit of $\log P(\vx)$ on $\delta\vf$. The $R^2$ decreases with $L$ as expected.}
+\label{tab:seq-level}
+\begin{tabular}{rrrr}
+\toprule
+$L$ & $N$ & $R^2$ & Ratio $-J_{\mathrm{fit}} / \Sigma_{\mathrm{emp}}^{-1}$ \\
+\midrule
+15  & 50{,}000  & 0.607 & $-3.45$ \\
+20  & 10{,}000  & 0.482 & $-3.34$ \\
+30  & 10{,}000  & 0.344 & $-3.26$ \\
+50  & 10{,}000  & 0.209 & $-3.00$ \\
+100 & 50{,}000  & 0.107 & $-2.91$ \\
+200 & 100{,}000 & 0.050 & $-2.77$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The $R^2$ drops monotonically, confirming that the quadratic in $\delta\vf$ captures a vanishing fraction of the variance in $\log P(\vx)$. The ratio $\approx -3$ (close to $-d_{\mathrm{vocab}}$) reflects the multinomial coefficient contributing a comparable quadratic curvature.
+
+\subsection{Type-level histogram fit}
+
+\begin{table}[h]
+\centering
+\caption{Histogram-based type-level analysis. We compare two estimates of the $L$-independent matrix $\Strue^{-1}$: from the quadratic fit to $\log P(\text{type})$ (in CLT-scaled coordinates $\mathbf{z} = \sqrt{L}\,\delta\vf$), and from $L \cdot \Sigma_{\mathrm{emp}}$. Reported: the $(0,0)$ entry of each matrix, their ratio, and the relative Frobenius error.}
+\label{tab:type-level}
+\begin{tabular}{rrrrcccc}
+\toprule
+$L$ & $N$ & Types & Med.\ count & $R^2$ & $\Strue^{-1}_{\mathrm{fit}}[0,0]$ & $\Strue^{-1}_{\mathrm{emp}}[0,0]$ & Frob.\ err. \\
+\midrule
+15  & 50{,}000  & 136    & 351 & 0.302 & $-0.29$ & 1.18 & 1.24 \\
+30  & 10{,}000  & 495    & 22  & 0.325 & 0.26  & 0.94 & 0.72 \\
+50  & 10{,}000  & 1{,}138  & 8   & 0.600 & 0.47  & 0.88 & 0.49 \\
+100 & 50{,}000  & 3{,}390  & 9   & 0.840 & 0.61  & 0.82 & 0.25 \\
+200 & 100{,}000 & 7{,}740  & 7   & 0.868 & 0.65  & 0.79 & 0.19 \\
+300 & 100{,}000 & 11{,}008 & 5   & 0.828 & 0.62  & 0.78 & 0.21 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The histogram $R^2$ improves from 0.30 to 0.87 and the two estimates of $\Strue^{-1}$ approach each other (Frobenius error decreasing from 1.24 to 0.19). However, the convergence stalls around $L = 200\text{--}300$ because the median count per type drops below $\sim 5$, introducing systematic histogram bias: $\mathbb{E}[\log(\text{count})] < \log \mathbb{E}[\text{count}]$ (Jensen's inequality).
+
+The number of distinct types grows as $\binom{L + d - 1}{d - 1} \approx L^{d-1}/2$, so maintaining a fixed number of samples per type requires $N \propto L^{d-1}$. For Mess3 ($d = 3$), this means $N \propto L^2$.
+
+\subsection{Convergence of $\Strue^{-1}$ estimates}
+
+The empirical estimate $\Strue^{-1}_{\mathrm{emp}} = (L \cdot \Sigma_{\mathrm{emp}})^{-1}$ converges from above, while the histogram fit estimate $\Strue^{-1}_{\mathrm{fit}}$ converges from below (due to Jensen bias). As of $L = 200$, the relative gap between them is approximately 20\%.
+
+Extrapolating, the true $\Strue^{-1}$ for Mess3 (projected to the first two components) appears to be approximately
+\begin{equation}
+  \Strue^{-1} \approx \begin{pmatrix} 0.75 & 0.37 \\ 0.37 & 0.75 \end{pmatrix},
+\end{equation}
+which is consistent with both estimates at the largest $L$ values.
+
+\section{Discussion}
+
+\begin{enumerate}
+  \item The CLT for HMM token frequencies is clearly operative: the empirical covariance $\Sigma_{\mathrm{emp}}$ scales as $1/L$ (i.e., $L \cdot \Sigma_{\mathrm{emp}}$ stabilizes), and the type distribution is increasingly well-described by a Gaussian.
+
+  \item The sequence-level log-likelihood $\log P(\vx)$ is \emph{not} well-approximated by a quadratic in $\delta\vf$ for large $L$, because ordering effects dominate. The useful Gaussian structure lives at the \emph{type} level, not the sequence level.
+
+  \item The histogram-based type-level fit successfully recovers $\Strue^{-1}$ but requires $N \propto L^2$ samples to avoid Jensen bias in the log-count estimator. This makes pushing to very large $L$ expensive.
+
+  \item The forward algorithm is not needed for the type-level analysis: the histogram $P(\text{type } \vf) = \text{count}_\vf / N$ is a simpler and unbiased estimator. The forward algorithm remains useful for sequence-level diagnostics and for computing the observation entropy rate $h_{\mathrm{obs}} = -\lim_{L \to \infty} \mathbb{E}[\log P(\vx)] / L$.
+\end{enumerate}
+
+\end{document}

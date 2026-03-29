@@ -1,0 +1,311 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{bm}
+\usepackage{booktabs}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\newcommand{\vw}{\bm{v}}
+\newcommand{\ew}{\bm{e}}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\PMI}{\mathrm{PMI}}
+\newcommand{\tr}{\mathrm{tr}}
+
+\title{Word Embeddings from Co-occurrence Statistics:\\A Variational and Statistical-Mechanical Perspective}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present a derivation of word embedding geometry from first principles, starting from a Boltzmann model of word co-occurrence statistics. By modeling the joint probability of a word sequence as an energy-based distribution over count fluctuations, and minimizing the KL divergence between this model and a parameterized softmax family, we show that the optimal embedding vectors satisfy an eigenvalue-like constraint whose solution recovers the well-known result: the dot product of embedding vectors encodes the pointwise mutual information (PMI) between words. We connect this derivation to the established results of Levy and Goldberg~\cite{levy2014}, Pennington et al.~\cite{pennington2014}, and Arora et al.~\cite{arora2016}, providing a unified statistical-mechanical perspective on why word embedding methods work.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Word embedding methods such as Word2Vec~\cite{mikolov2013} and GloVe~\cite{pennington2014} map words from a discrete vocabulary of size $N$ into continuous vectors $\vw_i \in \mathbb{R}^d$, with the remarkable property that semantic relationships are encoded in the vector geometry: words that co-occur frequently have large dot products $\vw_i \cdot \vw_j$, and linear directions in embedding space capture analogical structure.
+
+A natural question is: \emph{why} does this work? The answer, developed across several lines of research, is that these algorithms implicitly factorize a matrix of pointwise mutual information (PMI) computed from co-occurrence counts. Levy and Goldberg~\cite{levy2014} showed this explicitly for Word2Vec's skip-gram with negative sampling (SGNS). Arora et al.~\cite{arora2016} provided a generative justification via a latent random-walk model. Hashimoto et al.~\cite{hashimoto2016} framed embeddings as metric recovery in a semantic space.
+
+In this note, we present a self-contained derivation that approaches the problem from a statistical-mechanical perspective. We model word co-occurrence as a Boltzmann distribution whose energy is a quadratic function of count fluctuations (Section~\ref{sec:energy}), perform variational inference by minimizing the KL divergence against a softmax model (Section~\ref{sec:variational}), and show that the stationary-point conditions force the embedding dot products to equal a normalized covariance---i.e., the PMI (Section~\ref{sec:geometry}). We then connect this to the established literature (Section~\ref{sec:connections}), present the precise assumptions and main theorem of the RAND-WALK generative model of Arora et al.~\cite{arora2016} (Section~\ref{sec:randwalk}), and discuss the broader implications (Section~\ref{sec:discussion}).
+
+\section{The Bag-of-Words Energy Model}\label{sec:energy}
+
+\subsection{Setup and notation}
+
+Consider a vocabulary of $N$ tokens indexed by $i = 1, 2, \ldots, N$ and a text window of length $L$ with positions $p = 1, 2, \ldots, L$. Let $y_p \in \{1, \ldots, N\}$ denote the token at position $p$. The \emph{count} of token $i$ in the window is
+\begin{equation}\label{eq:count}
+    n_i = \sum_{p=1}^{L} \delta_{i, y_p} - P_i\,,
+\end{equation}
+where $P_i = \langle n_i \rangle$ is the expected count (itself a random variable determined by the underlying distribution), so that $n_i$ measures the \emph{fluctuation} of the count of word $i$ away from its expectation.
+
+\subsection{Boltzmann distribution over co-occurrences}
+
+We model the joint probability of a word sequence as a Boltzmann distribution whose energy is a function of the count fluctuations:
+\begin{equation}\label{eq:boltzmann}
+    p(w_1, w_2, \ldots, w_L) \propto e^{-\mathcal{E}[N(w_1, w_2, \ldots, w_L)]}\,.
+\end{equation}
+For the pairwise interaction model, the energy takes the quadratic form
+\begin{equation}\label{eq:pairwise}
+    \mathcal{E} = \sum_{i,j} G_{ij}\, n_i\, n_j\,,
+\end{equation}
+so that the pairwise co-occurrence probability factorizes as
+\begin{equation}\label{eq:pair-prob}
+    p(t_i, t_j) = e^{-G_{ij}\, n_i\, n_j}\,.
+\end{equation}
+The coupling matrix $G_{ij}$ encodes the strength of interaction between tokens $i$ and $j$. This is the direct analogue of a spin-glass Hamiltonian in statistical mechanics, with the word counts playing the role of spin variables and $G_{ij}$ playing the role of the exchange coupling.
+
+\subsection{Covariance structure and the count fluctuation hyperplane}
+
+The covariance matrix of the embedding vectors defines the \emph{count fluctuation structure}:
+\begin{equation}\label{eq:covariance}
+    \Sigma = E\, E^\top\,,
+\end{equation}
+where $E$ is the embedding matrix whose rows are the word vectors. The constraint surface on which the count fluctuations $\{n_i\}$ satisfy the normalization $\sum_i n_i = 0$ (since total count deviations must sum to zero in a fixed-length window) defines a hyperplane in the $N$-dimensional count space---the \emph{count fluctuation hyperplane}. The geometry of word embeddings is determined by the projection of the covariance structure onto this hyperplane.
+
+\section{Variational Inference via KL Divergence}\label{sec:variational}
+
+\subsection{The softmax proposal distribution}
+
+We approximate the true Boltzmann distribution~\eqref{eq:boltzmann} with a tractable softmax model. For each position $p$, the proposal assigns:
+\begin{equation}\label{eq:proposal}
+    \hat{p}(n_1, n_2, \ldots) = \prod_{p=1}^{L} \frac{e^{\varphi(y_p)}}{\hat{Z}(\varphi)}\,,
+\end{equation}
+where $\varphi(y_p)$ is a potential assigned to the token at position $p$ and the partition function is
+\begin{equation}\label{eq:partition}
+    \hat{Z}(\varphi) = \sum_{c=1}^{N} e^{\varphi \cdot \vw_c}\,.
+\end{equation}
+The goal is to choose the embedding vectors $\{\vw_c\}$ and potentials $\varphi$ such that $\hat{p}$ is as close as possible to the true distribution $p$, in the sense of minimizing the KL divergence $\KL(\hat{p} \,\|\, p)$ from the proposal to the true distribution.
+
+\subsection{KL divergence expansion}
+
+The KL divergence between the proposal and the Boltzmann model is
+\begin{equation}\label{eq:kl}
+    \KL(\hat{p} \,\|\, p) = \sum_{\{t_i, t_j\}} e^{-G_{ij}\, n_i\, n_j} \log \left( \frac{e^{-G_{ij}\, n_i\, n_j}}{\prod_{p=1}^{L} \hat{Z}(\varphi_p)} \right).
+\end{equation}
+Expanding the logarithm and collecting terms yields
+\begin{equation}\label{eq:kl-expanded}
+    \KL = \sum_{i,j} e^{-G_{ij}\, n_i\, n_j} \sum_{p=1}^{N} \hat{n}_p \Big( \log \hat{Z}(\varphi_p) - \log \psi_p \cdot \vw_p \Big)\,,
+\end{equation}
+where $\hat{n}_p$ are the expected counts under the proposal distribution.
+
+In the softmax formulation, the KL divergence takes the form
+\begin{equation}\label{eq:kl-softmax}
+    \KL = \sum_{i} P_i \left( \log \frac{\hat{Z}(\vw_i)}{e^{\vw_i \cdot \vw_i}} - \vw_i \cdot \vw_i \right) + \text{const}\,,
+\end{equation}
+where the sum runs over the vocabulary and $P_i$ are the unigram probabilities.
+
+\subsection{Gradient conditions}\label{sec:gradient}
+
+Taking the derivative of $\KL$ with respect to the embedding vector $\vw_k$ and setting it to zero yields:
+\begin{equation}\label{eq:gradient}
+    \frac{\partial \KL}{\partial \vw_k} = \sum_{i} e^{-G_{ij}\, n_i\, n_j} \sum_{p} \hat{n}_p \left( \delta_{kp} \frac{\sum_m \vw_m}{\hat{Z}} - \frac{2\vw_k}{\vw_k \cdot \vw_k} \right) - \hat{n}_k = 0\,.
+\end{equation}
+Under the approximation $\hat{Z}(\varphi_p) \approx \sum_c \vw_c \cdot \vw_c = W_{nk}$, this simplifies to the condition
+\begin{equation}\label{eq:stationary}
+    -2\hat{n}_k\, \vw_k + \sum_{i} \hat{n}_i\, \vw_k = 0\,.
+\end{equation}
+This is an eigenvalue-like equation: the embedding vector $\vw_k$ is constrained by a balance between its own count weight and the aggregate count-weighted embedding direction.
+
+\subsection{The matrix constraint}\label{sec:matrix}
+
+Writing the stationary condition~\eqref{eq:stationary} for each $k = 1, 2, \ldots, N$, we obtain a system of linear constraints on the embedding matrix $W$ (whose rows are $\vw_1, \vw_2, \ldots, \vw_N$):
+\begin{equation}\label{eq:matrix-constraint}
+\begin{aligned}
+    k{=}1: &\quad (-n_1,\; n_2,\; n_3,\; \ldots,\; n_N) \begin{pmatrix} \text{---}\, \vw_1 \,\text{---} \\ \text{---}\, \vw_2 \,\text{---} \\ \vdots \\ \text{---}\, \vw_N \,\text{---} \end{pmatrix} = \bm{0}\,, \\[6pt]
+    k{=}2: &\quad (n_1,\; -n_2,\; n_3,\; \ldots,\; n_N) \begin{pmatrix} \text{---}\, \vw_1 \,\text{---} \\ \text{---}\, \vw_2 \,\text{---} \\ \vdots \\ \text{---}\, \vw_N \,\text{---} \end{pmatrix} = \bm{0}\,,
+\end{aligned}
+\end{equation}
+and so on for each $k$. Each row of this system singles out the $k$-th word count with a sign flip, requiring that the count-weighted projection onto the embedding space vanishes. This imposes a geometric constraint: the word vectors must be arranged so that count fluctuations are orthogonal to certain directions in embedding space.
+
+\section{Embedding Geometry Encodes Normalized Covariance}\label{sec:geometry}
+
+The central result emerges from the stationary-point analysis. The dot product of embedding vectors satisfies
+\begin{equation}\label{eq:main-result}
+    \boxed{\;\ew_i \cdot \ew_j = \frac{\Sigma_{ij}}{L\, P_i\, P_j}\;\,}
+\end{equation}
+where $\Sigma_{ij} = \langle n_i\, n_j \rangle - \langle n_i \rangle \langle n_j \rangle$ is the covariance of the count fluctuations, $L$ is the window length, and $P_i$, $P_j$ are the unigram probabilities. The dot product encodes the \emph{normalized covariance}---a linear measure of the association between tokens $i$ and $j$, measuring how much their co-occurrence deviates from independence.
+
+This is related to, but distinct from, the pointwise mutual information $\PMI(i,j) = \log[p(i,j)/(p(i)p(j))]$, which is a logarithmic measure of association. The two coincide in the regime of weak correlations (where $\log(1+x) \approx x$), but differ in general. The Arora et al.\ RAND-WALK model~\cite{arora2016} yields $\ew_i \cdot \ew_j \propto \PMI(i,j)$ under its own set of assumptions (Section~\ref{sec:randwalk}); the present variational derivation from the bag-of-words energy model gives the normalized covariance directly.
+
+\section{Connection to Established Results}\label{sec:connections}
+
+\subsection{Levy and Goldberg (2014): SGNS as PMI factorization}
+
+Levy and Goldberg~\cite{levy2014} proved that Word2Vec's skip-gram with negative sampling (SGNS) implicitly factorizes the \emph{shifted PMI matrix}. At convergence, the word and context vectors satisfy
+\begin{equation}\label{eq:levy-goldberg}
+    \vw_i \cdot \bm{c}_j = \PMI(w_i, c_j) - \log k\,,
+\end{equation}
+where $k$ is the number of negative samples. The proof proceeds by treating each $(w, c)$ entry of the SGNS objective as an independent logistic regression, whose closed-form optimum yields the PMI value. Our variational derivation arrives at the same conclusion from the energy-model side: the KL-optimal embedding dot products encode the co-occurrence structure, which is PMI.
+
+\subsection{GloVe: biases absorb marginals}
+
+The GloVe objective~\cite{pennington2014} fits
+\begin{equation}\label{eq:glove}
+    \vw_i \cdot \vw_j + b_i + b_j = \log X_{ij}\,,
+\end{equation}
+where $X_{ij}$ is the co-occurrence count. Since $\log X_{ij} = \PMI(i,j) + \log X_{i\cdot} + \log X_{\cdot j} - \log X_{\cdot\cdot}$, the bias terms $b_i$ and $b_j$ absorb the marginal frequencies, and the dot product again encodes PMI. GloVe can be understood as a weighted least-squares factorization of the log co-occurrence matrix, with the biases playing the role of chemical potentials in the statistical-mechanical analogy.
+
+\subsection{Arora et al.\ (2016): the RAND-WALK model}
+
+Arora et al.~\cite{arora2016} proposed a generative model in which a latent \emph{discourse vector} $\bm{c}_t$ performs a random walk on the unit sphere $S^{d-1}$, and each word $w$ is emitted with log-linear probability
+\begin{equation}\label{eq:arora-emission}
+    \Pr[w \mid \bm{c}_t] = \frac{1}{Z_{\bm{c}_t}} \exp(\bm{c}_t \cdot \vw_w)\,.
+\end{equation}
+Under an isotropy assumption on the word vectors, the partition function $Z_{\bm{c}_t}$ concentrates around a constant $\hat{Z}$, and the co-occurrence probability within a window satisfies
+\begin{equation}\label{eq:arora-main}
+    \log p(w, w') = \frac{\|\vw_w + \vw_{w'}\|^2}{2d} - 2\log \hat{Z} \pm \epsilon\,.
+\end{equation}
+Expanding $\|\vw_w + \vw_{w'}\|^2 = \|\vw_w\|^2 + 2\,\vw_w \cdot \vw_{w'} + \|\vw_{w'}\|^2$ and using $\log p(w) \approx \|\vw_w\|^2 / (2d) - \log \hat{Z}$, one obtains the central result:
+\begin{equation}\label{eq:arora-pmi}
+    \PMI(w, w') \approx \frac{\vw_w \cdot \vw_{w'}}{d}\,.
+\end{equation}
+This provides a generative justification---from the random-walk dynamics---for the same PMI$\leftrightarrow$dot-product correspondence that our variational derivation produces from the energy-model side.
+
+\subsection{Hashimoto et al.\ (2016): metric recovery}
+
+Hashimoto, Alvarez-Melis, and Jaakkola~\cite{hashimoto2016} showed that word embeddings can be understood as recovering a latent semantic metric $d(w_i, w_j)$ from co-occurrence data, where co-occurrence probability is a kernel function $K(d(w_i, w_j))$ that decreases with semantic distance---directly analogous to a Boltzmann factor $e^{-\beta\, d^2}$. Under appropriate conditions, the embeddings produced by Word2Vec and GloVe are consistent estimators of this metric structure.
+
+\section{The RAND-WALK Model: Assumptions and Derivation}\label{sec:randwalk}
+
+The variational derivation of Section~\ref{sec:variational} shows that embedding dot products encode PMI from the ``consumer'' side---fitting a softmax model to Boltzmann co-occurrence statistics. Arora et al.~\cite{arora2016} arrive at the same conclusion from the ``producer'' side, via a generative model whose assumptions we now state precisely.
+
+\subsection{Model assumptions}
+
+\paragraph{(A1) Log-linear emission.} Each word $w$ has a time-invariant latent vector $\vw_w \in \mathbb{R}^d$. Given a discourse vector $\bm{c}_t \in \mathbb{R}^d$, the word emitted at time $t$ is drawn from a log-linear distribution:
+\begin{equation}\label{eq:rw-emission}
+    \Pr[w \text{ emitted at time } t \mid \bm{c}_t] = \frac{1}{Z_{\bm{c}_t}} \exp\!\big(\langle \bm{c}_t, \vw_w \rangle\big)\,,
+\end{equation}
+where $Z_{\bm{c}_t} = \sum_{w'} \exp(\langle \bm{c}_t, \vw_{w'} \rangle)$ is the partition function. This is a Boltzmann distribution at unit temperature with energy $E(w, \bm{c}_t) = -\langle \bm{c}_t, \vw_w \rangle$.
+
+\paragraph{(A2) Isotropy of word vectors.} The ensemble of word vectors is generated i.i.d.\ as $\vw = s \cdot \hat{\vw}$, where $\hat{\vw} \sim \mathcal{N}(0, I_d)$ is a spherical Gaussian vector and $s$ is a scalar random variable satisfying $\mathbb{E}[s] = \tau = \Theta(1)$ and $s \leq \kappa$ for an absolute constant $\kappa$. The choice $\tau = \Theta(1)$ ensures that $\Pr[w \mid \bm{c}_t]$ is neither too peaked nor too uniform; the dynamic range of word probabilities is roughly $\exp(\kappa^2)$. Isotropy requires $d \ll n$ (the embedding dimension must be much smaller than the vocabulary size), and means the word vectors have no preferred direction: $\frac{1}{n} \sum_w \vw_w \vw_w^\top \approx \frac{\sigma^2}{d}\, I_d$.
+
+\paragraph{(A3) Slow random walk on the discourse vector.} The discourse vector $\bm{c}_t$ performs a random walk on the unit sphere $S^{d-1}$ with:
+\begin{itemize}
+    \item \textbf{Stationary distribution:} uniform over $S^{d-1}$.
+    \item \textbf{Step size:} $\|\bm{c}_{t+1} - \bm{c}_t\|_2 \leq 2\epsilon / \sqrt{d}$ for a small constant $\epsilon$.
+\end{itemize}
+The slow-walk condition ensures that consecutive discourse vectors are nearly identical, so that $\langle \vw_w, \bm{c}' - \bm{c} \rangle = O(\epsilon^2)$ for any word vector $\vw_w$ of $O(1)$ norm. This models the local coherence of natural language: the topic drifts slowly, and words within a small window share approximately the same discourse context.
+
+\subsection{Partition function concentration}
+
+The technical heart of the RAND-WALK analysis is showing that the partition function $Z_{\bm{c}}$, despite being a sum of heavy-tailed random variables (each $\exp(\langle \vw_w, \bm{c} \rangle)$ is neither bounded nor sub-Gaussian), concentrates tightly around a constant.
+
+\paragraph{(A4) Concentration (Lemma 2.1 of~\cite{arora2016}).} Under the Bayesian prior (A2):
+\begin{equation}\label{eq:rw-concentration}
+    \Pr_{\bm{c} \sim \mathcal{C}}\!\Big[(1 - \epsilon_z)\, Z \;\leq\; Z_{\bm{c}} \;\leq\; (1 + \epsilon_z)\, Z\Big] \;\geq\; 1 - \delta\,,
+\end{equation}
+where $\epsilon_z = \tilde{O}(1/\sqrt{n})$ and $\delta = \exp\!\big(-\Omega(\log^2 n)\big)$.
+
+This is \emph{derived} from (A2), not an independent axiom. The key insight is that the mean partition function $\mathbb{E}_{\vw_w}[Z_{\bm{c}}]$ depends on $\bm{c}$ only through $\|\bm{c}\|_2$:
+\begin{equation}\label{eq:rw-mean-Z}
+    \mathbb{E}_{\vw_w}[Z_{\bm{c}}] = f\!\big(\|\bm{c}\|_2\big) = f(1)\,,
+\end{equation}
+since $\|\bm{c}\|_2 = 1$ on the sphere. Explicitly, $f(\alpha) = n\,\mathbb{E}_s[\exp(s^2 \alpha / 2)]$, where the expectation is over the norm distribution $s$. Since the mean is exactly the same constant for all $\bm{c} \in S^{d-1}$, concentration of $Z_{\bm{c}}$ around this mean gives (A4). This result provides a theoretical explanation of the empirical phenomenon of \emph{self-normalization} in log-linear language models: treating $Z$ as a constant is justified because it barely varies.
+
+\subsection{Main theorem}
+
+\paragraph{Theorem 2.2~\cite{arora2016}.} Suppose the word vectors satisfy the concentration inequality~\eqref{eq:rw-concentration}, and the window size is $q = 2$. Then:
+\begin{align}
+    \log p(w, w') &= \frac{\|\vw_w + \vw_{w'}\|^2}{2d} - 2\log Z \pm \epsilon\,, \label{eq:rw-joint} \\
+    \log p(w) &= \frac{\|\vw_w\|^2}{2d} - \log Z \pm \epsilon\,, \label{eq:rw-marginal}
+\end{align}
+where $\epsilon = O(\epsilon_z) + \tilde{O}(1/d) + O(\epsilon^2)$. Together these imply:
+\begin{equation}\label{eq:rw-pmi}
+    \boxed{\;\PMI(w, w') = \frac{\langle \vw_w,\, \vw_{w'} \rangle}{d} \pm O(\epsilon)\;}
+\end{equation}
+
+Since word vectors have $\ell_2$ norm of order $\sqrt{d}$, the leading term $\|\vw_w + \vw_{w'}\|^2 / (2d)$ is $\Theta(1)$, so the error $\epsilon$ is small in comparison.
+
+\paragraph{Proof mechanism.} The derivation proceeds in three steps:
+\begin{enumerate}
+    \item \textbf{Integrate out the latent variables.} Write $p(w, w') = \mathbb{E}_{\bm{c}, \bm{c}'}[\Pr(w \mid \bm{c})\,\Pr(w' \mid \bm{c}')]$ and use~\eqref{eq:rw-concentration} to replace $Z_{\bm{c}}$ and $Z_{\bm{c}'}$ by the constant $Z$ with multiplicative error $1 \pm O(\epsilon_z)$.
+    \item \textbf{Replace $\bm{c}'$ by $\bm{c}$.} The slow-walk assumption (A3) gives $\langle \vw_{w'}, \bm{c}' - \bm{c} \rangle = O(\epsilon^2)$, so $\exp(\langle \vw_{w'}, \bm{c}' \rangle) \approx (1 \pm O(\epsilon^2))\exp(\langle \vw_{w'}, \bm{c} \rangle)$.
+    \item \textbf{Evaluate the spherical integral.} The expectation reduces to $\mathbb{E}_{\bm{c} \sim S^{d-1}}[\exp(\langle \vw_w + \vw_{w'}, \bm{c} \rangle)]$. Since $\langle \vw_w + \vw_{w'}, \bm{c} \rangle$ is approximately Gaussian with variance $\|\vw_w + \vw_{w'}\|^2 / d$ for large $d$, the moment generating function gives $\exp(\|\vw_w + \vw_{w'}\|^2 / 2d)$.
+\end{enumerate}
+
+\paragraph{General window size.} For co-occurrence within a window of size $q$, the pair $(w, w')$ can appear in any of $\binom{q}{2}$ positions, yielding:
+\begin{equation}\label{eq:rw-window}
+    \PMI_q(w, w') = \frac{\langle \vw_w,\, \vw_{w'} \rangle}{d} + \log \binom{q}{2} \pm O(\epsilon)\,.
+\end{equation}
+The additive shift $\log \binom{q}{2}$ is consistent with the empirical observation of Levy and Goldberg~\cite{levy2014} that SGNS solutions satisfy $\PMI(w, w') - \beta = \langle \vw_w, \vw_{w'} \rangle$ for a constant $\beta$ related to the negative sampling rate and window size.
+
+\subsection{Summary of assumptions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{\#} & \textbf{Assumption} & \textbf{Type} & \textbf{Role} \\
+\midrule
+A1 & Log-linear emission $\propto \exp(\langle \bm{c}_t, \vw_w \rangle)$ & Axiom & Generative model structure \\
+A2 & Isotropy: $\vw = s\hat{\vw}$, $\hat{\vw} \sim \mathcal{N}(0,I)$, $s \leq \kappa$ & Axiom & Partition function concentration \\
+A3 & Slow walk: $\|\bm{c}_{t+1} - \bm{c}_t\| \leq 2\epsilon/\sqrt{d}$ & Axiom & Replace $\bm{c}' \approx \bm{c}$ in windows \\
+A4 & $Z_{\bm{c}} \approx Z$ for most $\bm{c} \in S^{d-1}$ & Derived & Factor out partition function \\
+\bottomrule
+\end{tabular}
+\caption{Core assumptions of the RAND-WALK model. (A4) is derived from (A2) and high dimensionality; all others are axioms of the generative model.}
+\label{tab:assumptions}
+\end{table}
+
+\section{Discussion}\label{sec:discussion}
+
+The derivations above converge on a single picture: \textbf{word embeddings arise as solutions to a variational energy-minimization problem, and their inner-product geometry encodes pointwise mutual information.}
+
+The statistical-mechanical perspective makes this natural. The Boltzmann distribution~\eqref{eq:boltzmann} assigns energies to word configurations via the coupling matrix $G_{ij}$. The softmax model~\eqref{eq:proposal} is a mean-field approximation, and minimizing the KL divergence is equivalent to the standard variational free-energy minimization in statistical physics. The embedding vectors are the variational parameters, and their optimal values---determined by the stationary conditions~\eqref{eq:stationary}---encode the interaction structure of the true distribution.
+
+The partition function $\hat{Z}$ plays its usual role: it ensures normalization but complicates computation. The concentration of $\hat{Z}$ in the Arora et al.\ model~\cite{arora2016} is the analogue of self-averaging of the free energy in disordered systems. The shift by $\log k$ in the Levy--Goldberg result~\cite{levy2014} corresponds to adjusting the chemical potential (the reference energy scale) via the number of negative samples.
+
+This perspective suggests that the success of word embedding methods is not accidental but reflects a deep structural fact: natural language co-occurrence statistics are well-described by a pairwise energy model, and the low-rank structure of the PMI matrix (equivalently, the low dimensionality of the embedding space) reflects the fact that semantic similarity is governed by a small number of latent factors---the ``discourse vectors'' of Arora et al., or equivalently, the slow modes of the energy landscape.
+
+\begin{thebibliography}{10}
+
+\bibitem{mikolov2013}
+T.~Mikolov, I.~Sutskever, K.~Chen, G.~Corrado, and J.~Dean,
+``Distributed Representations of Words and Phrases and their Compositionality,''
+\emph{Advances in Neural Information Processing Systems}, vol.~26, 2013.
+arXiv:1310.4546.
+
+\bibitem{pennington2014}
+J.~Pennington, R.~Socher, and C.~D.~Manning,
+``GloVe: Global Vectors for Word Representation,''
+\emph{Proceedings of EMNLP}, pp.~1532--1543, 2014.
+
+\bibitem{levy2014}
+O.~Levy and Y.~Goldberg,
+``Neural Word Embedding as Implicit Matrix Factorization,''
+\emph{Advances in Neural Information Processing Systems}, vol.~27, 2014.
+arXiv:1405.4053.
+
+\bibitem{levy2015}
+O.~Levy, Y.~Goldberg, and I.~Dagan,
+``Improving Distributional Similarity with Lessons Learned from Word Embeddings,''
+\emph{Transactions of the Association for Computational Linguistics}, vol.~3, pp.~211--225, 2015.
+arXiv:1507.01460.
+
+\bibitem{arora2016}
+S.~Arora, Y.~Li, Y.~Liang, T.~Ma, and A.~Risteski,
+``A Latent Variable Model Approach to PMI-based Word Embeddings,''
+\emph{Transactions of the Association for Computational Linguistics}, vol.~4, pp.~385--399, 2016.
+arXiv:1502.03520.
+
+\bibitem{arora2017}
+S.~Arora, Y.~Liang, and T.~Ma,
+``A Simple but Tough-to-Beat Baseline for Sentence Embeddings,''
+\emph{Proceedings of ICLR}, 2017.
+arXiv:1704.05358.
+
+\bibitem{hashimoto2016}
+T.~B.~Hashimoto, D.~Alvarez-Melis, and T.~S.~Jaakkola,
+``Word Embeddings as Metric Recovery in Semantic Spaces,''
+\emph{Transactions of the Association for Computational Linguistics}, vol.~4, pp.~273--286, 2016.
+arXiv:1608.01622.
+
+\end{thebibliography}
+
+\end{document}

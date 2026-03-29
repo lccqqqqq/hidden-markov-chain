@@ -1,0 +1,30 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+
+Consider a sequence $\mathbf{x} = (x_1, x_2, \ldots, x_L)$. Its type (information theory terminology) is the equivalence class of all sequences sharing the same token frequency vector $f$. For example, with $L=4$ and tokens $\{0,1\}$, the sequences $(0,0,1,1)$, $(0,1,0,1)$, $(1,0,0,1)$, etc.\ all belong to type $f = (1/2, 1/2)$.
+
+The counting factor: The number of distinct sequences in a type is the multinomial coefficient:
+
+$$M(f) = \frac{L!}{\prod_j (L \cdot f_j)!}$$
+
+For i.i.d.\ processes, every sequence in a type has the same probability $P(\mathbf{x}) = \prod_j p_j^{L f_j}$, so the total probability of the type is exactly:
+
+$$P(\text{type } f) = M(f) \cdot P(\mathbf{x})$$
+
+and $\log P(\mathbf{x}) + \log M(f) = \log P(\text{type } f)$ exactly.
+
+For HMMs, sequences within a type have different probabilities (ordering matters due to transitions). So:
+
+$$P(\text{type } f) = \sum_{\mathbf{x}:\, \text{freq}(\mathbf{x})=f} P(\mathbf{x}) = M(f) \cdot \mathbb{E}_{\text{uniform}}[P(\mathbf{x}) \mid \text{type } f]$$
+
+What we compute, $\log P(\mathbf{x}) + \log M(f)$, is not exactly $\log P(\text{type } f)$. The gap is Jensen's inequality:
+
+$$\log \mathbb{E}[P(\mathbf{x}) \mid \text{type}] \geq \mathbb{E}[\log P(\mathbf{x}) \mid \text{type}]$$
+
+But for large $L$, the within-type variance of $\log P(\mathbf{x})$ shrinks (ordering becomes a lower-order effect), Jensen's gap vanishes, and our per-sequence approximation $\log P(\mathbf{x}) + \log M(f)$ converges to the true $\log P(\text{type } f)$.
+
+That's why the type-level $J$ matrix already matches $\Sigma^{-1}_{\text{emp}}$ to ${\sim}5\%$ at $L=15$ --- the Gaussian structure of the type distribution is already visible, even though the per-sequence ordering noise is still large ($R^2 = 0.6$).
+
+\end{document}
