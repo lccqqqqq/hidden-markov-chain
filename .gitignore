@@ -70,6 +70,9 @@ archive/
 # Large data files
 *.npz
 
+# Personal documents
+personal/
+
 # Claude Code
 .claude/
 *.mcp.json
