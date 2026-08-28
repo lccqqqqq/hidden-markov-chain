@@ -250,7 +250,35 @@ class HMM(ABC):
         return torch.from_numpy(obs_batch_np)
 
     def entropy_rate_theory_estimate(self):
-        """Calculate theoretical entropy rate"""
+        """
+        Analytic entropy rate of the JOINT (observation, hidden-state) process.
+
+        NOTE: this is not the observation entropy rate h_X, despite the name.
+
+        The sum below is
+
+            sum_i pi_i sum_{j,k} E[j,i,k] (-log E[j,i,k])  =  H(X, S' | S)
+
+        which equals the observation entropy rate h_X only when the next state is
+        determined by the current state and the emitted token — a unifilar HMM,
+        where H(S' | X, S) = 0. Otherwise it overstates h_X by exactly H(S' | X, S):
+
+            process          this method   H(S'|X,S)    true h_X
+            Z1R                 0.231049    0.000000    0.231048   exact (unifilar)
+            RRXOR               0.462098    0.000000    0.462096   exact (unifilar)
+            Mess3               0.921079    0.227150    0.793853   +0.127 too high
+            DirectedCycle       1.351836    0.325083    1.246225   +0.106 too high
+            CylinderGraph       2.534193    0.752862    2.439838   +0.094 too high
+
+        The symptom is Bayes-optimal loss curves that dip *below* the supposed
+        entropy rate, which is impossible: H(X_t | X_<t) converges to h_X from above.
+
+        Use `entropy_rate_empirical_estimate` instead. It propagates the mixed
+        state and averages H(X | belief), which is h_X for any HMM, unifilar or not.
+
+        The quantity computed here is legitimate in its own right — it is just not
+        h_X, so do not compare a training loss against it.
+        """
         stationary = self.get_stationary_distribution()
         entropy_rate = 0.
         for i in range(self.num_hidden_states):

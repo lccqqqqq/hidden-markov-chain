@@ -1,0 +1,8 @@
+{
+ "bayes_optimal": 2.4724265992410257,
+ "entropy_rate": 2.439683245571385,
+ "hmm_dof": 864,
+ "hmm_bytes_fp32": 3456,
+ "params": 206128,
+ "bytes_fp32": 824512
+}
