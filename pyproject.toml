@@ -1,16 +1,48 @@
-[build-system]
-requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "hidden-markov-chain"
 version = "0.1.0"
-description = "Hidden Markov Chain experiments"
-requires-python = ">=3.8"
+description = "Training small transformers on synthetic data from Hidden Markov Models"
+requires-python = ">=3.11,<3.14"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+dependencies = [
+    # Core numerics / HMM definitions (src/hmm.py)
+    "numpy>=1.26",
+    "networkx>=3.0",
+    "scipy>=1.11",          # networkx.adjacency_matrix -> scipy.sparse
+    "einops>=0.7",
+    "jaxtyping>=0.2.25",
+    "tqdm>=4.66",
+    "pyyaml>=6.0",
+    # data_generator.py saves tensors; utils.py builds HookedTransformer
+    "torch>=2.4",
+    "transformer-lens>=2.0",
+]
+
+[project.optional-dependencies]
+# Only needed for the parallel generation path in src/data_generator.py.
+# `mpich` is a PyPI-packaged MPI runtime (ships mpirun/mpiexec into .venv/bin),
+# so no system libopenmpi/libmpich and no sudo is required locally.
+# On hydra, use the cluster's own MPI instead of this extra.
+mpi = [
+    "mpi4py>=4.0",
+    "mpich>=4.2 ; sys_platform == 'linux'",
+]
+
+[tool.uv]
+# Flat scripts in src/, not an installable package — deps only.
+package = false
+
+# NVIDIA driver 550.163.01 caps at CUDA 12.4, so the default PyPI torch wheel
+# (built against CUDA 13.0) won't initialise. Pin the cu126 build, which runs on
+# a 12.4 driver via CUDA 12.x minor-version compatibility. Linux only; other
+# platforms resolve from PyPI as normal.
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu126", marker = "sys_platform == 'linux'" }]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

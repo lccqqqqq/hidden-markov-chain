@@ -8,16 +8,41 @@ Research codebase for training small transformers on synthetic data generated fr
 
 ## Key Commands
 
+### Environment (uv)
+Dependencies are managed with `uv`; the lockfile is `uv.lock`. Prefix commands with `uv run`.
+```bash
+uv sync                 # base env
+uv sync --extra mpi     # + mpi4py and a PyPI MPI runtime (provides .venv/bin/mpirun)
+```
+The `mpi` extra pulls the `mpich` wheel so no system MPI / sudo is needed locally. On hydra,
+use the cluster's own MPI modules instead of the extra.
+
+`torch` is pinned to the **cu126** build on Linux (see `[[tool.uv.index]]` in `pyproject.toml`).
+The default PyPI wheel is built against CUDA 13.0, which will not initialise on this machine's
+NVIDIA 550.x driver (CUDA 12.4 max); cu126 runs on it via CUDA 12.x minor-version compatibility.
+Remove the pin if the driver is ever updated past 570.
+
+Scripts in `src/` use flat imports (`from hmm import ...`), so run them as
+`uv run python src/<script>.py` from the repo root — Python puts `src/` on `sys.path`
+automatically and relative paths like `config/...` resolve from the repo root.
+
 ### Data Generation (MPI-parallelized)
 ```bash
-mpirun -n <num_workers> python src/data_generator.py
+# generate shards + consolidate in one go
+uv run --extra mpi mpirun -n <num_workers> python src/data_generator.py --config config/base_config.yaml
+
+# or run the stages separately
+uv run --extra mpi mpirun -n <num_workers> python src/data_generator.py --stage generate
+uv run python src/data_generator.py --stage consolidate
 ```
-Then consolidate shards into train/test splits by calling `consolidate_and_split()` in `data_generator.py`.
+Each rank writes a shard to `<save_dir>/shards/`; consolidation (rank 0 only) merges them into
+non-overlapping `seq_length+1` windows and writes `train/observations.pt` + `test/observations.pt`.
+`--seq-length` defaults to `train.seq_length` from the config; `--train-ratio` defaults to 0.99.
 
 ### Training
 ```bash
 # Single run (local or via cluster)
-python src/train.py
+uv run python src/train.py --config config/base_config.yaml
 
 # Cluster submission (uses addqueue)
 bash submit_training.sh

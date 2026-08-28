@@ -76,3 +76,6 @@ personal/
 # Claude Code
 .claude/
 *.mcp.json
+
+# uv
+.venv/

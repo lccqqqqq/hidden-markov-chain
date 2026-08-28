@@ -7,7 +7,6 @@ import inspect
 from hmm import HMM
 from hmm import RRXOR, Z1R, Mess3Proc, PSL7HMM, CylinderGraphHMM
 from utils import create_process_from_dict
-from mpi4py import MPI
 import os
 import numpy as np
 from pathlib import Path
@@ -22,8 +21,9 @@ PROCESS_REGISTRY = {
 }
 
 
-def generate_data(data_generator_config_path="base_config.yaml"):
-    """Generate dataset from config file."""
+def generate_data(data_generator_config_path="config/base_config.yaml"):
+    """Generate dataset from config file. Run under mpirun; each rank writes one shard."""
+    from mpi4py import MPI
     with open(data_generator_config_path, "r") as f:
         cfg = yaml.safe_load(f)
 
@@ -101,6 +101,45 @@ def consolidate_and_split(data_dir, seq_length=16, train_ratio=0.95, seed=42):
         json.dump(metadata, f, indent=2)
 
 
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", default="config/base_config.yaml",
+                        help="Path to the YAML config (default: config/base_config.yaml)")
+    parser.add_argument("--stage", choices=["generate", "consolidate", "all"], default="all",
+                        help="generate: MPI shard generation (run under mpirun). "
+                             "consolidate: merge shards into train/test .pt. "
+                             "all: both, consolidating on rank 0 (default)")
+    parser.add_argument("--seq-length", type=int, default=None,
+                        help="Sequence length for consolidation (default: train.seq_length from config)")
+    parser.add_argument("--train-ratio", type=float, default=0.99,
+                        help="Fraction of sequences used for training (default: 0.99)")
+    args = parser.parse_args()
+
+    with open(args.config, "r") as f:
+        cfg = yaml.safe_load(f)
+    data_dir = cfg["data_generator"]["save_dir"]
+    seq_length = args.seq_length or cfg["train"]["seq_length"]
+
+    if args.stage in ("generate", "all"):
+        generate_data(args.config)
+
+    if args.stage in ("consolidate", "all"):
+        # Under mpirun only rank 0 consolidates; without MPI this is a no-op guard.
+        rank = 0
+        try:
+            from mpi4py import MPI
+            MPI.COMM_WORLD.Barrier()
+            rank = MPI.COMM_WORLD.Get_rank()
+        except ImportError:
+            pass
+        if rank == 0:
+            consolidate_and_split(data_dir=data_dir, seq_length=seq_length,
+                                  train_ratio=args.train_ratio)
+            print(f"Consolidated {data_dir} (seq_length={seq_length}, "
+                  f"train_ratio={args.train_ratio})")
+
+
 if __name__ == "__main__":
-    # generate_data()
-    consolidate_and_split(data_dir="data/datasets/cylinder_graph_hmm", train_ratio=0.99)
+    main()
