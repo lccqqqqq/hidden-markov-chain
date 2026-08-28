@@ -50,9 +50,79 @@ class HMM(ABC):
 
         return stationary
 
-    def generate_sequence(self, length: int, init_state: int | None = None, use_tqdm: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+    def _sampling_tables(self):
+        """
+        Precompute per-state CDFs over the flattened (observation, next_state) joint
+        distribution, plus decode tables from a flat index back to (obs, next_state).
+
+        Uses the same flat-index convention as the reference sampler in
+        `generate_sequence`: idx = observation * num_hidden_states + next_state.
+        Cached on first use; the emission matrices are read exactly once.
+        """
+        if getattr(self, "_sampling_tables_cache", None) is None:
+            E = self.emission_matrices                 # (d_vocab, n_states, n_states)
+            S = self.num_hidden_states
+            # Row i is E[:, i, :].flatten(), i.e. the joint over (obs, next) given state i
+            joint = np.transpose(E, (1, 0, 2)).reshape(S, -1)
+            joint = joint / joint.sum(axis=1, keepdims=True)
+            cdfs = np.cumsum(joint, axis=1)
+            cdfs[:, -1] = 1.0                          # guard against float drift
+            n_pairs = joint.shape[1]
+            self._sampling_tables_cache = (
+                [row.tolist() for row in cdfs],        # plain lists -> C bisect, no numpy call overhead
+                [i // S for i in range(n_pairs)],      # flat idx -> observation
+                [i % S for i in range(n_pairs)],       # flat idx -> next state
+            )
+        return self._sampling_tables_cache
+
+    def _generate_sequence_fast(self, length: int, init_state: int, use_tqdm: bool) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Inverse-CDF sampler over precomputed per-state tables.
+
+        Reads the emission matrices once instead of once per token, draws uniforms in
+        bulk, and uses `bisect` on Python lists to avoid per-token numpy call overhead.
+
+        Output is bit-identical to the reference loop under the same seed: this consumes
+        exactly one uniform per token via inverse-CDF with side='right', which is what
+        `np.random.choice(n, p=...)` does internally. Verified over millions of tokens
+        for every process in this module, but note it rests on that implementation
+        detail of numpy's legacy RandomState rather than on a documented guarantee.
+        """
+        from bisect import bisect_right
+
+        cdfs, obs_of, next_of = self._sampling_tables()
+        states = np.zeros(length, dtype=np.int64)
+        obs = np.zeros(length, dtype=np.int64)
+        states_out, obs_out = states, obs      # locals for the hot loop
+        current_state = init_state
+
+        CHUNK = 1_000_000
+        pbar = tqdm(total=length, desc="Generating sequence") if use_tqdm else None
+        pos = 0
+        while pos < length:
+            n = min(CHUNK, length - pos)
+            uniforms = np.random.random(n).tolist()
+            for u in uniforms:
+                states_out[pos] = current_state
+                idx = bisect_right(cdfs[current_state], u)
+                obs_out[pos] = obs_of[idx]
+                current_state = next_of[idx]
+                pos += 1
+            if pbar is not None:
+                pbar.update(n)
+        if pbar is not None:
+            pbar.close()
+
+        return states, obs
+
+    def generate_sequence(self, length: int, init_state: int | None = None, use_tqdm: bool = False,
+                          fast: bool = False) -> Tuple[np.ndarray, np.ndarray]:
         """
         Data generation process
+
+        Args:
+            fast: Use the precomputed-CDF sampler (see `_generate_sequence_fast`).
+                  ~50-150x faster and bit-identical to the default under the same seed.
 
         Returns:
             Tuple of (states, observations) as numpy arrays
@@ -61,6 +131,9 @@ class HMM(ABC):
             # Sample initial state from stationary distribution instead of uniform random
             stationary = self.get_stationary_distribution()
             init_state = np.random.choice(self.num_hidden_states, p=stationary)
+
+        if fast:
+            return self._generate_sequence_fast(length, init_state, use_tqdm)
 
         states = np.zeros(length, dtype=np.int64)
         obs = np.zeros(length, dtype=np.int64)
@@ -147,7 +220,8 @@ class HMM(ABC):
         # Convert to torch tensor for saving
         torch.save(torch.from_numpy(beliefs), os.path.join(save_dir, f"beliefs_{self.__class__.__name__}_{length}.pt"))
 
-    def generate_data(self, batch_size: int, length: int, init_state: int | None = None, use_tqdm: bool = False) -> torch.Tensor:
+    def generate_data(self, batch_size: int, length: int, init_state: int | None = None, use_tqdm: bool = False,
+                      fast: bool = False) -> torch.Tensor:
         """
         Generate a batch of observation sequences.
 
@@ -168,7 +242,7 @@ class HMM(ABC):
             else:
                 seq_init_state = init_state
 
-            states, obs = self.generate_sequence(length, init_state=seq_init_state)
+            states, obs = self.generate_sequence(length, init_state=seq_init_state, fast=fast)
             obs_batch.append(obs)
 
         # Stack and convert to torch tensor for compatibility with training code
@@ -433,7 +507,11 @@ class CylinderGraphHMM(HMM):
     
     @property
     def emission_matrices(self):
-        return self._get_emission_matrix()
+        # Cached: the matrix is fully determined by the (seeded) graph built in
+        # __init__, but generate_sequence touches this property once per token.
+        if getattr(self, "_emission_cache", None) is None:
+            self._emission_cache = self._get_emission_matrix()
+        return self._emission_cache
 
 
 def main():

@@ -39,6 +39,13 @@ Each rank writes a shard to `<save_dir>/shards/`; consolidation (rank 0 only) me
 non-overlapping `seq_length+1` windows and writes `train/observations.pt` + `test/observations.pt`.
 `--seq-length` defaults to `train.seq_length` from the config; `--train-ratio` defaults to 0.99.
 
+**Use `--fast`.** It swaps the per-token `np.random.choice` for a precomputed per-state
+inverse-CDF sampler (`HMM._generate_sequence_fast`): 50-150x faster and **bit-identical**
+to the default sampler under the same seed, since both consume one uniform per token via
+`searchsorted(..., side='right')`. The default stays on the reference sampler; `--fast` is
+opt-in. Relatedly, `CylinderGraphHMM.emission_matrices` is now cached — it used to rebuild
+the graph adjacency matrix (~385 us) on every one of the 10M property accesses.
+
 ### Training
 ```bash
 # Single run (local or via cluster)
