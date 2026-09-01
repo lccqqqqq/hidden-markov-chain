@@ -1,0 +1,7 @@
+# resubmitted 2026-08-31 ~15:50 after fixing compute-node imports (dill etc. installed to user site); IDs 12919331-45 cancelled/failed
+12919352 e7      E7 global-Hessian GPTQ (bits 4 3 2, damp 1e-2 1e-1; n_newton_calib 512)  -n 1 -m 4  [12919346 OOM-killed at 2 GB]
+12919347 e8      E8 belief-probe projection (d' 18 24 32)                 -n 1 -m 1.5
+12919348 e9      E9 layer tying                                           -n 1 -m 1.5
+12919349 r_ngrp  R1.1 + R3.1 neuron-group components                     -n 1 -m 2
+12919350 r_main  R3.1 + R1.1 head/attn/mlp components                     -n 1 -m 2
+r_post.sh (R1.2 hysteresis + R3.3 cross-susceptibilities) written, to submit when E8 finishes

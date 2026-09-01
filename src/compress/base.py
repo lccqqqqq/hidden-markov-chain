@@ -6,9 +6,11 @@ Protocol choices (applied identically to every method, recorded once here):
   * Quantized tensors: every parameter whose name ends in one of WEIGHT_SUFFIXES
     (embeddings, positional embeddings, attention and MLP matrices, unembedding).
   * Biases are kept in fp32 (they are <1% of parameters).
-  * Granularity "per_channel" means one (scale, zero) per *output* channel, i.e. per slice
-    along the last dimension of the TransformerLens weight (TL stores weights as
-    (..., d_in, d_out)). "per_tensor" means one (scale, zero) for the whole tensor.
+  * Granularity "per_channel" means one (scale, zero) per *output* channel: the last
+    dimension of 2D TL weights (TL stores (d_in, d_out)); for attention W_Q/W_K/W_V with
+    shape (head, d_model, d_head) the output channels are the (head, d_head) pairs.
+    [Amended 2026-08-31: the first RTN sweep grouped W_Q/K/V by d_head index across heads
+    (16 groups); see experiment_log.md.] "per_tensor" is one (scale, zero) per tensor.
     Group-wise g128 is meaningless for 64-wide matrices and is not offered.
   * Fake quantization: weights remain fp32 tensors constrained to the b-bit grid, so the
     model runs unchanged through TransformerLens. Bytes are *computed* by `count_bytes`,
@@ -63,6 +65,12 @@ class Quantizer(ABC):
         self.bits = bits
         self.granularity = granularity
         self.symmetric = symmetric
+        # Optional per-tensor width override {param_name: bits}, set by allocation policies
+        # (HAWQ-V2). The per-matrix algorithm is unchanged; only the width varies.
+        self.bits_map: dict[str, int] | None = None
+
+    def _bits(self, name: str) -> int:
+        return self.bits if self.bits_map is None else self.bits_map.get(name, self.bits)
 
     @property
     def spec(self) -> QuantSpec:
@@ -74,11 +82,21 @@ class Quantizer(ABC):
 
     # ---- helpers shared by subclasses -------------------------------------------------
     @staticmethod
-    def _channel_view(w: t.Tensor, granularity: str) -> t.Tensor:
-        """Return a 2D view (rows, channels) where each column shares one (scale, zero)."""
+    def _channel_view(w: t.Tensor, granularity: str, name: str = "") -> t.Tensor:
+        """2D view (rows, output-channels); each column shares one (scale, zero)."""
         if granularity == "per_tensor":
             return w.reshape(-1, 1)
+        if name.split(".")[-1] in ("W_Q", "W_K", "W_V"):   # (head, d_model, d_head)
+            return w.permute(1, 0, 2).reshape(w.shape[1], -1)   # -> (d_model, head*d_head)
         return w.reshape(-1, w.shape[-1])
+
+    @staticmethod
+    def _from_channel_view(v: t.Tensor, shape: t.Size, name: str = "") -> t.Tensor:
+        """Inverse of `_channel_view` (per_tensor and per_channel are both plain reshapes
+        except the attention permute)."""
+        if name.split(".")[-1] in ("W_Q", "W_K", "W_V") and v.shape[0] == shape[1]:
+            return v.reshape(shape[1], shape[0], shape[2]).permute(1, 0, 2).reshape(shape)
+        return v.reshape(shape)
 
     @staticmethod
     def grid(w2: t.Tensor, bits: int, symmetric: bool) -> tuple[t.Tensor, t.Tensor, int, int]:
@@ -130,6 +148,6 @@ def count_bytes(model: t.nn.Module, bits: int | dict[str, int] | None, granulari
         if b is None:
             total += p.numel() * 4
         else:
-            n_ch = 1 if granularity == "per_tensor" else p.shape[-1]
+            n_ch = 1 if granularity == "per_tensor" else Quantizer._channel_view(p, granularity, name).shape[1]
             total += (p.numel() * b + 7) // 8 + n_ch * 4
     return total

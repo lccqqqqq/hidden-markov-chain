@@ -26,7 +26,8 @@ class RTN(Quantizer):
         for name, p in model.named_parameters():
             if not is_quantized_param(name):
                 continue
-            w2 = self._channel_view(p.data, self.granularity)
-            scale, zero, qmin, qmax = self.grid(w2, self.bits, self.symmetric)
-            p.data.copy_(self.fake_quant(w2, scale, zero, qmin, qmax).reshape(p.shape))
+            w2 = self._channel_view(p.data, self.granularity, name)
+            scale, zero, qmin, qmax = self.grid(w2, self._bits(name), self.symmetric)
+            fq = self.fake_quant(w2, scale, zero, qmin, qmax)
+            p.data.copy_(self._from_channel_view(fq, p.shape, name))
         return model

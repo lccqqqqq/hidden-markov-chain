@@ -22,11 +22,12 @@ import torch as t
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # src/ on path when run as a script
 from compress import RTN, count_bytes, count_params
 from compress.base import Quantizer
+from compress.gptq import GPTQ
 from evaluate import bayes_optimal, entropy_rate, evaluate, generator_dof, load_run, load_test_data
 from utils import create_process_from_dict
 
-METHODS: dict[str, type[Quantizer]] = {"rtn": RTN}
-# TODO: register GPTQ, AWQ, STEQAT, LSQ, HAWQv2 here once implemented (compress/*.py).
+METHODS: dict[str, type[Quantizer]] = {"rtn": RTN, "gptq": GPTQ}
+# TODO: register AWQ, STEQAT, LSQ, HAWQv2 here once implemented (compress/*.py).
 # Experimental methods register under a distinct prefix, e.g. "exp/<name>".
 
 

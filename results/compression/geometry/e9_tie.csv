@@ -1,0 +1,2 @@
+n_shared,n_apply,init,unique_params,bytes_fp32,recovery,test_nll,test_kl
+1,4,mean,56944,227776,200steps,2.6973321437835693,0.2273792028427124
