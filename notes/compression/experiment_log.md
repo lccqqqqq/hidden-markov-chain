@@ -1076,20 +1076,22 @@ Output: `results/compression/geometry/hydra/hydra_r3main/r3_cross.json` (24 sour
 target components; χ_cc′ = drift-corrected relative change of Ω_c′ after 200 steps with a
 field on c at the h where m_c ≈ ½).
 
-**Results.** Median |χ| = 0.019 (90th pct 0.17): most pairs are independent after
-relaxation, confirming E2's head-level additivity survives retraining. The large entries
-are all sublayer-scale and split cleanly by sign:
-- **Compensating (χ < 0, partner grows): attention substitutes across layers.** Squeeze
-  attn.L2 → attn.L1 grows (−0.52) and layer-2 heads grow (−0.53 to −0.58); squeeze
-  attn.L3 → mlp.L2 grows (−0.66); squeeze attn.L1 → head.L1.2 grows (−0.56).
-- **Cooperating (χ > 0, partner shrinks too): within-layer attn–mlp pairs are serial
-  circuits.** Squeeze mlp.L2 → attn.L2 collapses with it (+1.72) and mlp.L1 follows
-  (+1.20); squeeze mlp.L1 → attn.L2 (+0.81); squeeze mlp.L2 → attn.L3 (+0.79).
+**Results.** (Sign convention from the code: χ_cc′ = relative change of Ω_c′ after squeezing c
+with a positive field, drift-corrected; χ > 0 ⇒ the partner *grows*.) Median |χ| = 0.019
+(90th pct 0.17): most pairs are independent after relaxation, confirming E2's head-level
+additivity survives retraining. The large entries are all sublayer-scale and split by sign:
+- **Substitutes (χ > 0, partner grows when c is squeezed).** Squeeze mlp.L2 → attn.L2 grows
+  +1.72, mlp.L1 +1.20, attn.L3 +0.79; squeeze mlp.L1 → attn.L2 +0.81; squeeze mlp.L0 →
+  heads L1.0/L1.3 +0.34. The layer-2 MLP's function is absorbed by neighbouring attention
+  and by MLP-1 — the relaxed counterpart of E2's positive cross-terms.
+- **Serial chains (χ < 0, partner shrinks too).** Squeeze attn.L2 → attn.L1 −0.52, mlp.L1
+  −0.55 (and its own heads −0.53…−0.58, trivially); squeeze attn.L3 → mlp.L2 −0.66;
+  squeeze attn.L1 → head.L1.2 −0.56. Components upstream of a squeezed sublayer lose their
+  purpose and decay with it: layer 1 feeds attn.L2, mlp.L2 feeds attn.L3.
 
 **Reading.** The docx's Table-3 relations exist and are measurable, but as *thermo­dynamic
 response coefficients under retraining*, not as static loss-expansion terms: merge/
-substitute candidates = the compensating pairs; delete-together units = the cooperating
-pairs. Consistent with R3.2's endpoint (layers 2–3 attention and MLPs die together while
+substitute candidates = the χ > 0 pairs; delete-together units = the χ < 0 chains. Consistent with R3.2's endpoint (layers 2–3 attention and MLPs die together while
 early layers absorb their function).
 
 ---
@@ -1140,3 +1142,75 @@ relaxed (300-step) cost median −0.52 mnats, max +1.29 (top-variance group of l
 quench 212). Confirms: every 32-neuron group is individually removable at ≈ 0 cost after
 relaxation. Program complete; all hydra jobs finished, results synced under
 `results/compression/geometry/hydra/`.
+
+---
+
+## 2026-09-01 — R4: finite-temperature correlators of coarse observables (§4.3 of the writeup; hydra)
+
+Code: `compress/experimental/{geo_correlators,run_geo_correlators}.py`. Outputs:
+`results/compression/geometry/hydra/r4_corr_{adam,sgd,sgld}.json`, `r4_summary.json`,
+`r4_delete.csv`, `r4_tgptq.csv` (job 12921819, 1 core, 35 min).
+
+**Method.** Trajectories from w* — Adam lr 1e-3 (2 000 steps), SGD lr 1e-2 (2 000), SGLD
+ε = 3×10⁻⁷, nβ = 7.4×10⁵, γ = 100 (4 000) — recording every 5 steps the 72 gauge-invariant
+component observables Ω_c (geo_field), the batch KL, ‖w − w*‖, and the calib KL every 50.
+Fluctuations x_c = Ω_c/Ω_c(w*) − 1 after 25 % burn-in: covariance C, correlation, loss
+correlator cov(ΔL, x_c), integrated autocorrelation time τ_c. Tests: FDT (∂Ω_c′/∂h_c =
+−β C_cc′) against R3.3's χ; C_cc against R3.1's free fraction (1 − m at the strongest
+field) and E1's quench cost; deletion order by C_cc (all components / fine components
+only) vs quench order vs random, each hard-deleted + 200 soft recovery steps at R3.2's
+parameter counts; ThermalGPTQ = reference rounding with ⟨2XXᵀ⟩ over 50 Adam states vs
+H(w*) without propagation vs the propagated reference.
+
+**Trajectory facts.** ‖w − w*‖ after 2 000 steps: Adam 14.0 (KL falls to 2.4 mnats), SGD
+0.05 (KL 3.7), SGLD 15.1 (KL 7.7). τ_c ≈ 90–105 records ≈ 450–520 steps for *every*
+observable under every dynamics: a single slow mode (drift along the flat manifold) as
+long as the whole window (≈ 3 τ per trajectory) — the "correlators" are drift statistics,
+not equilibrium fluctuations.
+
+**Correlator tests** (Spearman unless stated):
+
+| test | Adam | SGD | SGLD | reading |
+|---|---|---|---|---|
+| corr(x_c, x_c′) vs χ_cc′ (R3.3, 24×71 pairs) | −0.09 | +0.03 | −0.12 | **FDT fails** |
+| sign agreement with −χ, all / \|χ\| > 0.2 (66 pairs) | 0.45 / 0.52 | 0.42 / 0.64 | 0.37 / 0.56 | ≈ chance |
+| var(x_c) vs free fraction (R3.1) | 0.53 | 0.62 | **0.80** | thermal variance *does* rank how decorative a component is |
+| var(x_c) vs quench cost (E1) | 0.02 | 0.42 | 0.13 | not a cost signal |
+| cov(ΔL, x_c) vs field cost (R3.1) | 0.41 | −0.14 | −0.27 | no consistent loss correlator |
+
+Loosest observables (largest var): Adam — attn.L3, attn.L2, mlp.L2, qk.L3.2; SGLD — layer-3
+and layer-2 heads/attention. Tightest: layer-0 QK, top neuron groups of layers 0 and 3 —
+the same layer ordering as E4/R3 (layer 0 pinned, layers 2–3 loose).
+
+**Deletion by thermal variance** (Δ mnats after 200 recovery steps; params left ≈):
+
+| order | 165k | 108k | 74k | 39k | 16k |
+|---|---|---|---|---|---|
+| thermal var, fine components | +4.0 | +18.9 | +81 | +205 | +666 |
+| thermal var, incl. sublayers | (+8.5 @ 140k) | +48 @ 86k | +216 @ 57k | +406 @ 40k | +1118 @ 7k |
+| quench cost ascending (E1) | **+0.3** | **+6.5** | **+19.9** | **+99** | **+248** |
+| random | +19.6 | +46.9 | +157 | +230 | +440 (@11k) |
+| R3.2 global field (for reference) | −0.4 | +2.9 | +7.5 | +33 | +134 (@19.7k) |
+
+**ThermalGPTQ** (Δ mnats): 4-bit 2.2 / 3-bit 9.7 / 2-bit 113 vs H(w*)-no-propagation 2.0 /
+9.6 / 105 and propagated reference 2.1 / 8.8 / 71.6. Averaging activation correlators over
+the trajectory does not help and slightly hurts at 2 bits; sequential propagation is worth
+34 mnats at 2 bits.
+
+**Findings.**
+1. **Short-trajectory correlators of coarse observables do not reproduce the T = 0 response
+   (FDT test fails, sign agreement at chance).** The reason is visible in τ_c: one
+   relaxation time ≈ the window, so the second moments measure the slow drift along the
+   flat manifold, not equilibrium fluctuations. Coarse observables equilibrate faster than
+   weights (R2), but not within 2 000–4 000 steps.
+2. **The one positive:** the thermal variance of a component's observable ranks how much of
+   it is decorative (Spearman 0.80 with the field-measured free fraction under SGLD). This
+   is a *scale-redundancy* detector (e.g. the over-sharpened QK logit scales), not a
+   deletion or cost detector: as a deletion selector it is worse than the static quench
+   ordering at every parameter count, and far worse than the adaptive field sweep.
+3. Thermalising the GPTQ Hessian is useless here; what matters for rounding at 2 bits is
+   sequential propagation (34 mnats), i.e. conditioning on the already-quantized
+   upstream, not on the temperature.
+4. Conclusion for §4.3: finite-temperature information on this model is obtainable only
+   from equilibrated long trajectories (≫ 10 τ ≈ 5 000+ steps with block-averaged errors);
+   whether the FDT test then passes is the remaining open question (R4b submitted).

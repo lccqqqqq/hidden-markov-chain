@@ -109,7 +109,7 @@ power); m_c = √(Ω_c/Ω_c(w*)).
 | Relaxed (adiabatic) cost | L*(α=0) − L*(1) with the retained parameters re-optimised; anneal or quench-then-recover | measured (R1) | the true budget of a structural edit; 10× below quench; path-independent |
 | Relaxation time τ_c | convergence rate of the relaxed cost with recovery steps | partially (50/200/600-step points) | how much recovery a given edit needs; slow τ = the retained parameters must move along flat directions |
 | Field response m_c(h) | Ω_c at the minimum of L + hΩ_c; a rate–distortion curve with a free endpoint | measured (R3.1) | what fraction of a component is decorative (QK logit scale: 80–90 %), and the cost of the functional remainder; continuous vs jump collapse → "shrink" vs "delete" |
-| Cross-susceptibilities χ_cc′ | ∂m_c′/∂h_c, drift-corrected | measured (R3.3) | circuit discovery with relaxation: χ < 0 = substitutes (merge candidates; attention across layers), χ > 0 = serial circuits (delete together; attn+mlp within a layer) |
+| Cross-susceptibilities χ_cc′ | ∂m_c′/∂h_c, drift-corrected | measured (R3.3) | circuit discovery with relaxation (χ_cc′ = relative change of Ω_c′ when c is squeezed): χ > 0 = substitutes (partner grows; mlp.L2 ↔ attn.L2 / mlp.L1 / attn.L3 → merge candidates), χ < 0 = serial chains (partner decays too; layer 1 → attn.L2, mlp.L2 → attn.L3 → delete together) |
 | Global-field phase diagram | all m_c(h) under one group-lasso field, up and down in h | measured (R3.2) | the parameter-axis frontier and the natural deletion *order*; hysteresis marks the irreversible, collective regime |
 | Drift at h = 0 | ‖w − w*‖ after free fine-tuning at fixed loss | measured (≈ 4 in 200 steps) | size of the flat manifold at the recovery scale; sets expectations for any sampler |
 
@@ -125,15 +125,20 @@ the linear-response susceptibilities at that scale:
 | observable | status | what happened / what would make it work |
 |---|---|---|
 | Per-weight posterior variance (→ posterior-variance bit allocation, finite-T OBS) | **measured, failed** (R2) | SGLD chains equilibrate only directions with relaxation time 2/(ε(nβh+γ)) ≲ chain length — here only W_U. Everything else reported ε × steps (pure diffusion); the map was uninformative and the allocation degenerate. Weight-space correlators of a 2×10⁵-dim flat manifold are not obtainable by sampling at any useful temperature. |
-| Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **not run; the right target** | 72 observables instead of 2×10⁵ coordinates; each Ω_c is a coarse, smooth function that equilibrates on the time-scale of the *retained* dynamics, not the slowest weight direction. Estimator: covariance of Ω_c across SGD/SGLD iterates during a short fine-tune at fixed lr (SWAG-style; effective T ~ η/B). Would give R3.3's χ matrix from one run instead of 24 field runs, plus its diagonal (each component's thermal variance = how loosely it is pinned). |
-| Loss–observable correlators ⟨δL δΩ_c⟩ | not run | the finite-T analogue of the envelope derivative ∂L*/∂h_c: components whose norm fluctuations do not correlate with loss fluctuations are decorative at that scale — a one-run replacement for the h-sweep. |
-| Activation correlators at finite T | not run | XXᵀ averaged over π_T instead of at w*: the GPTQ Hessian robustified against the very lattice perturbation it is compensating (probably a small effect, cheap to test). |
-| Time correlators / relaxation spectrum | not run | autocorrelation of Ω_c along a fine-tune: its decay time is τ_c of §4.2 measured without perturbing anything; the spectrum of decay times is the "relaxation spectrum" of the network. |
+| Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **measured (R4), FDT test failed** | 72 observables along Adam / SGD / SGLD trajectories of 2 000–4 000 steps: Spearman(corr, χ_R3.3) = −0.09 / +0.03 / −0.12, sign agreement with −χ at chance. Cause: τ_c ≈ 450–520 steps for every observable under every dynamics — one slow drift mode as long as the window, so the second moments are drift statistics. Coarse observables equilibrate faster than weights but not in 10³ steps; R4b (30 000-step trajectories, block errors) tests whether they ever do. |
+| Thermal variance var(x_c) as a selector | **measured (R4): partial positive** | Ranks the field-measured *free fraction* of a component at Spearman 0.80 (SGLD) — a scale-redundancy detector (over-sharpened QK). Not a cost or deletion signal: as a deletion order it loses to the static quench order at every size (+81 vs +20 mnats at 74k params) and to the field sweep by 10×. |
+| Loss–observable correlators ⟨δL δΩ_c⟩ | **measured (R4): negative** | Spearman with the field cost 0.41 / −0.14 / −0.27 across dynamics — no consistent signal at these trajectory lengths. |
+| Activation correlators at finite T (ThermalGPTQ) | **measured (R4): negative** | ⟨2XXᵀ⟩ over 50 Adam states: 2.2 / 9.7 / 113 mnats at 4 / 3 / 2 bits vs 2.0 / 9.6 / 105 for H(w*) without propagation; the propagated reference (71.6 at 2 bits) shows that conditioning on already-quantized upstream layers, not temperature, is what matters. |
+| Time correlators / relaxation spectrum | **measured (R4)** | integrated τ_c ≈ 90–105 records (450–520 steps) for all 72 observables and all three dynamics — no spectrum, a single collective slow mode (drift along the flat manifold). The relaxation spectrum is degenerate at this scale; resolving it needs windows ≫ 10⁴ steps. |
 
-The lesson from R2 is not that finite-temperature information is empty; it is that
-weights are the wrong variables to thermalise. Coarse observables (component norms,
-sublayer output power, per-position loss) are the analogue of collective coordinates —
-low-dimensional, smooth, fast — and every finite-T quantity should be defined on them.
+The lesson from R2 was that weights are the wrong variables to thermalise; R4 adds that
+coarse observables are the right variables but still need genuinely equilibrated
+trajectories — on this model every one of them relaxes on a single collective time of
+~500 steps, so 10³-step windows give drift statistics, not fluctuations. What survived: the
+thermal variance is a usable detector of *scale* redundancy (which parts of a component are
+decorative), and nothing finite-temperature improved rounding or deletion over the T = 0
+measurements. The open item is R4b: 30 000-step trajectories with block-averaged errors,
+to see whether the FDT relation to R3.3's χ appears once the drift is averaged out.
 
 ### 4.4 Data-side and representational observables
 
