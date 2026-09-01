@@ -1163,10 +1163,11 @@ parameter counts; ThermalGPTQ = reference rounding with ⟨2XXᵀ⟩ over 50 Ada
 H(w*) without propagation vs the propagated reference.
 
 **Trajectory facts.** ‖w − w*‖ after 2 000 steps: Adam 14.0 (KL falls to 2.4 mnats), SGD
-0.05 (KL 3.7), SGLD 15.1 (KL 7.7). τ_c ≈ 90–105 records ≈ 450–520 steps for *every*
-observable under every dynamics: a single slow mode (drift along the flat manifold) as
-long as the whole window (≈ 3 τ per trajectory) — the "correlators" are drift statistics,
-not equilibrium fluctuations.
+0.05 (KL 3.7), SGLD 15.1 (KL 7.7). the integrated autocorrelation time saturates the estimator's 60-lag cap for *every*
+observable under every dynamics (τ_c ≥ 300 steps; the autocorrelation never crosses zero
+within the window): a single slow drift mode along the flat manifold dominates — the
+"correlators" are drift statistics, not equilibrium fluctuations. (An earlier version of
+this entry quoted τ ≈ 450–520 steps; that number was the cap, i.e. a lower bound.)
 
 **Correlator tests** (Spearman unless stated):
 
@@ -1211,6 +1212,18 @@ the trajectory does not help and slightly hurts at 2 bits; sequential propagatio
 3. Thermalising the GPTQ Hessian is useless here; what matters for rounding at 2 bits is
    sequential propagation (34 mnats), i.e. conditioning on the already-quantized
    upstream, not on the temperature.
-4. Conclusion for §4.3: finite-temperature information on this model is obtainable only
-   from equilibrated long trajectories (≫ 10 τ ≈ 5 000+ steps with block-averaged errors);
-   whether the FDT test then passes is the remaining open question (R4b submitted).
+4. Conclusion for §4.3 (before R4b): finite-temperature information would need
+   equilibrated trajectories; R4b below tests whether 30 000–60 000 steps suffice.
+
+**R4b — long trajectories** (hydra job 12921984, 2 h 27 min; `hydra/r4b/`): SGD 30 000
+steps (‖w−w*‖ 0.32, KL 3.35 mnats), SGLD 60 000 (‖w−w*‖ **39.6**, KL rising to 11.8), Adam
+30 000 (‖w−w*‖ 48.9, KL still falling, 0.96), recorded every 10 steps (2 250–4 500 samples).
+τ again saturates the cap (≥ 600 steps) in all three. FDT test: Spearman(corr, χ) = +0.05 /
+−0.11 / −0.08, sign agreement 0.42 / 0.37 / 0.53 (large-|χ| 0.50 / 0.56 / 0.58) — **fails at
+every length tried**. Variance vs free fraction: 0.64 / 0.70 / 0.25 (SGD / SGLD / Adam) —
+the scale-redundancy detector is robust under SGD/SGLD, absent under Adam (whose
+preconditioning re-weights the observables). Verdict: on this model trajectory sampling
+never reaches equilibrium at any affordable length — SGLD is a random walk on a flat
+manifold whose extent (‖δw‖ ≳ 40) exceeds anything the localization pins; finite-T
+correlators are not an available tool here, and the one usable finite-T quantity (thermal
+variance → decorative fraction) is already known from the T = 0 field sweep.

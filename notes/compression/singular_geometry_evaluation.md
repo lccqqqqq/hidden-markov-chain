@@ -125,11 +125,11 @@ the linear-response susceptibilities at that scale:
 | observable | status | what happened / what would make it work |
 |---|---|---|
 | Per-weight posterior variance (→ posterior-variance bit allocation, finite-T OBS) | **measured, failed** (R2) | SGLD chains equilibrate only directions with relaxation time 2/(ε(nβh+γ)) ≲ chain length — here only W_U. Everything else reported ε × steps (pure diffusion); the map was uninformative and the allocation degenerate. Weight-space correlators of a 2×10⁵-dim flat manifold are not obtainable by sampling at any useful temperature. |
-| Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **measured (R4), FDT test failed** | 72 observables along Adam / SGD / SGLD trajectories of 2 000–4 000 steps: Spearman(corr, χ_R3.3) = −0.09 / +0.03 / −0.12, sign agreement with −χ at chance. Cause: τ_c ≈ 450–520 steps for every observable under every dynamics — one slow drift mode as long as the window, so the second moments are drift statistics. Coarse observables equilibrate faster than weights but not in 10³ steps; R4b (30 000-step trajectories, block errors) tests whether they ever do. |
+| Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **measured (R4), FDT test failed** | 72 observables along Adam / SGD / SGLD trajectories of 2 000–4 000 steps: Spearman(corr, χ_R3.3) = −0.09 / +0.03 / −0.12, sign agreement with −χ at chance. Cause: the autocorrelation never decays within the window (τ_c saturates the 60-lag cap under every dynamics) — one slow drift mode, so the second moments are drift statistics. **R4b** (30 000–60 000 steps): still no equilibration (SGLD wanders to ‖δw‖ ≈ 40, KL rising; Adam still descending), FDT test still at chance (Spearman −0.11…+0.05). Trajectory sampling does not reach equilibrium on this model at any affordable length. |
 | Thermal variance var(x_c) as a selector | **measured (R4): partial positive** | Ranks the field-measured *free fraction* of a component at Spearman 0.80 (SGLD) — a scale-redundancy detector (over-sharpened QK). Not a cost or deletion signal: as a deletion order it loses to the static quench order at every size (+81 vs +20 mnats at 74k params) and to the field sweep by 10×. |
 | Loss–observable correlators ⟨δL δΩ_c⟩ | **measured (R4): negative** | Spearman with the field cost 0.41 / −0.14 / −0.27 across dynamics — no consistent signal at these trajectory lengths. |
 | Activation correlators at finite T (ThermalGPTQ) | **measured (R4): negative** | ⟨2XXᵀ⟩ over 50 Adam states: 2.2 / 9.7 / 113 mnats at 4 / 3 / 2 bits vs 2.0 / 9.6 / 105 for H(w*) without propagation; the propagated reference (71.6 at 2 bits) shows that conditioning on already-quantized upstream layers, not temperature, is what matters. |
-| Time correlators / relaxation spectrum | **measured (R4)** | integrated τ_c ≈ 90–105 records (450–520 steps) for all 72 observables and all three dynamics — no spectrum, a single collective slow mode (drift along the flat manifold). The relaxation spectrum is degenerate at this scale; resolving it needs windows ≫ 10⁴ steps. |
+| Time correlators / relaxation spectrum | **measured (R4, R4b)** | the autocorrelation of every observable stays positive over the whole 60-lag window at 2 000 and at 30 000–60 000 steps — no spectrum, one collective drift mode that outlasts any trajectory tried. The relaxation spectrum is not resolvable by trajectory statistics here. |
 
 The lesson from R2 was that weights are the wrong variables to thermalise; R4 adds that
 coarse observables are the right variables but still need genuinely equilibrated
@@ -137,8 +137,11 @@ trajectories — on this model every one of them relaxes on a single collective 
 ~500 steps, so 10³-step windows give drift statistics, not fluctuations. What survived: the
 thermal variance is a usable detector of *scale* redundancy (which parts of a component are
 decorative), and nothing finite-temperature improved rounding or deletion over the T = 0
-measurements. The open item is R4b: 30 000-step trajectories with block-averaged errors,
-to see whether the FDT relation to R3.3's χ appears once the drift is averaged out.
+measurements. R4b (30 000–60 000 steps) closed the open item negatively: the drift never averages out,
+so the FDT route to χ is not available on this model; the field sweep (T = 0, R3.2/R3.3) is
+the way to get the response coefficients, and the thermal variance's one robust use —
+ranking decorative scale (ρ ≈ 0.65–0.70 under SGD/SGLD) — duplicates what the field sweep
+measures directly.
 
 ### 4.4 Data-side and representational observables
 
