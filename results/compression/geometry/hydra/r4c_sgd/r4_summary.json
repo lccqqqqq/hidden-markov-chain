@@ -1,0 +1,32 @@
+{
+ "sgd_g1000": {
+  "spearman_var_vs_quench": 0.40623191202006564,
+  "spearman_var_vs_freefrac": 0.662261238664866,
+  "spearman_losscorr_vs_fieldcost": 0.08852659335005468,
+  "spearman_abs_losscorr_vs_quench": 0.04788089266190752,
+  "spearman_corr_vs_chi": 0.04195171399059183,
+  "sign_agreement_corr_vs_minus_chi": 0.41901408450704225,
+  "sign_agreement_large_chi": 0.5,
+  "n_large_chi": 66
+ },
+ "sgd_g10000": {
+  "spearman_var_vs_quench": 0.4212167985079427,
+  "spearman_var_vs_freefrac": 0.6683066435140524,
+  "spearman_losscorr_vs_fieldcost": -0.06977940703582225,
+  "spearman_abs_losscorr_vs_quench": 0.010386520033442665,
+  "spearman_corr_vs_chi": 0.05372014702190311,
+  "sign_agreement_corr_vs_minus_chi": 0.41725352112676056,
+  "sign_agreement_large_chi": 0.5,
+  "n_large_chi": 66
+ },
+ "sgd_g100000": {
+  "spearman_var_vs_quench": 0.505016399768474,
+  "spearman_var_vs_freefrac": 0.622837481510065,
+  "spearman_losscorr_vs_fieldcost": -0.061579522798893824,
+  "spearman_abs_losscorr_vs_quench": 0.03135249855296161,
+  "spearman_corr_vs_chi": 0.026029769146814197,
+  "sign_agreement_corr_vs_minus_chi": 0.4665492957746479,
+  "sign_agreement_large_chi": 0.5606060606060606,
+  "n_large_chi": 66
+ }
+}

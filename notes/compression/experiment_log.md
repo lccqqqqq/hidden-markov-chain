@@ -1227,3 +1227,54 @@ never reaches equilibrium at any affordable length — SGLD is a random walk on 
 manifold whose extent (‖δw‖ ≳ 40) exceeds anything the localization pins; finite-T
 correlators are not an available tool here, and the one usable finite-T quantity (thermal
 variance → decorative fraction) is already known from the T = 0 field sweep.
+
+---
+
+## 2026-09-01 — R4c: localization (γ) scan — equilibrated correlators (hydra)
+
+Jobs 12922031–3 (`hydra/r4c_{sgld,sgd,adam}/`). Motivated by the observation that R4/R4b
+chains were filling a γ = 100 ball of radius √(N/γ) ≈ 45 with τ_flat = 2/(εγ) ≈ 6.7×10⁴
+steps — never equilibrating. γ ∈ {10³, 10⁴, 10⁵} at ε = 3×10⁻⁷ (stability is set by
+nβh_max ≈ 4×10⁶ ≫ γ, so ε is unchanged); the same localization added to Adam/SGD as a
+loss-units term (γ/nβ)(w − w*); 20 000 steps (SGLD 40 000), recorded every 10; lag cap 300.
+
+**Equilibration** (prediction √(N/γ) = 14 / 4.5 / 1.4):
+
+| chain | ‖δw‖_end | ⟨ΔKL⟩ tail (mnat) | τ (records, median/max) | window/τ |
+|---|---|---|---|---|
+| sgld γ=10³ | 14.2 | 2.7 | 385 / 556 | ~8 |
+| sgld γ=10⁴ | 4.53 | 0.57 | 105 / 256 | ~28 |
+| sgld γ=10⁵ | **1.43** | 0.02 | **13 / 24** | **~230** |
+| sgd (any γ) | 0.02–0.22 | ≈ 0 | ≈ window | — (not thermal) |
+| adam (any γ) | 0.1–1.0 | ≈ 0 | 1–2 | white noise, no thermal structure |
+
+**FDT test** (sign agreement of corr(x_c, x_c′) with −χ_cc′ on the 66 pairs with |χ| > 0.2;
+chance 0.5):
+
+| | γ=10³ | γ=10⁴ | γ=10⁵ |
+|---|---|---|---|
+| sgld | 0.667 | 0.667 | **0.727** (48/66, z ≈ 3.7) |
+| sgd / adam | 0.50 / 0.58 | 0.50 / 0.61 | 0.56 / 0.58 |
+
+Full-matrix rank correlation stays ≈ 0 at all settings — expected: ~230 independent samples
+give a correlator noise floor ~0.07 vs median |χ| = 0.02; only the strong pairs are
+resolvable at this length. Variance vs field free fraction (scale-redundancy detector):
+sgld 0.73 / 0.71 / **0.76** — best in the equilibrated chain.
+
+**Findings.**
+1. **The R4/R4b failure was under-localization, not a property of the model.** With
+   γ = 10⁵ the SGLD chain is genuinely stationary (230 τ of data, extent and ⟨ΔL⟩ matching
+   the Gaussian predictions), and the fluctuation–dissipation relation to R3.3's field
+   response emerges in sign on the strongly coupled pairs (0.727 vs chance). γ/nβ is the
+   curvature-scale dial: at 10⁵/7.4×10⁵ ≈ 0.13 the chain feels only the ~230 stiffest
+   directions (E3's count), i.e. the loss-bearing core.
+2. Only SGLD's noise is thermal. SGD's η/B noise never decorrelates the observables;
+   Adam's preconditioned noise decorrelates instantly but carries no response structure.
+   "SWAG-style" covariances from optimizer trajectories are therefore not a substitute.
+3. Practical reading for §4.3: one equilibrated, strongly localized SGLD chain (~40 min on
+   one core here) recovers the sign structure of the large response coefficients — the
+   merge/delete-together classification of R3.3 — without running the 24 field
+   experiments; resolving the *small* coefficients or the ranks would need ~10²× more
+   samples, at which point the field sweep is cheaper. The T = 0 sweeps remain the
+   precision tool; the thermal route is now a validated coarse screen rather than a dead
+   end. (Amends the R4b verdict.)

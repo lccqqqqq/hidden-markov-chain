@@ -78,6 +78,7 @@ def main():
     ap.add_argument("--n-calib", type=int, default=4096)
     ap.add_argument("--recover-steps", type=int, default=200)
     ap.add_argument("--n-states", type=int, default=50)
+    ap.add_argument("--gammas", nargs="+", type=float, default=[100.0], help="SGLD-unit localization; applied to adam/sgd as gamma/nbeta in loss units")
     ap.add_argument("--out", default="results/compression/geometry")
     ap.add_argument("--threads", type=int, default=8)
     args = ap.parse_args()
@@ -110,14 +111,16 @@ def main():
 
     if "traj" in args.stage:
         summary = {}
-        for dyn in args.dynamics:
+        for dyn, gamma in [(d, g) for d in args.dynamics for g in args.gammas]:
             t0 = time.time()
             steps = args.steps * (2 if dyn == "sgld" else 1)
             tr = thermal_trajectory(model, fm, train, proc, dyn, steps, LR[dyn], record_every=args.record_every,
-                                    nbeta=nbeta, calib=calib, p_calib=p_calib)
+                                    nbeta=nbeta, gamma=gamma, calib=calib, p_calib=p_calib)
             an = analyze(tr)
-            an.update(dynamics=dyn, lr=LR[dyn], steps=steps, dist=tr["dist"], kl_steps=tr["kl_steps"], kl=tr["kl"],
-                      batch_loss=tr["batch_loss"], diverged=tr["diverged"])
+            kl_tail = [k for st, k in zip(tr["kl_steps"], tr["kl"]) if st >= 0.25 * steps]
+            an.update(dynamics=dyn, lr=LR[dyn], gamma=gamma, steps=steps, dist=tr["dist"], kl_steps=tr["kl_steps"], kl=tr["kl"],
+                      batch_loss=tr["batch_loss"], diverged=tr["diverged"],
+                      mean_dkl_tail=float(np.mean(kl_tail)) - base_t["kl"] if kl_tail else None)
             var = dict(zip(labels, an["var"])); lc = dict(zip(labels, an["loss_corr"])); tau = dict(zip(labels, an["tau_records"]))
             comp = {}
             common = [k for k in labels if k in quench]
@@ -139,21 +142,21 @@ def main():
                 comp["sign_agreement_large_chi"] = float(np.mean([np.sign(a[i]) == -np.sign(b[i]) for i in big])) if big else float("nan")
                 comp["n_large_chi"] = len(big)
             an["comparisons"] = comp
-            with open(out / f"r4_corr_{dyn}.json", "w") as f:
+            with open(out / f"r4_corr_{dyn}_g{gamma:g}.json", "w") as f:
                 json.dump(an, f)
             top = sorted(labels, key=lambda k: -var[k])[:6]; bot = sorted(labels, key=lambda k: var[k])[:4]
-            print(f"[{dyn}] steps={steps} lr={LR[dyn]:g} diverged={tr['diverged']} |w-w*|_end={tr['dist'][-1]:.2f} "
-                  f"KL_end={tr['kl'][-1]*1e3:.2f} mnat  samples={an['n_samples']}  [{time.time()-t0:.0f}s]", flush=True)
+            print(f"[{dyn} g={gamma:g}] steps={steps} lr={LR[dyn]:g} diverged={tr['diverged']} |w-w*|_end={tr['dist'][-1]:.2f} "
+                  f"KL_end={tr['kl'][-1]*1e3:.2f} mnat <dKL>_tail={1e3*(an['mean_dkl_tail'] or 0):.2f}  samples={an['n_samples']}  [{time.time()-t0:.0f}s]", flush=True)
             print(f"   loosest (var): {[(k, f'{var[k]:.2e}') for k in top]}\n   tightest: {[(k, f'{var[k]:.2e}') for k in bot]}", flush=True)
             print(f"   tau (records) median {np.nanmedian(list(tau.values())):.1f}, max {np.nanmax(list(tau.values())):.1f}", flush=True)
             print("   comparisons: " + ", ".join(f"{k}={v:.3f}" if isinstance(v, float) else f"{k}={v}" for k, v in comp.items()), flush=True)
-            summary[dyn] = comp
+            summary[f"{dyn}_g{gamma:g}"] = comp
         with open(out / "r4_summary.json", "w") as f:
             json.dump(summary, f, indent=1)
 
     if "delete" in args.stage:
         from compress.experimental.run_geo_globalfield import removed_params
-        an = json.load(open(out / "r4_corr_adam.json"))
+        an = json.load(open(sorted(out.glob("r4_corr_adam*.json"))[0]))
         var = dict(zip(an["labels"], an["var"]))
         pd = json.load(open(out / "r3_globalfield.json")) if (out / "r3_globalfield.json").exists() else None
         targets = [d["removed_params"] for d in pd["deletions"] if d["removed_params"] > 0] if pd else [40000, 95000, 128000, 140000, 165000]

@@ -54,14 +54,20 @@ def thermal_trajectory(model0: HookedTransformer, fm: FieldModel, train: t.Tenso
         idx = t.randint(0, len(train), (batch_size,), generator=g)
         batch = train[idx]
         loss = kl_loss(model, batch, teacher_probs(process, batch))
+        gloss = (gamma / nbeta) if (nbeta and dynamics in ("adam", "sgd") and gamma > 0) else 0.0
         if dynamics == "adam":
-            opt.zero_grad(); loss.backward(); opt.step()
+            opt.zero_grad(); loss.backward()
+            if gloss:
+                with t.no_grad():
+                    for p, p0 in zip(params, w0):
+                        p.grad += gloss * (p - p0)          # localization in loss units
+            opt.step()
         else:
             grads = t.autograd.grad(loss, params)
             with t.no_grad():
                 for p, gr, p0 in zip(params, grads, w0):
                     if dynamics == "sgd":
-                        p -= lr * gr
+                        p -= lr * (gr + gloss * (p - p0))
                     elif dynamics == "sgld":            # lr plays the role of eps
                         p -= 0.5 * lr * (nbeta * gr + gamma * (p - p0))
                         p += math.sqrt(lr) * t.randn(p.shape, generator=ng)
@@ -79,14 +85,14 @@ def thermal_trajectory(model0: HookedTransformer, fm: FieldModel, train: t.Tenso
         if not math.isfinite(loss.item()) or loss.item() > 5:
             break
     model.eval()
-    return dict(dynamics=dynamics, lr=lr, steps=steps, labels=labels, rec_steps=rec_steps,
+    return dict(dynamics=dynamics, lr=lr, gamma=gamma, steps=steps, labels=labels, rec_steps=rec_steps,
                 x=X, batch_loss=batch_loss, dist=dist, kl_steps=kl_steps, kl=kl_vals,
                 diverged=len(rec_steps) < steps // record_every, model=model)
 
 
 # ---- correlator analysis --------------------------------------------------------------------
 
-def analyze(traj: dict, burn_frac: float = 0.25, max_lag: int = 60) -> dict:
+def analyze(traj: dict, burn_frac: float = 0.25, max_lag: int = 300) -> dict:
     X = np.array(traj["x"]); n = len(X); b = int(burn_frac * n)
     Xs = X[b:]; L = np.array(traj["batch_loss"])[b:]
     mu = Xs.mean(0); C = np.cov(Xs.T)

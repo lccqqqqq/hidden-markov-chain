@@ -125,7 +125,7 @@ the linear-response susceptibilities at that scale:
 | observable | status | what happened / what would make it work |
 |---|---|---|
 | Per-weight posterior variance (→ posterior-variance bit allocation, finite-T OBS) | **measured, failed** (R2) | SGLD chains equilibrate only directions with relaxation time 2/(ε(nβh+γ)) ≲ chain length — here only W_U. Everything else reported ε × steps (pure diffusion); the map was uninformative and the allocation degenerate. Weight-space correlators of a 2×10⁵-dim flat manifold are not obtainable by sampling at any useful temperature. |
-| Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **measured (R4), FDT test failed** | 72 observables along Adam / SGD / SGLD trajectories of 2 000–4 000 steps: Spearman(corr, χ_R3.3) = −0.09 / +0.03 / −0.12, sign agreement with −χ at chance. Cause: the autocorrelation never decays within the window (τ_c saturates the 60-lag cap under every dynamics) — one slow drift mode, so the second moments are drift statistics. **R4b** (30 000–60 000 steps): still no equilibration (SGLD wanders to ‖δw‖ ≈ 40, KL rising; Adam still descending), FDT test still at chance (Spearman −0.11…+0.05). Trajectory sampling does not reach equilibrium on this model at any affordable length. |
+| Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **measured (R4), FDT test failed** | 72 observables along Adam / SGD / SGLD trajectories of 2 000–4 000 steps: Spearman(corr, χ_R3.3) = −0.09 / +0.03 / −0.12, sign agreement with −χ at chance. Cause: the autocorrelation never decays within the window (τ_c saturates the 60-lag cap under every dynamics) — one slow drift mode, so the second moments are drift statistics. **R4b** (30 000–60 000 steps, γ = 100): still no equilibration — the chain was filling the γ-ball (√(N/γ) ≈ 45) with τ_flat = 2/(εγ) ≈ 7×10⁴ steps. **R4c (γ scan)**: at γ = 10⁵ the SGLD chain equilibrates (τ = 130 steps, 230 τ window, ‖δw‖ = 1.43 = √(N/γ)) and the FDT sign relation to χ emerges on the strongly coupled pairs (0.727 vs chance 0.5); full-matrix ranks stay at the sampling-noise floor. γ/nβ is the curvature-scale dial (10⁵ ↔ the ~230 stiffest directions). Only SGLD noise is thermal — SGD never decorrelates, Adam is white. |
 | Thermal variance var(x_c) as a selector | **measured (R4): partial positive** | Ranks the field-measured *free fraction* of a component at Spearman 0.80 (SGLD) — a scale-redundancy detector (over-sharpened QK). Not a cost or deletion signal: as a deletion order it loses to the static quench order at every size (+81 vs +20 mnats at 74k params) and to the field sweep by 10×. |
 | Loss–observable correlators ⟨δL δΩ_c⟩ | **measured (R4): negative** | Spearman with the field cost 0.41 / −0.14 / −0.27 across dynamics — no consistent signal at these trajectory lengths. |
 | Activation correlators at finite T (ThermalGPTQ) | **measured (R4): negative** | ⟨2XXᵀ⟩ over 50 Adam states: 2.2 / 9.7 / 113 mnats at 4 / 3 / 2 bits vs 2.0 / 9.6 / 105 for H(w*) without propagation; the propagated reference (71.6 at 2 bits) shows that conditioning on already-quantized upstream layers, not temperature, is what matters. |
@@ -137,11 +137,17 @@ trajectories — on this model every one of them relaxes on a single collective 
 ~500 steps, so 10³-step windows give drift statistics, not fluctuations. What survived: the
 thermal variance is a usable detector of *scale* redundancy (which parts of a component are
 decorative), and nothing finite-temperature improved rounding or deletion over the T = 0
-measurements. R4b (30 000–60 000 steps) closed the open item negatively: the drift never averages out,
-so the FDT route to χ is not available on this model; the field sweep (T = 0, R3.2/R3.3) is
-the way to get the response coefficients, and the thermal variance's one robust use —
-ranking decorative scale (ρ ≈ 0.65–0.70 under SGD/SGLD) — duplicates what the field sweep
-measures directly.
+measurements. R4c settled it: the R4/R4b failure was under-localization. With γ chosen so that
+τ_flat = 2/(εγ) fits many times into the window (γ = 10⁵ here: τ = 130 steps, 230 τ of
+stationary data, ‖δw‖ pinned at √(N/γ)), one SGLD chain recovers the *sign structure* of
+the strong response coefficients χ (0.727 agreement on |χ| > 0.2 pairs vs 0.5 chance) and
+the scale-redundancy ranking (ρ = 0.76) — a validated coarse screen for merge/
+delete-together relations at ~1/24 the cost of the field sweeps. The precision numbers
+(small χ, ranks, actual costs) still require the T = 0 field sweeps: the correlator noise
+floor at affordable sample counts (~0.07) sits above the median |χ| (0.02). γ/nβ acts as
+the curvature-scale dial selecting which directions the chain thermalises — the operational
+form of "finite-scale" landscape information. Optimizer noise is no shortcut: SGD's η/B
+noise never decorrelates the observables and Adam's preconditioned noise is white.
 
 ### 4.4 Data-side and representational observables
 
