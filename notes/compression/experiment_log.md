@@ -1259,7 +1259,10 @@ chance 0.5):
 Full-matrix rank correlation stays ≈ 0 at all settings — expected: ~230 independent samples
 give a correlator noise floor ~0.07 vs median |χ| = 0.02; only the strong pairs are
 resolvable at this length. Variance vs field free fraction (scale-redundancy detector):
-sgld 0.73 / 0.71 / **0.76** — best in the equilibrated chain.
+sgld 0.73 / 0.71 / 0.76 (R4's un-equilibrated γ = 100 chain gave 0.80) — i.e. 0.71–0.80
+across four decades of γ, so this ranking is robust and, unlike the FDT test, does *not*
+depend on equilibration. Under SGD 0.62–0.67; under Adam 0.25–0.61 (preconditioning
+re-weights the observables), so the detector needs isotropic noise.
 
 **Findings.**
 1. **The R4/R4b failure was under-localization, not a property of the model.** With

@@ -2,10 +2,10 @@
 
 *Written 2026-08-31, revised 2026-09-01 after the full program ran. Evaluates the ideas in
 `singular_landscape_transformer_compression.docx` (draft of 2026-08-17) against the data in
-`experiment_log.md`, reports what the geometry program (E0–E10) and the relaxation program
-(R1–R3, `relaxation_program.md`) found, and then sets out — the part that survived —
-which observables beyond the static Hessian carry compression information and what each
-one lets you do.*
+`experiment_log.md`, reports what the geometry program (E0–E10), the relaxation program
+(R1–R3, `relaxation_program.md`) and the finite-temperature correlator program (R4–R4c)
+found, and then sets out — the part that survived — which observables beyond the static
+Hessian carry compression information and what each one lets you do.*
 
 Companion files: `compression_survey.md` (method definitions, honesty rules, code layout),
 `experiment_log.md` (every number below, with settings), `relaxation_program.md` (plans for
@@ -126,18 +126,19 @@ the linear-response susceptibilities at that scale:
 |---|---|---|
 | Per-weight posterior variance (→ posterior-variance bit allocation, finite-T OBS) | **measured, failed** (R2) | SGLD chains equilibrate only directions with relaxation time 2/(ε(nβh+γ)) ≲ chain length — here only W_U. Everything else reported ε × steps (pure diffusion); the map was uninformative and the allocation degenerate. Weight-space correlators of a 2×10⁵-dim flat manifold are not obtainable by sampling at any useful temperature. |
 | Component-observable correlators ⟨δΩ_c δΩ_c′⟩ | **measured (R4), FDT test failed** | 72 observables along Adam / SGD / SGLD trajectories of 2 000–4 000 steps: Spearman(corr, χ_R3.3) = −0.09 / +0.03 / −0.12, sign agreement with −χ at chance. Cause: the autocorrelation never decays within the window (τ_c saturates the 60-lag cap under every dynamics) — one slow drift mode, so the second moments are drift statistics. **R4b** (30 000–60 000 steps, γ = 100): still no equilibration — the chain was filling the γ-ball (√(N/γ) ≈ 45) with τ_flat = 2/(εγ) ≈ 7×10⁴ steps. **R4c (γ scan)**: at γ = 10⁵ the SGLD chain equilibrates (τ = 130 steps, 230 τ window, ‖δw‖ = 1.43 = √(N/γ)) and the FDT sign relation to χ emerges on the strongly coupled pairs (0.727 vs chance 0.5); full-matrix ranks stay at the sampling-noise floor. γ/nβ is the curvature-scale dial (10⁵ ↔ the ~230 stiffest directions). Only SGLD noise is thermal — SGD never decorrelates, Adam is white. |
-| Thermal variance var(x_c) as a selector | **measured (R4): partial positive** | Ranks the field-measured *free fraction* of a component at Spearman 0.80 (SGLD) — a scale-redundancy detector (over-sharpened QK). Not a cost or deletion signal: as a deletion order it loses to the static quench order at every size (+81 vs +20 mnats at 74k params) and to the field sweep by 10×. |
+| Thermal variance var(x_c) as a selector | **measured (R4, R4c): partial positive** | Ranks the field-measured *free fraction* of a component at Spearman 0.71–0.80 under SGLD, robust across γ ∈ {10², 10³, 10⁴, 10⁵} and so not an equilibration artefact — a scale-redundancy detector (over-sharpened QK). Weaker under SGD (0.62–0.67) and unreliable under Adam (0.25–0.61, preconditioning re-weights the observables). Not a cost or deletion signal: as a deletion order it loses to the static quench order at every size (+81 vs +20 mnats at 74k params) and to the field sweep by 10×. |
 | Loss–observable correlators ⟨δL δΩ_c⟩ | **measured (R4): negative** | Spearman with the field cost 0.41 / −0.14 / −0.27 across dynamics — no consistent signal at these trajectory lengths. |
 | Activation correlators at finite T (ThermalGPTQ) | **measured (R4): negative** | ⟨2XXᵀ⟩ over 50 Adam states: 2.2 / 9.7 / 113 mnats at 4 / 3 / 2 bits vs 2.0 / 9.6 / 105 for H(w*) without propagation; the propagated reference (71.6 at 2 bits) shows that conditioning on already-quantized upstream layers, not temperature, is what matters. |
-| Time correlators / relaxation spectrum | **measured (R4, R4b)** | the autocorrelation of every observable stays positive over the whole 60-lag window at 2 000 and at 30 000–60 000 steps — no spectrum, one collective drift mode that outlasts any trajectory tried. The relaxation spectrum is not resolvable by trajectory statistics here. |
+| Time correlators / relaxation spectrum | **measured (R4, R4b, R4c)** | At γ = 100 the autocorrelation of every observable stays positive over the whole window at 2 000 and at 30 000–60 000 steps (τ only bounded below, no spectrum). Localization resolves it: SGLD τ ≈ 3 850 / 1 050 / 130 steps at γ = 10³ / 10⁴ / 10⁵ (OU flat-direction prediction 2/(εγ) = 6 670 / 670 / 67) — the ~1/γ scaling holds and each point sits within a factor ~2 of the prediction, so the observables' slow time is set by the localization, not by the model. A modest genuine spread appears once resolved (median 130 vs max 240 steps at γ = 10⁵). |
 
 The lesson from R2 was that weights are the wrong variables to thermalise; R4 adds that
-coarse observables are the right variables but still need genuinely equilibrated
-trajectories — on this model every one of them relaxes on a single collective time of
-~500 steps, so 10³-step windows give drift statistics, not fluctuations. What survived: the
-thermal variance is a usable detector of *scale* redundancy (which parts of a component are
-decorative), and nothing finite-temperature improved rounding or deletion over the T = 0
-measurements. R4c settled it: the R4/R4b failure was under-localization. With γ chosen so that
+coarse observables are the right variables but still need a genuinely equilibrated
+trajectory — at the γ = 100 used there, no observable's autocorrelation decayed inside any
+window tried (up to 60 000 steps), so the second moments were drift statistics, not
+fluctuations. What survived from R4 alone: the thermal variance is a usable detector of
+*scale* redundancy (which parts of a component are decorative), and nothing
+finite-temperature improved rounding or deletion over the T = 0 measurements.
+R4c settled the rest: the R4/R4b failure was under-localization. With γ chosen so that
 τ_flat = 2/(εγ) fits many times into the window (γ = 10⁵ here: τ = 130 steps, 230 τ of
 stationary data, ‖δw‖ pinned at √(N/γ)), one SGLD chain recovers the *sign structure* of
 the strong response coefficients χ (0.727 agreement on |χ| > 0.2 pairs vs 0.5 chance) and
@@ -219,10 +220,13 @@ noise never decorrelates the observables and Adam's preconditioned noise is whit
 | R1.3 | adiabatic compiler | — | superseded by R3.2 |
 | R1.4 | annealed vs direct quantization | `run_geo_annealq.py`, entry R1.4 | done — 70 kB frontier |
 | R2.1–2.2 | SGLD non-Gaussianity map, posterior-variance allocation | `geo_thermal.py`, entry R2 | done, negative |
-| R2.3 | finite-T GPTQ | — | dropped with cause |
+| R2.3 | finite-T GPTQ (weight-space covariance) | — | dropped with cause; the activation-space version was later run as R4's ThermalGPTQ — negative |
 | R3.1 | per-component field sweeps | `geo_field.py`, entry R3 (+ hydra) | done |
 | R3.2 | global-field phase diagram | `run_geo_globalfield.py`, entry R3 | done — params frontier |
 | R3.3 | cross-susceptibilities | `run_geo_field.py --stage r33`, entry R3.3 (hydra) | done |
+| R4 | coarse-observable correlators; thermal-variance deletion order; ThermalGPTQ | `geo_correlators.py`, entry R4 (hydra) | done — FDT negative at γ = 100, deletion/rounding negative |
+| R4b | long trajectories (30k–60k steps) | same runner, entry R4 addendum (hydra) | done — no equilibration; diagnosed as under-localization |
+| R4c | γ-localization scan {10³, 10⁴, 10⁵} × {SGLD, SGD, Adam} | same runner `--gammas`, entry R4c (hydra) | done — equilibrated SGLD recovers the FDT sign structure of χ |
 
 ## Appendix B — Protocol notes carried forward
 
